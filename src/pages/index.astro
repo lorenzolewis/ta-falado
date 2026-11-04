@@ -1,60 +1,32 @@
 ---
-// Placeholder home page. The real one (with the player and progress) is #14.
-import { SERIES, getLesson, lessonPath, lessonsBySeries, nextLesson } from '../lib/lessons';
+import Base from '../layouts/Base.astro';
+import { formatDuration, isoDuration } from '../lib/format';
+import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
+import { SERIES_LABEL } from '../lib/series';
 
-const title = 'Tá Falado';
-const seriesNames = { pronunciation: 'Pronunciation', grammar: 'Grammar', supplementary: 'Supplementary' } as const;
-const series = await Promise.all(SERIES.map(async (s) => ({ id: s, lessons: await lessonsBySeries(s) })));
-const first = await getLesson('pronunciation', 1);
-const afterFirst = first && (await nextLesson(first));
+const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await lessonsBySeries(id) })));
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content="Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers." />
-  </head>
-  <body>
-    <main>
-      <h1 lang="pt-BR">{title}</h1>
-      <p>A new home for the Brazilian Portuguese podcast for Spanish speakers is on its way.</p>
-      {
-        series.map(({ id, lessons }) => (
-          <section>
-            <h2>{seriesNames[id]}</h2>
-            <ol>
-              {lessons.map((lesson) => (
-                <li value={lesson.data.number}>
-                  <a href={lessonPath(lesson.data)}>{lesson.data.title}</a>{lesson.data.topic && `, ${lesson.data.topic}`}
-                </li>
-              ))}
-            </ol>
-          </section>
-        ))
-      }
-      {afterFirst && <p>After the first lesson comes <a href={lessonPath(afterFirst.data)}>{afterFirst.data.title}</a>.</p>}
-      <p>
-        <small>
-          Original lessons by COERLL at the University of Texas at Austin, licensed <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
-        </small>
-      </p>
-    </main>
-  </body>
-</html>
-
-<style>
-  :root {
-    color-scheme: light dark;
-    font-family: system-ui, sans-serif;
-    line-height: 1.5;
+<Base>
+  <h1 lang="pt-BR">Tá Falado</h1>
+  <p>Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
+  {
+    series.map(({ id, lessons }) => (
+      <section aria-labelledby={`series-${id}`}>
+        <h2 id={`series-${id}`}>{SERIES_LABEL[id]}</h2>
+        <ol>
+          {lessons.map(({ data }) => (
+            <li value={data.number}>
+              <a href={lessonPath(data)}>{data.title}</a>
+              {data.topic && <>, {data.topic}</>}
+              {' · '}
+              <time datetime={isoDuration(data.audio.durationSeconds)}>
+                {formatDuration(data.audio.durationSeconds)}
+              </time>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))
   }
-
-  main {
-    max-inline-size: 40rem;
-    margin-inline: auto;
-    padding: 2rem 1rem;
-  }
-</style>
+</Base>
