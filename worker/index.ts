@@ -6,6 +6,11 @@ type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return serveRange(request, await env.ASSETS.fetch(request));
+    // The asset binding drops Cache-Control when it sees Range, so ask it for the plain file.
+    const headers = new Headers(request.headers);
+    headers.delete('Range');
+    headers.delete('If-Range');
+    const asset = await env.ASSETS.fetch(new Request(request, { headers }));
+    return serveRange(request, asset);
   },
 };

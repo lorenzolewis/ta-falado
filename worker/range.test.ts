@@ -7,7 +7,8 @@ import { parseRange } from './range';
 const mp3 = readFileSync(new URL('../public/mp3/tafalado_01.mp3', import.meta.url));
 const size = mp3.byteLength; // 7,590,390
 
-// Stands in for the static-asset binding, which ignores Range and always returns the whole file.
+// Stands in for the static-asset binding, which ignores Range and always returns the whole file,
+// but (as seen on a preview deploy) leaves out Cache-Control when the request carries Range.
 const env = {
   ASSETS: {
     async fetch(request: Request) {
@@ -17,8 +18,10 @@ const env = {
       return new Response(request.method === 'HEAD' ? null : mp3, {
         headers: {
           'Content-Type': 'audio/mpeg',
-          'Cache-Control': 'public, max-age=0, must-revalidate',
           ETag: '"abc"',
+          ...(request.headers.has('Range')
+            ? {}
+            : { 'Cache-Control': 'public, max-age=0, must-revalidate' }),
         },
       });
     },
