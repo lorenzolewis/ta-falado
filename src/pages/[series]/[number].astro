@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
+import PlayButton from '../../components/PlayButton.astro';
 import Base from '../../layouts/Base.astro';
 import { formatDate, formatDuration, isoDate, isoDuration } from '../../lib/format';
 import { getLessons, lessonPath, type Lesson } from '../../lib/lessons';
@@ -33,8 +34,7 @@ const heading = `${SERIES_LABEL[data.series]} ${data.number}`;
         {formatDuration(data.audio.durationSeconds)}
       </time>
     </p>
-    <!-- "Play" button for the persistent player (#15) goes here. -->
-    <div data-play-slot></div>
+    <p><PlayButton lesson={lesson} /></p>
     {data.photo && <img src={data.photo.url} alt={data.photo.alt} loading="lazy" decoding="async" />}
     <Content />
     <p><a href={data.pdf.url}>Transcript (PDF)</a></p>

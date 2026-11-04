@@ -1,0 +1,70 @@
+---
+// The persistent mini-player (#15, ADR 0001). It is on every page under the same persist name, so
+// <ClientRouter /> keeps this element (and its focus) across navigations. The audio itself lives in
+// src/lib/player.ts. Minimal on purpose: the visual design is #29.
+import { RATES } from '../lib/player';
+---
+
+<section class="player" aria-label="Audio player" data-player hidden transition:persist="player">
+  <p class="wrap"><a data-title href="/"></a></p>
+  <div class="wrap controls">
+    <button type="button" data-action="back" aria-keyshortcuts="ArrowLeft">Back 10s</button>
+    <button type="button" data-action="toggle" aria-keyshortcuts="Space">Play</button>
+    <button type="button" data-action="forward" aria-keyshortcuts="ArrowRight">Forward 30s</button>
+    <button type="button" data-action="mute" aria-pressed="false" aria-keyshortcuts="M">Mute</button>
+    <label>
+      Speed
+      <select data-rate>
+        {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+      </select>
+    </label>
+  </div>
+  <div class="wrap seek">
+    <span data-current>0:00</span>
+    <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+    <span data-duration>0:00</span>
+  </div>
+  <p class="wrap" role="status" data-status></p>
+</section>
+
+<script>
+  import '../lib/player-ui';
+</script>
+
+<style>
+  .player {
+    position: sticky;
+    inset-block-end: 0;
+    background: Canvas;
+    border-block-start: 1px solid;
+    padding-block: 0.5rem;
+  }
+  .player[hidden] {
+    display: none;
+  }
+  p {
+    margin: 0;
+  }
+  [data-status]:empty {
+    display: none;
+  }
+  .controls,
+  .seek {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block: 0.25rem;
+  }
+  .seek input {
+    flex: 1;
+    min-inline-size: 8rem;
+  }
+  .seek span {
+    font-variant-numeric: tabular-nums;
+  }
+  button,
+  select {
+    min-block-size: 2.75rem;
+  }
+</style>

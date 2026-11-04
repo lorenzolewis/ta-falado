@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from 'astro:transitions';
+import Player from '../components/Player.astro';
 import '../styles/base.css';
 
 interface Props {
@@ -17,6 +19,7 @@ const { title, description = 'Brazilian Portuguese pronunciation and grammar pod
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title ? `${title} · Tá Falado` : 'Tá Falado'}</title>
     <meta name="description" content={description} />
+    <ClientRouter />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -35,7 +38,7 @@ const { title, description = 'Brazilian Portuguese pronunciation and grammar pod
         </small>
       </p>
     </footer>
-    <!-- Persistent player (#15) goes here, outside <main>, so it can be kept across navigations. -->
-    <div id="player"></div>
+    <!-- Outside <main>, and on every page, so it is kept across navigations (ADR 0001). -->
+    <Player />
   </body>
 </html>
