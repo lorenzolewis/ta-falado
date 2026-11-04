@@ -6,10 +6,15 @@ import { JUMP_BACK, JUMP_FORWARD, player, type Track } from './player';
 
 const time = (seconds: number) => formatDuration(Math.floor(seconds));
 
-/** The mini-player is persisted across navigations, so it is wired up only once. */
+const bound = new WeakSet<Element>();
+
+/**
+ * The mini-player is persisted across navigations, so it must be wired up only once: binding it
+ * again on each page load would stack listeners and make every click act twice (or more).
+ */
 function bindMiniPlayer(root: HTMLElement) {
-  if (root.dataset.bound) return;
-  root.dataset.bound = '';
+  if (bound.has(root)) return;
+  bound.add(root);
 
   const $ = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
   const title = $<HTMLAnchorElement>('[data-title]');

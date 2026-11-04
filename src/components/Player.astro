@@ -67,4 +67,9 @@ import { RATES } from '../lib/player';
   select {
     min-block-size: 2.75rem;
   }
+  /* Mute keeps its label (it's a toggle button), so show the pressed state visually. */
+  [aria-pressed='true'] {
+    box-shadow: inset 0 0 0 2px currentColor;
+    text-decoration: line-through;
+  }
 </style>
