@@ -2,14 +2,14 @@
 import Base from '../layouts/Base.astro';
 import * as credits from '../../CREDITS.md';
 
-// CREDITS.md is the single source for the credits and licence. Its headings start at h1, so shift
+// CREDITS.md is the single source for the credits and license. Its headings start at h1, so shift
 // them down one level to sit under this page's h1, and drop the maintainer comments.
 const creditsHtml = (await credits.compiledContent())
   .replace(/<!--[\s\S]*?-->/g, '')
   .replace(/<(\/?)h([1-5])\b/g, (_, slash: string, level: string) => `<${slash}h${Number(level) + 1}`);
 ---
 
-<Base title="About" description="About this independent, unofficial archive of the Tá Falado podcast, with full credits and licence.">
+<Base title="About" description="About this independent, unofficial archive of the Tá Falado podcast, with full credits and license.">
   <h1>About this site</h1>
   <p>
     This is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian

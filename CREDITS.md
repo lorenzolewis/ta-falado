@@ -1,7 +1,7 @@
 # Credits and license
 
 <!--
-This file is the single source for the credits and licence: src/pages/about.astro renders it as the
+This file is the single source for the credits and license: src/pages/about.astro renders it as the
 /about page, shifting each heading down one level. Edit the credits here, not in the page. Raw HTML
 is allowed for `lang` attributes (Portuguese is lang="pt-BR", Spanish lang="es").
 -->
@@ -10,7 +10,7 @@ This site is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i
 
 ## License and attribution
 
-The lessons, audio, transcripts and photos on this site come from the original work below and are used under its Creative Commons licence.
+The lessons, audio, transcripts and photos on this site come from the original work below and are used under its Creative Commons license.
 
 - **Title:** *<span lang="pt-BR">Tá Falado</span>: Brazilian Portuguese Pronunciation for Speakers of Spanish*
 - **Authors:** the podcasting team from the University of Texas at Austin, hosted by Orlando R. Kelm (see [the team](#the-team) below), produced at the College of Liberal Arts, University of Texas at Austin
@@ -26,7 +26,7 @@ computed its footer year with a script, so 2025 is when the archive was frozen, 
 was made (2006–2007). The original pages carry only a CC BY 3.0 badge, with no copyright text.
 -->
 
-The site's own code is separate: it's MIT-licensed (see `LICENSE` in the [source repository](https://github.com/lorenzolewis/te-falado)). The CC BY 3.0 licence above covers the content.
+The site's own code is separate: it's MIT-licensed (see `LICENSE` in the [source repository](https://github.com/lorenzolewis/te-falado)). The CC BY 3.0 license above covers the content.
 
 ## The team
 
