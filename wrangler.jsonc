@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "te-falado",
+  "compatibility_date": "2026-11-04",
+  // Fully static: no Worker script, Astro's build output is served as static assets.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}
