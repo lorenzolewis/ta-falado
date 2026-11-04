@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import * as credits from '../../CREDITS.md';
+
+// CREDITS.md is the single source for the credits and license. Its headings start at h1, so shift
+// them down one level to sit under this page's h1, and drop the maintainer comments.
+const creditsHtml = (await credits.compiledContent())
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<(\/?)h([1-5])\b/g, (_, slash: string, level: string) => `<${slash}h${Number(level) + 1}`);
+---
+
+<Base title="About" description="About this independent, unofficial archive of the Tá Falado podcast, with full credits and license.">
+  <h1>About this site</h1>
+  <p>
+    This is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian
+    Portuguese lessons recorded at the University of Texas at Austin in 2006 and 2007. It keeps all 46 lessons
+    and their transcripts available in a site that works on a phone.
+  </p>
+  <p>
+    The lessons are for English speakers who also speak Spanish and are learning Brazilian Portuguese: each one
+    builds on what you already know from Spanish, pointing out where Portuguese pronunciation and grammar differ.
+  </p>
+  <p>
+    The original site is archived at{' '}
+    <a href="https://www.coerll.utexas.edu/brazilpod/tafalado/">www.coerll.utexas.edu/brazilpod/tafalado</a>.
+  </p>
+  <Fragment set:html={creditsHtml} />
+</Base>
