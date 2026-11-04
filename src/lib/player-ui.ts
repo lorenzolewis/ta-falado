@@ -28,6 +28,10 @@ function bindMiniPlayer(root: HTMLElement) {
     else if (action === 'forward') player.skip(JUMP_FORWARD);
     else if (action === 'mute') player.toggleMute();
   });
+  // The player is sticky at the bottom, so keep focused and scrolled-to content clear of it.
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--player-block-size', `${root.offsetHeight}px`);
+  }).observe(root);
   rate.addEventListener('change', () => player.setRate(Number(rate.value)));
   seek.addEventListener('input', () => player.seek(Number(seek.value)));
 

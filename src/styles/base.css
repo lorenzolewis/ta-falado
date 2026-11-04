@@ -4,6 +4,8 @@
   font-family: system-ui, sans-serif;
   line-height: 1.5;
   overflow-wrap: break-word;
+  /* Set by the sticky mini-player (src/lib/player-ui.ts) so it never covers focused content. */
+  scroll-padding-block-end: var(--player-block-size, 0px);
 }
 
 body {
