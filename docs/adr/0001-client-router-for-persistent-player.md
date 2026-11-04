@@ -1,0 +1,3 @@
+# Use Astro's ClientRouter so the audio player persists across pages
+
+The mini-player must keep playing while the learner browses other lessons. Browser-native cross-document view transitions still do a full page load, which destroys the `<audio>` element, so we use Astro's `<ClientRouter />` with `transition:persist` on the player instead. That's despite targeting Baseline "newly available" browsers, and despite Astro noting the router "will increasingly become unnecessary". The cost is SPA-style script handling: per-page scripts must run from `astro:page-load`, and the player must sit on every page with the same persist name. Revisit if a web standard ever lets media survive a document navigation.
