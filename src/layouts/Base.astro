@@ -1,0 +1,41 @@
+---
+import '../styles/base.css';
+
+interface Props {
+  /** Page title, before the site name. Omit on the home page. */
+  title?: string;
+  description?: string;
+}
+
+const { title, description = 'Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title ? `${title} · Tá Falado` : 'Tá Falado'}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="wrap">
+      <p><a href="/" lang="pt-BR">Tá Falado</a></p>
+    </header>
+    <main id="main" class="wrap">
+      <slot />
+    </main>
+    <footer class="wrap">
+      <p>
+        <small>
+          An independent, unofficial archive. Original lessons by COERLL at the University of Texas at Austin, licensed{' '}
+          <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.{' '}
+          <a href="/about">About this site</a>
+        </small>
+      </p>
+    </footer>
+    <!-- Persistent player (#15) goes here, outside <main>, so it can be kept across navigations. -->
+    <div id="player"></div>
+  </body>
+</html>
