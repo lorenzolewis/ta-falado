@@ -19,7 +19,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     <div class="a-line" aria-hidden="true"></div>
     <div class="a-row">
       <button type="button" class="a-open" data-proto="open-sheet" aria-haspopup="dialog">
-        <img class="a-art" data-proto-art alt="" width="44" height="44" />
+        <span class="a-art" data-proto-art aria-hidden="true"></span>
         <span class="a-text">
           <span class="a-title" data-proto-title></span>
           <span class="meta" data-proto-left></span>
@@ -28,7 +28,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
         <span class="visually-hidden">, open the player</span>
       </button>
       <div class="a-id">
-        <img class="a-art" data-proto-art alt="" width="56" height="56" />
+        <span class="a-art" data-proto-art aria-hidden="true"></span>
         <span class="a-text">
           <a class="a-title" data-title href="/"></a>
           <span class="meta" data-proto-series></span>
@@ -61,7 +61,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
 
     <dialog class="a-sheet" data-proto-sheet aria-label="Player">
       <button type="button" class="ctl a-close" data-proto="close-sheet" aria-label="Close the player"><Icon name="chevron" /></button>
-      <img class="a-big" data-proto-art alt="" width="320" height="320" />
+      <span class="a-big" data-proto-art aria-hidden="true"></span>
       <p class="a-sheet-title"><a data-title href="/"></a></p>
       <p class="meta" data-proto-series></p>
       <div class="a-sheet-seek">
@@ -427,8 +427,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     inline-size: 44px;
     block-size: 44px;
     border-radius: var(--radius-row);
-    background: var(--track-on-strong);
-    object-fit: cover;
+    background: var(--track-on-strong) var(--art, none) center / cover;
   }
   .a-text {
     display: grid;
@@ -498,7 +497,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     block-size: auto;
     aspect-ratio: 1;
     border-radius: var(--radius-card);
-    background: var(--track-on-strong);
+    background: var(--track-on-strong) var(--art, none) center / cover;
   }
   .a-sheet-title {
     margin-block-start: var(--space-8) !important;

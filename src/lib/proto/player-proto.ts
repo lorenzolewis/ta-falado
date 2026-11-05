@@ -59,9 +59,11 @@ function render() {
   for (const el of wrap.querySelectorAll<HTMLElement>('[data-proto-left]')) {
     el.textContent = track ? `${time(Math.max(duration - current, 0))} left` : '';
   }
-  for (const el of wrap.querySelectorAll<HTMLImageElement>('[data-proto-art]')) {
-    if (track && el.getAttribute('src') !== track.artwork) el.src = track.artwork;
-  }
+  // A CSS background, not an <img>: Astro's dev-toolbar audit re-fetches every <img> on each DOM
+  // change, and the player changes the DOM several times a second, so the dev server re-rendered
+  // the artwork endlessly. Set only when the track changes.
+  const art = track ? `url("${track.artwork}")` : '';
+  if (wrap.style.getPropertyValue('--art') !== art) wrap.style.setProperty('--art', art);
   if (!state.track && track) {
     // The real bindings skip updates with no track, so fill what they would have.
     for (const a of wrap.querySelectorAll<HTMLAnchorElement>('[data-title]')) {
