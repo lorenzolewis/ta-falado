@@ -1,20 +1,12 @@
 import type { APIRoute } from 'astro';
 import { episodeCoverPath, PODCAST_COVER_PATH } from '../lib/artwork';
 import { getLessons, lessonPath, shortTitle, type Lesson } from '../lib/lessons';
+import { LICENSE_URL, PODCAST_AUTHOR, PODCAST_DESCRIPTION, PODCAST_TITLE } from '../lib/podcast';
 import { SERIES_LABEL } from '../lib/series';
 
 // The podcast feed (ADR 0003): one serial feed, the series named in each title, no seasons.
 // Absolute URLs come from Astro's `site` (astro.config.ts), never from a host written here.
 // `scripts/validate-feed.ts` checks the built file in CI.
-
-const LICENSE_URL = 'https://creativecommons.org/licenses/by/3.0/';
-
-const CHANNEL_DESCRIPTION =
-  'Tá Falado is a podcast of Brazilian Portuguese pronunciation and grammar for speakers of Spanish: ' +
-  '24 pronunciation lessons, 2 supplementary lessons and 20 grammar lessons, each with a cultural ' +
-  'conversation, recorded in 2006–2007 by a team at the University of Texas at Austin and published by ' +
-  'COERLL under CC BY 3.0. This is an independent, unofficial archive of the original podcast. ' +
-  "It isn't affiliated with or endorsed by the University of Texas at Austin or COERLL.";
 
 const CREDIT =
   'Original lesson by the Tá Falado team at the University of Texas at Austin, published by COERLL. ' +
@@ -33,14 +25,14 @@ export const GET: APIRoute = async ({ site }) => {
   xmlns:podcast="https://podcastindex.org/namespace/1.0"
   xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Tá Falado</title>
+    <title>${escape(PODCAST_TITLE)}</title>
     <link>${url('/')}</link>
     <atom:link href="${url('/feed.xml')}" rel="self" type="application/rss+xml"/>
-    <description>${escape(CHANNEL_DESCRIPTION)}</description>
+    <description>${escape(PODCAST_DESCRIPTION)}</description>
     <language>en</language>
     <copyright>© 2025, University of Texas at Austin. Licensed CC BY 3.0 (${LICENSE_URL}).</copyright>
     <itunes:type>serial</itunes:type>
-    <itunes:author>COERLL, University of Texas at Austin</itunes:author>
+    <itunes:author>${escape(PODCAST_AUTHOR)}</itunes:author>
     <itunes:explicit>false</itunes:explicit>
     <itunes:image href="${url(PODCAST_COVER_PATH)}"/>
     <itunes:category text="Education">

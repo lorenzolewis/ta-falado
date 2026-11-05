@@ -8,6 +8,9 @@ type LessonRef = { series: Series; number: number };
 
 /** The podcast cover's file name, beside the episode covers (never a lesson's `series-NN`). */
 export const PODCAST_COVER_SLUG = 'cover';
+/** The podcast cover: 3000×3000, Apple's maximum. */
+export const COVER_SIZE = 3000;
+
 /** The podcast cover (3000×3000, RGB, no transparency). */
 export const PODCAST_COVER_PATH = `/artwork/${PODCAST_COVER_SLUG}.png`;
 
