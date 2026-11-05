@@ -149,14 +149,19 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
     font-weight: 400;
   }
 
-  /* Phone: the "Lessons" link sits at the top of the pane, so the print starts below it, still
-     bleeding to the sides, with square corners. */
+  /* Phone: the "Lessons" link (src/layouts/Base.astro) sits over the print's top corner, on a
+     page-coloured pill so it reads on any paper, and the print still bleeds to the pane's top. */
   @media (max-width: 51.99rem) {
-    :global(.back) + .lesson .cover {
-      margin-block-start: 0;
+    :global(.pane):has(> .lesson) {
+      position: relative;
     }
-    :global(.back) + .lesson .cover :global(.print) {
-      border-radius: 0;
+    :global(.pane > .back):has(+ .lesson) {
+      position: absolute;
+      inset-block-start: var(--space-12);
+      inset-inline-start: var(--space-12);
+      z-index: 1;
+      margin: 0;
+      background: var(--surface);
     }
   }
 
