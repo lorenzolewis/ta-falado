@@ -1,0 +1,151 @@
+---
+// PROTOTYPE (#55) variant A, "Liner notes": a reading page. Series and number over a big serif
+// title, one line of facts, an ipê Play pill, then the intro with the photo set into it at its
+// own small size, captioned with the lesson's culture topic. The transcript closes the page.
+// PT words italic in the accent; ES words plain italic.
+import Icon from '../../../components/Icon.astro';
+import Base from '../../../layouts/Base.astro';
+import Switcher from '../_Switcher.astro';
+import { sampleStaticPaths, view } from '../_lesson';
+
+export const getStaticPaths = sampleStaticPaths;
+const { lesson } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="a" data-proto-lesson={v.trackJson}>
+    <header>
+      <p class="series">{v.series} {v.number}</p>
+      <h1>{v.title}</h1>
+      <p class="facts">
+        First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.
+      </p>
+      <p class="listen">
+        <button type="button" class="btn btn-ipe" data-proto-play>
+          <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span data-proto-label>Play</span>
+        </button>
+        <span class="left" data-proto-left></span>
+      </p>
+    </header>
+
+    <div class="intro">
+      {
+        v.photo && (
+          <figure>
+            <img src={v.photo.url} alt={v.photo.alt} />
+            {v.topic && <figcaption>{v.topic}</figcaption>}
+          </figure>
+        )
+      }
+      <Fragment set:html={v.intro} />
+    </div>
+
+    <p class="pdf">
+      <a href={v.pdf}>
+        <Icon name="doc" />
+        <span>Read the transcript <span class="size">PDF{v.pdfSize && `, ${v.pdfSize}`}</span></span>
+      </a>
+    </p>
+  </article>
+  <Switcher variant="a" lesson={lesson.id} />
+</Base>
+
+<script>
+  import '../_play';
+</script>
+
+<style>
+  .a {
+    max-inline-size: 40rem;
+  }
+  p {
+    margin: 0;
+  }
+  .series {
+    color: var(--accent);
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  h1 {
+    margin: var(--space-4) 0 var(--space-12);
+    font-size: clamp(var(--text-36), 7vw, var(--text-60));
+    line-height: 1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .facts {
+    color: var(--muted);
+  }
+  .listen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-16);
+    margin-block-start: var(--space-24);
+  }
+  .left {
+    color: var(--muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-proto-play] :global(.i-pause),
+  [data-state='playing'] :global(.i-play),
+  [data-state='loading'] :global(.i-play) {
+    display: none;
+  }
+  [data-state='playing'] :global(.i-pause),
+  [data-state='loading'] :global(.i-pause) {
+    display: block;
+  }
+
+  .intro {
+    margin-block-start: 40px;
+    padding-block-start: var(--space-24);
+    border-block-start: 1px solid var(--line);
+    font: var(--text-21) / 1.55 var(--font-serif);
+  }
+  .intro::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+  .intro :global(p + p) {
+    margin-block-start: var(--space-16);
+  }
+  .intro :global(.w-pt) {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  figure {
+    float: inline-end;
+    inline-size: min(45%, 240px);
+    margin: var(--space-4) 0 var(--space-12) var(--space-24);
+  }
+  figure img {
+    display: block;
+    inline-size: 100%;
+    border-radius: var(--radius-row);
+  }
+  figcaption {
+    margin-block-start: var(--space-6);
+    color: var(--muted);
+    font: 500 var(--text-14) / 1.3 var(--font-sans);
+  }
+
+  .pdf {
+    margin-block-start: var(--space-32);
+  }
+  .pdf a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-block-size: 44px;
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  .size {
+    color: var(--muted);
+    font-weight: 400;
+  }
+</style>
