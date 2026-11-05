@@ -1,4 +1,4 @@
-// PROTOTYPE (#61), throwaway: renders three artwork templates in the #55 print style for a handful
+// PROTOTYPE (#61), throwaway: renders the chosen artwork template (A2) in the #55 print style for a handful
 // of lessons into prototype-renders/. Run: `node scripts/prototype-artwork.ts`.
 // Standalone (no Astro): it reads the lesson frontmatter itself.
 
@@ -8,7 +8,7 @@ import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
 import { DEFAULT_PAPER, INK, PAPER } from '../src/lib/print.ts';
-import { nestSvg, printLayers, type Box } from '../src/lib/print-svg.ts';
+import { dotPitch, nestSvg, printLayers, type Box } from '../src/lib/print-svg.ts';
 import { SERIES_LABEL, type Series } from '../src/lib/series.ts';
 
 const ROOT = new URL('../', import.meta.url);
@@ -39,7 +39,7 @@ function lesson(slug: string): Cover {
     slug,
     series,
     number: Number(field('number')),
-    title: series === 'pronunciation' ? title.replace(/^Pronunciation of /, '') : title,
+    title, // the full title, as on the OG image (#71)
     photo: photoUrl ? { data: readFileSync(new URL(`public${photoUrl}`, ROOT)), type: 'image/jpeg' } : undefined,
   };
 }
@@ -72,150 +72,90 @@ async function layer(children: El[], box: Box = { x: 0, y: 0, width: C, height: 
 
 const at = (style: Record<string, unknown>, children: El['props']['children']) => div({ position: 'absolute', display: 'flex', flexDirection: 'column', ...style }, children);
 
-/** "Tá Falado" set as on the lesson page's no-photo print: one line, 18.5% of the frame's width. */
-function nameplate(width: number, opacity = 0.85): El {
-  const size = 0.185 * width;
-  return at(
-    { left: 0.1 * size, top: 0.16 * size, fontFamily: SERIF, fontSize: size, lineHeight: 0.82, letterSpacing: -0.03 * size, opacity, whiteSpace: 'nowrap' },
-    'Tá Falado',
-  );
-}
-
 /** A title size that keeps the longest titles to the given number of lines. */
 function titleSize(title: string, sizes: [maxChars: number, size: number][]): number {
   return (sizes.find(([max]) => title.length <= max) ?? sizes.at(-1)!)[1];
 }
 
 // ---------------------------------------------------------------------------------------------
-// Variants. Each returns the print's box, the dot pitch, and two text layers: `printed` sits under
-// the dot screen (it is part of the print), `over` is overprinted on top of it.
+// The chosen template, A2 (round 1 picked A; round 2 added the podcast name on a tab). Type follows the OG image (#71):
+// the name in Alegreya 700 at line-height 0.9 and -0.03em, the series and number in Alegreya Sans
+// 700, then the full title in Alegreya 700 at line-height 1. `printed` sits under the dot screen
+// (part of the print); `over` is overprinted on top of it.
 
 interface Layout {
   box: Box;
-  pitch: number;
   printed?: El[];
   over?: El[];
-  /** Extra SVG drawn with the ink, under the printed text (variant C's podcast cover). */
-  extra?: string;
 }
 
 const label = (cover: Cover) => `${SERIES_LABEL[cover.series!]} ${cover.number}`;
+const name = (size: number, text = 'Tá Falado', lineHeight = 0.9) =>
+  div({ fontFamily: SERIF, fontSize: size, lineHeight, letterSpacing: -0.03 * size, whiteSpace: 'nowrap' }, text);
 
-const VARIANTS: Record<string, { name: string; blurb: string; layout: (c: Cover) => Layout }> = {
-  a: {
-    name: 'A, Plate',
-    blurb: 'The print across the top two thirds, a paper foot with the series, number and title. Fine screen.',
+/** The series and number, then the title: the foot of every episode cover. */
+function caption(cover: Cover, sizes: [number, number][]): El[] {
+  const size = titleSize(cover.title!, sizes);
+  return [
+    div({ fontFamily: SANS, fontSize: 50, lineHeight: 1, marginBottom: 14 }, label(cover)),
+    // One box per word: Satori breaks lines after a slash, which split "/ô/" across lines.
+    div(
+      { display: 'flex', flexWrap: 'wrap', columnGap: 0.24 * size, fontFamily: SERIF, fontSize: size, lineHeight: 1, letterSpacing: -0.01 * size },
+      cover.title!.split(' ').map((word) => div({ whiteSpace: 'nowrap' }, word)),
+    ),
+  ];
+}
+
+const FULL: Box = { x: 0, y: 0, width: C, height: C };
+
+/** The podcast cover, the same in both: the name stacked large at the foot, the subtitle at the top. */
+const podcastCover = (): Layout => ({
+  box: FULL,
+  printed: [at({ left: 56, bottom: 40 }, [name(300, 'Tá', 0.82), name(300, 'Falado', 0.82)])],
+  over: [at({ left: 64, top: 64, width: 720, fontFamily: SANS, fontSize: 54, lineHeight: 1.12 }, SUBTITLE)],
+});
+
+/** No photo (Supplementary 1 and 2), the same in both: as on the OG image, blank paper and dots. */
+const blank = (cover: Cover): Layout => ({
+  box: FULL,
+  over: [
+    at({ left: 64, top: 60, right: 64, bottom: 64, justifyContent: 'space-between' }, [
+      name(120),
+      div({ display: 'flex', flexDirection: 'column' }, caption(cover, [[22, 112], [34, 96], [99, 88]])),
+    ]),
+  ],
+});
+
+const VARIANTS: Record<string, { name: string; layout: (c: Cover) => Layout }> = {
+  a2: {
+    name: 'A2, name on a tab at the foot of the photo',
     layout(cover) {
-      const pitch = C / 160;
-      if (!cover.series) {
-        // Podcast cover: the name stacked large at the foot, the subtitle at the top.
-        return {
-          box: { x: 0, y: 0, width: C, height: C },
-          pitch,
-          printed: [at({ left: 56, bottom: 40, fontFamily: SERIF, fontSize: 300, lineHeight: 0.82, letterSpacing: -9, opacity: 0.88 }, [div({}, 'Tá'), div({}, 'Falado')])],
-          over: [at({ left: 64, top: 64, width: 720, fontFamily: SANS, fontSize: 54, lineHeight: 1.12 }, SUBTITLE)],
-        };
-      }
-      const box = { x: 0, y: 0, width: C, height: 620 };
-      const size = titleSize(cover.title!, [[14, 110], [24, 88], [36, 72], [99, 60]]);
+      if (!cover.series) return podcastCover();
+      if (!cover.photo) return blank(cover);
       return {
-        box,
-        pitch,
-        printed: cover.photo ? [] : [nameplate(box.width)],
-        over: [
-          at({ left: 64, top: 676, right: 64, bottom: 56 }, [
-            div({ fontFamily: SANS, fontSize: 54, lineHeight: 1 }, label(cover)),
-            div({ fontFamily: SERIF, fontSize: size, lineHeight: 1, marginTop: 20, letterSpacing: -0.01 * size }, cover.title),
-          ]),
-        ],
-      };
-    },
-  },
-  b: {
-    name: 'B, Numeral',
-    blurb: 'The print fills the square; a paper tab holds the series and a huge number. No title: apps show it beside the art. Coarse screen.',
-    layout(cover) {
-      const pitch = C / 90;
-      const box = { x: 0, y: 0, width: C, height: C };
-      if (!cover.series) {
-        return {
-          box,
-          pitch,
-          printed: [nameplate(C, 0.88)],
-          over: [at({ left: 64, bottom: 64, width: 640, fontFamily: SANS, fontSize: 54, lineHeight: 1.12 }, SUBTITLE)],
-        };
-      }
-      const digits = String(cover.number).length;
-      return {
-        box,
-        pitch,
-        printed: [
-          ...(cover.photo ? [] : [nameplate(C)]),
-          // The tab: paper, so it reads over any photo. Drawn in the printed layer so the screen covers it.
-          at({ left: 0, bottom: 0, width: digits > 1 ? 520 : 400, height: 470, backgroundColor: cover.photo ? PAPER[cover.series] : 'transparent', padding: '40px 0 0 56px' }, [
-            div({ fontFamily: SANS, fontSize: 52, lineHeight: 1, opacity: 0.88 }, SERIES_LABEL[cover.series]),
-            div({ fontFamily: SERIF, fontSize: 400, lineHeight: 0.86, letterSpacing: -16, marginTop: 4, marginLeft: -12, opacity: 0.88 }, String(cover.number)),
-          ]),
-        ],
-      };
-    },
-  },
-  c: {
-    name: 'C, Masthead',
-    blurb: '"Tá Falado" printed across the top of every cover, the print in a window below, then the series, number and title. Medium screen.',
-    layout(cover) {
-      const pitch = C / 120;
-      const m = 56;
-      const masthead = at({ left: m - 6, top: 34, fontFamily: SERIF, fontSize: 196, lineHeight: 1, letterSpacing: -6, opacity: 0.88, whiteSpace: 'nowrap' }, 'Tá Falado');
-      const box = { x: m, y: 250, width: C - 2 * m, height: cover.series ? 500 : 540 };
-      if (!cover.series) {
-        // Podcast cover: the window shows the three papers, one per series.
-        const w = box.width / 3;
-        const extra = (['pronunciation', 'grammar', 'supplementary'] as const)
-          .map((s, i) => `<rect x="${box.x + i * w}" y="${box.y}" width="${w + (i < 2 ? 1 : 0)}" height="${box.height}" fill="${PAPER[s]}"/>`)
-          .join('');
-        const rule = `<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="none" stroke="${INK}" stroke-width="6"/>`;
-        return {
-          box,
-          pitch,
-          extra: extra + rule,
-          printed: [masthead],
-          over: [at({ left: m, top: 830, width: 800, fontFamily: SANS, fontSize: 52, lineHeight: 1.12 }, SUBTITLE)],
-        };
-      }
-      const size = titleSize(cover.title!, [[22, 78], [34, 62], [99, 54]]);
-      return {
-        box,
-        pitch,
-        printed: [
-          masthead,
-          ...(cover.photo
-            ? []
-            : [at({ left: m + 40, top: box.y + box.height - 430, fontFamily: SERIF, fontSize: 480, lineHeight: 0.86, opacity: 0.88 }, String(cover.number))]),
-        ],
-        over: [
-          at({ left: m, top: 790, right: m }, [
-            div({ fontFamily: SANS, fontSize: 40, lineHeight: 1 }, label(cover)),
-            div({ fontFamily: SERIF, fontSize: size, lineHeight: 1.02, marginTop: 14, letterSpacing: -0.01 * size, lineClamp: 2 }, cover.title),
-          ]),
-        ],
+        box: { x: 0, y: 0, width: C, height: 620 },
+        // The tab rises from the foot at the photo's bottom-left, clear of the faces, which sit high.
+        printed: [at({ left: 0, bottom: C - 620, padding: '30px 40px 22px 56px', backgroundColor: PAPER[cover.series] }, [name(96)])],
+        over: [at({ left: 60, top: 620, right: 60, bottom: 56, justifyContent: 'flex-end' }, caption(cover, [[22, 88], [34, 72], [99, 60]]))],
       };
     },
   },
 };
+
 
 // ---------------------------------------------------------------------------------------------
 // Rendering
 
 async function render(variant: string, cover: Cover, outputWidth: number): Promise<Buffer> {
   const paper = cover.series ? PAPER[cover.series] : DEFAULT_PAPER;
-  const { box, pitch, printed = [], over = [], extra = '' } = VARIANTS[variant].layout(cover);
+  const { box, printed = [], over = [] } = VARIANTS[variant].layout(cover);
+  const pitch = dotPitch(C, C);
   const canvas = { x: 0, y: 0, width: C, height: C };
   const print = printLayers({ id: 'p', paper, box, screenBox: canvas, pitch, photo: cover.photo });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${C}" height="${C}" viewBox="0 0 ${C} ${C}">
     <defs>${print.defs}</defs>
     <rect width="${C}" height="${C}" fill="${paper}"/>
-    ${print.ink}${extra}
+    ${print.ink}
     ${printed.length ? nestSvg(await layer(printed), canvas, 'printed') : ''}
     ${print.screen}
     ${over.length ? nestSvg(await layer(over), canvas, 'over') : ''}

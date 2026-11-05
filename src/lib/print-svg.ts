@@ -1,11 +1,16 @@
 // The print (#55) as plain SVG, for the generated artwork (#61) and the OG images (#71). Satori has
 // no CSS `filter` or `mix-blend-mode`, so the photo is drawn here instead, for resvg to rasterise:
-// an SVG filter turns it into black ink on the series paper, and a <pattern> lays the dot screen
+// an SVG filter prints it in black on the series paper, and a <pattern> lays the dot screen
 // over it. Satori only draws the text, which the caller places between the layers (printed: under
 // the dots) or on top (overprinted). Same recipe as src/components/Print.astro:
-//   photo: grayscale(1) contrast(1.35) brightness(1.05), multiplied over the paper in INK
+//   photo: grayscale(1) contrast(1.35) brightness(1.05); mix-blend-mode: multiply over the paper
 //   dots:  paper-coloured, solid to 0.9/4 of the pitch, soft to 1.5/4, at 55% opacity
-import { INK } from './print.ts';
+// The OG images (#71) use the same filter and the same pitch rule (`dotPitch`).
+
+/** The dot pitch for a canvas: 1/160 of its short side, which is the page's 4px on a 1200×630 card. */
+export function dotPitch(width: number, height: number): number {
+  return Math.min(width, height) / 160;
+}
 
 /** A rectangle on the canvas, in canvas units. */
 export interface Box {
@@ -30,7 +35,7 @@ export interface PrintOptions {
   paper: string;
   box: Box;
   screenBox?: Box;
-  /** The dot pitch in canvas units. The lesson page uses 4px on a frame about 400–700px wide. */
+  /** The dot pitch in canvas units: `dotPitch()` of the canvas. */
   pitch: number;
   /** A JPEG or PNG, as bytes. */
   photo?: { data: Buffer; type: 'image/jpeg' | 'image/png' };
@@ -38,16 +43,13 @@ export interface PrintOptions {
 
 export function printLayers({ id, paper, box, screenBox = box, pitch, photo }: PrintOptions): PrintLayers {
   const [pr, pg, pb] = rgb(paper);
-  const [ir, ig, ib] = rgb(INK);
-  // Multiplying an ink-tinted grey over the paper is a straight line per channel from paper×ink
-  // (where the photo is black) to paper (where it is white): one feComponentTransfer table.
-  const channel = (p: number, i: number) => `${fmt(p * i)} ${fmt(p)}`;
+  // Multiplying an opaque grey photo over the paper scales each channel by the paper's.
   const defs = `
     <filter id="${id}-ink" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-      <feColorMatrix type="saturate" values="0"/>
+      <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/>
       <feComponentTransfer><feFuncR type="linear" slope="1.35" intercept="-0.175"/><feFuncG type="linear" slope="1.35" intercept="-0.175"/><feFuncB type="linear" slope="1.35" intercept="-0.175"/></feComponentTransfer>
       <feComponentTransfer><feFuncR type="linear" slope="1.05"/><feFuncG type="linear" slope="1.05"/><feFuncB type="linear" slope="1.05"/></feComponentTransfer>
-      <feComponentTransfer><feFuncR type="table" tableValues="${channel(pr, ir)}"/><feFuncG type="table" tableValues="${channel(pg, ig)}"/><feFuncB type="table" tableValues="${channel(pb, ib)}"/></feComponentTransfer>
+      <feComponentTransfer><feFuncR type="linear" slope="${fmt(pr)}"/><feFuncG type="linear" slope="${fmt(pg)}"/><feFuncB type="linear" slope="${fmt(pb)}"/></feComponentTransfer>
     </filter>
     <radialGradient id="${id}-dot"><stop offset="0.6" stop-color="${paper}"/><stop offset="1" stop-color="${paper}" stop-opacity="0"/></radialGradient>
     <pattern id="${id}-screen" width="${pitch}" height="${pitch}" patternUnits="userSpaceOnUse">
