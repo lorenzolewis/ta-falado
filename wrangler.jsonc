@@ -3,6 +3,10 @@
   "name": "tafalado",
   "routes": [{ "pattern": "tafalado.lorenzo.soy", "custom_domain": true }],
   "compatibility_date": "2026-11-04",
+  // A <version>-tafalado.<subdomain>.workers.dev link per version, so each PR's preview can be
+  // opened (OG and structured-data checks). The plain workers.dev address stays off (routes set).
+  // Wrangler warns that previews stay public: fine, the site is public anyway.
+  "preview_urls": true,
   // The site is fully static (Astro's build output). This Worker only answers byte ranges
   // for MP3s, which static assets don't (ADR 0002).
   "main": "./worker/index.ts",
