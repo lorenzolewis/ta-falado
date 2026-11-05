@@ -166,7 +166,7 @@ async function variantA(l: Lesson) {
 
 /** B: one sheet of paper. The text is printed in ink on the left of the paper; the photo is
  *  printed on its right, on the same paper, with no frame between them. */
-async function variantB(l: Lesson) {
+async function variantB(l: Lesson, withName = false) {
   const col = 520;
   const print = await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b-paper').then(async (bg) =>
     // Draw the whole sheet as paper and dots, then print the photo only in the right part.
@@ -175,10 +175,16 @@ async function variantB(l: Lesson) {
   const overlay = div(
     { width: W, height: H, display: 'flex', flexDirection: l.photo ? 'row' : 'column', justifyContent: l.photo ? 'flex-start' : 'flex-end' },
     div(
-      { display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', boxSizing: 'border-box', width: l.photo ? col : W, height: l.photo ? H : 'auto', padding: '56px 48px 56px 60px', color: INK },
+      { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: l.photo ? col : W, height: l.photo ? H : 'auto', padding: '56px 48px 56px 60px', color: INK },
       [
-        div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 34, marginBottom: 10 }, label(l)),
-        div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: l.photo ? titleSize(l.title, 72, 60) : 76, lineHeight: 1, lineClamp: 4 }, l.title),
+        // B2: the site name in the upper left. Without a photo the placeholder already prints it.
+        withName && l.photo
+          ? el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 44, lineHeight: 1, letterSpacing: -0.03 * 44 }, 'Tá Falado', { lang: 'pt-BR' })
+          : div({ display: 'flex' }),
+        div({ display: 'flex', flexDirection: 'column' }, [
+          div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 34, marginBottom: 10 }, label(l)),
+          div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: l.photo ? titleSize(l.title, 72, 60) : 76, lineHeight: 1, lineClamp: 4 }, l.title),
+        ]),
       ],
     ),
   );
@@ -202,7 +208,7 @@ async function variantC(l: Lesson) {
 
 // ---- Run ------------------------------------------------------------------------------------
 const LESSONS = ['pronunciation-16', 'pronunciation-11', 'pronunciation-04', 'grammar-17', 'grammar-14', 'supplementary-01'];
-const VARIANTS = { A: variantA, B: variantB, C: variantC };
+const VARIANTS = { B2: (l: Lesson) => variantB(l, true) };
 const out = 'prototype-renders';
 await mkdir(out, { recursive: true });
 const lessons = await Promise.all(LESSONS.map(loadLesson));
