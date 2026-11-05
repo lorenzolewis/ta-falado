@@ -1,13 +1,12 @@
 ---
-// PROTOTYPE (#53): the floating bar that flips between home-page variants and fakes progress.
+// PROTOTYPE (#53): the floating bar that fakes progress and forces a theme (it flipped between variants
+// until the cleanup left only D).
 // Deliberately unlike the design (black pill, system font) so it is never mistaken for it.
 interface Props {
   current: string;
 }
 const VARIANTS = [
-  { key: 'a', name: 'Notebook index' },
-  { key: 'b', name: 'Toolbar and tabs' },
-  { key: 'c', name: 'Rail and map' },
+  // A, B and C were dropped at cleanup; see PROTOTYPE.md.
   { key: 'd', name: 'Sidebar app' },
 ];
 const i = VARIANTS.findIndex((v) => v.key === Astro.props.current);
