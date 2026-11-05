@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import { normalize } from '../lib/filter';
 import { formatDuration, isoDuration } from '../lib/format';
 import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
 import { SERIES_LABEL } from '../lib/series';
@@ -10,13 +11,18 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
 <Base>
   <h1 lang="pt-BR">Tá Falado</h1>
   <p>Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
+  <search data-filter>
+    <label for="filter">Filter lessons</label>{' '}
+    <input id="filter" type="search" name="q" autocomplete="off" spellcheck="false" data-filter-input />
+    <p role="status" class="visually-hidden" data-filter-status></p>
+  </search>
   {
     series.map(({ id, lessons }) => (
-      <section aria-labelledby={`series-${id}`}>
+      <section aria-labelledby={`series-${id}`} data-filter-section>
         <h2 id={`series-${id}`}>{SERIES_LABEL[id]}</h2>
         <ol>
-          {lessons.map(({ data }) => (
-            <li value={data.number}>
+          {lessons.map(({ data, body }) => (
+            <li value={data.number} data-search={normalize([data.title, data.topic, body].join(' '))}>
               <a href={lessonPath(data)}>{data.title}</a>
               {data.topic && <>, {data.topic}</>}
               {' · '}
@@ -29,4 +35,9 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
       </section>
     ))
   }
+  <p hidden data-filter-empty>No lessons match. Try fewer or different words.</p>
 </Base>
+
+<script>
+  import '../lib/filter-ui';
+</script>
