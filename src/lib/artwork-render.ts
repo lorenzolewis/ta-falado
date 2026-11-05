@@ -4,52 +4,128 @@ import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
 import { artworkSlug, COVER_SIZE, EPISODE_COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
-import { getLessons, shortTitle, type Lesson } from './lessons';
-import { SERIES_LABEL, type Series } from './series';
+import { getLessons, type Lesson } from './lessons';
+import { DEFAULT_PAPER, INK, PAPER } from './print';
+import { dotPitch, nestSvg, printLayers, type Box } from './print-svg';
+import { SERIES_LABEL } from './series';
 
-// The artwork template (#17): one layout drawn at three sizes, rendered at build time by the
-// endpoints in src/pages/artwork/. Satori lays out the elements as SVG; resvg rasterises it.
-// Server-only: browser code that needs an artwork URL imports ./artwork instead.
+// The artwork template (#61, the decision is on that issue): the lesson photo printed across the top
+// in the #55 print style, "Tá Falado" on a paper tab at the photo's bottom-left, and the series,
+// number and title on the paper foot. Rendered at build time by the endpoints in src/pages/artwork/.
 //
-// The look is a placeholder; the design pass (#29) restyles it. Keep the size and format rules:
+// Each image is one SVG for resvg, stacked as: the paper; the photo in ink (./print-svg); the
+// printed text; the dot screen; the overprinted text. Satori lays out only the text, as two
+// transparent layers. Server-only: browser code that needs an artwork URL imports ./artwork instead.
 // Apple wants RGB with no transparency, so every image is written as an opaque RGB PNG.
 
-/** A canvas in CSS pixels. Sizes in the template scale with it. */
+/** A canvas in CSS pixels. Sizes in the templates are in these units. */
 interface Size {
   width: number;
   height: number;
 }
-/** The cover layouts are drawn on this canvas, then scaled to their output size. */
+/** The covers are drawn on this canvas, then scaled to their output size. */
 const SQUARE: Size = { width: 1000, height: 1000 };
 const OG: Size = { width: OG_WIDTH, height: OG_HEIGHT };
 
-/** What one image shows. The series is absent on the podcast cover. */
-interface ArtworkContent {
-  series?: Series;
-  /** The large line: the lesson number, or the site name on the podcast cover. */
-  headline: string;
-  title?: string;
-  topic?: string;
+const SERIF = 'Alegreya';
+const SANS = 'Alegreya Sans';
+const NAME = 'Tá Falado';
+const SUBTITLE = 'Brazilian Portuguese pronunciation and grammar for Spanish speakers';
+
+/** One image: the print's box and paper, and the text above and below the dot screen. */
+interface Artwork {
+  canvas: Size;
+  paper: string;
+  /** Where the photo is printed. Absent: paper and dots only. */
+  photo?: { box: Box; image: Photo };
+  /** Text that is part of the print, under the dot screen. */
+  printed?: SatoriElement[];
+  /** Text overprinted on top of the dot screen. */
+  over?: SatoriElement[];
 }
 
-const COLORS: Record<Series | 'site', { background: string; text: string }> = {
-  site: { background: '#0b6e4f', text: '#ffffff' },
-  pronunciation: { background: '#0b6e4f', text: '#ffffff' },
-  grammar: { background: '#1d4e89', text: '#ffffff' },
-  supplementary: { background: '#7a3e00', text: '#ffffff' },
-};
+type Photo = { data: Buffer; type: 'image/jpeg' | 'image/png' };
 
-function renderPodcastCover(): Promise<Buffer> {
-  const content = { headline: 'Tá Falado', title: 'Brazilian Portuguese pronunciation and grammar for Spanish speakers' };
-  return render(content, SQUARE, COVER_SIZE);
+async function renderPodcastCover(): Promise<Buffer> {
+  return render(
+    {
+      canvas: SQUARE,
+      paper: DEFAULT_PAPER,
+      printed: [at({ left: 56, bottom: 40 }, [name(300, 'Tá', 0.82), name(300, 'Falado', 0.82)])],
+      over: [at({ left: 64, top: 64, width: 720, fontFamily: SANS, fontSize: 54, lineHeight: 1.12 }, SUBTITLE)],
+    },
+    COVER_SIZE,
+  );
 }
 
-function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
-  return render(lessonContent(lesson), SQUARE, EPISODE_COVER_SIZE);
+async function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
+  const { data } = lesson;
+  const paper = PAPER[data.series];
+  const photo = await lessonPhoto(lesson);
+  if (!photo) return render(sheet(lesson, SQUARE, { name: 120, title: [[22, 112], [34, 96], [99, 88]] }), EPISODE_COVER_SIZE);
+  const photoHeight = 620;
+  return render(
+    {
+      canvas: SQUARE,
+      paper,
+      photo: { box: { x: 0, y: 0, width: SQUARE.width, height: photoHeight }, image: photo },
+      // The tab rises from the foot at the photo's bottom-left, clear of the faces, which sit high.
+      printed: [at({ left: 0, bottom: SQUARE.height - photoHeight, padding: '30px 40px 22px 56px', backgroundColor: paper }, [name(96)])],
+      over: [at({ left: 60, top: photoHeight, right: 60, bottom: 56, justifyContent: 'flex-end' }, caption(lesson, [[22, 88], [34, 72], [99, 60]]))],
+    },
+    EPISODE_COVER_SIZE,
+  );
 }
 
+/**
+ * The lesson page's Open Graph image. A stopgap until #71 lands its own layout: the cover's
+ * no-photo sheet (name at the top, the series, number and title at the foot) at 1200×630.
+ */
 export function renderOgImage(lesson: Lesson): Promise<Buffer> {
-  return render(lessonContent(lesson), OG, OG.width);
+  return render(sheet(lesson, OG, { name: 88, title: [[34, 72], [99, 60]] }), OG.width);
+}
+
+/** Paper and dots with no photo: the name at the top, the series, number and title at the foot. */
+function sheet(lesson: Lesson, canvas: Size, sizes: { name: number; title: [number, number][] }): Artwork {
+  const inset = Math.round(canvas.height * 0.064);
+  return {
+    canvas,
+    paper: PAPER[lesson.data.series],
+    over: [
+      at({ left: inset, top: inset - 4, right: inset, bottom: inset, justifyContent: 'space-between' }, [
+        name(sizes.name),
+        div({ display: 'flex', flexDirection: 'column' }, caption(lesson, sizes.title)),
+      ]),
+    ],
+  };
+}
+
+/** The series and number, then the full title. */
+function caption({ data }: Lesson, sizes: [maxChars: number, size: number][]): SatoriElement[] {
+  const size = (sizes.find(([max]) => data.title.length <= max) ?? sizes.at(-1)!)[1];
+  return [
+    div({ fontFamily: SANS, fontSize: 50, lineHeight: 1, marginBottom: 14 }, `${SERIES_LABEL[data.series]} ${data.number}`),
+    // One box per word: Satori breaks lines after a slash, which would split "/ô/".
+    div(
+      { display: 'flex', flexWrap: 'wrap', columnGap: 0.24 * size, fontFamily: SERIF, fontSize: size, lineHeight: 1, letterSpacing: -0.01 * size },
+      data.title.split(' ').map((word) => div({ whiteSpace: 'nowrap' }, word)),
+    ),
+  ];
+}
+
+/** "Tá Falado" (or part of it) in the identity's display setting. */
+function name(size: number, text = NAME, lineHeight = 0.9): SatoriElement {
+  return div({ fontFamily: SERIF, fontSize: size, lineHeight, letterSpacing: -0.03 * size, whiteSpace: 'nowrap' }, text);
+}
+
+/** The lesson's photo from public/, or undefined when it has none. */
+async function lessonPhoto({ id, data }: Lesson): Promise<Photo | undefined> {
+  if (!data.photo) return undefined;
+  const url = data.photo.url;
+  // Photos are static assets in git (ADR 0002). An absolute URL would need fetching at build time.
+  if (!url.startsWith('/')) throw new Error(`Lesson "${id}" has a photo at ${url}; artwork needs a root-relative path in public/.`);
+  const type = url.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  return { data: await readFile(`public${url}`), type };
 }
 
 /**
@@ -57,16 +133,20 @@ export function renderOgImage(lesson: Lesson): Promise<Buffer> {
  *
  * The `cacheKey` lets Astro's incremental build (astro.config.ts) reuse an image from the last
  * build instead of drawing it again. Astro already redraws when this module's code changes; the
- * key adds what it can't see: the lesson's data (its digest) and the font files, which are read
- * from disk rather than imported.
+ * key adds what it can't see: the lesson's data (its digest), its photo and the font files, which
+ * are read from disk rather than imported.
  */
 export async function lessonArtworkPaths() {
   const fontKey = await fontHash();
-  return (await getLessons()).map((lesson) => {
-    // The glob loader always sets a digest. Without one, an edited lesson would keep its old image.
-    if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
-    return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${fontKey}` };
-  });
+  return Promise.all(
+    (await getLessons()).map(async (lesson) => {
+      // The glob loader always sets a digest. Without one, an edited lesson would keep its old image.
+      if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
+      const photo = await lessonPhoto(lesson);
+      const photoKey = photo ? createHash('sha256').update(photo.data).digest('hex').slice(0, 16) : 'none';
+      return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${photoKey}:${fontKey}` };
+    }),
+  );
 }
 
 /**
@@ -90,29 +170,43 @@ export function pngResponse(bytes: Buffer): Response {
   return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png' } });
 }
 
-function lessonContent({ data }: Lesson): ArtworkContent {
-  return { series: data.series, headline: `${SERIES_LABEL[data.series]} ${data.number}`, title: shortTitle(data), topic: data.topic };
+/** Composes an artwork's layers into one SVG and rasterises it `outputWidth` pixels wide. */
+async function render({ canvas, paper, photo, printed = [], over = [] }: Artwork, outputWidth: number): Promise<Buffer> {
+  const full: Box = { x: 0, y: 0, ...canvas };
+  const print = printLayers({
+    id: 'print',
+    paper,
+    box: photo?.box ?? full,
+    screenBox: full,
+    pitch: dotPitch(canvas.width, canvas.height),
+    photo: photo?.image,
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">
+    <defs>${print.defs}</defs>
+    <rect width="${canvas.width}" height="${canvas.height}" fill="${paper}"/>
+    ${print.ink}
+    ${printed.length ? nestSvg(await textLayer(printed, canvas), full, 'printed') : ''}
+    ${print.screen}
+    ${over.length ? nestSvg(await textLayer(over, canvas), full, 'over') : ''}
+  </svg>`;
+  const image = new Resvg(svg, { fitTo: { mode: 'width', value: outputWidth }, background: paper }).render();
+  return encodeRgbPng(image.pixels, image.width, image.height);
 }
 
-/**
- * Lays out `content` on a `canvas` of CSS pixels, then rasterises it `outputWidth` pixels wide
- * (the height follows the aspect ratio).
- */
-async function render(content: ArtworkContent, canvas: Size, outputWidth: number): Promise<Buffer> {
-  const colors = COLORS[content.series ?? 'site'];
+/** A transparent Satori layer of absolutely placed text, in ink. */
+async function textLayer(children: SatoriElement[], { width, height }: Size): Promise<string> {
   // Satori's types want a React element; ours has the same shape without depending on React.
-  const svg = await satori(template(content, colors, canvas) as never, {
-    ...canvas,
+  const root = div({ width, height, display: 'flex', position: 'relative', color: INK }, children);
+  return satori(root as never, {
+    width,
+    height,
     fonts: await fonts(),
     // Satori asks for more fonts when a glyph isn't in ours. Fail the build instead of drawing
     // a blank box, so a title with a character the font lacks can't ship broken.
     loadAdditionalAsset: async (_language, segment) => {
-      const text = [content.headline, content.title, content.topic].filter(Boolean).join(' / ');
-      throw new Error(`The artwork font has no glyph for "${segment}" (in "${text}").`);
+      throw new Error(`The artwork fonts have no glyph for "${segment}".`);
     },
   });
-  const image = new Resvg(svg, { fitTo: { mode: 'width', value: outputWidth }, background: colors.background }).render();
-  return encodeRgbPng(image.pixels, image.width, image.height);
 }
 
 // Satori takes React-shaped elements; plain objects avoid a React dependency.
@@ -121,49 +215,29 @@ const div = (style: Record<string, unknown>, children?: SatoriElement['props']['
   type: 'div',
   props: { style, children },
 });
+/** An absolutely placed column. */
+const at = (style: Record<string, unknown>, children: SatoriElement['props']['children']) =>
+  div({ position: 'absolute', display: 'flex', flexDirection: 'column', ...style }, children);
 
-function template(content: ArtworkContent, colors: { background: string; text: string }, { width, height }: Size): SatoriElement {
-  const unit = Math.min(width, height) / 100; // 1% of the short side
-  const lines: SatoriElement[] = [];
-  if (content.series) {
-    lines.push(div({ fontSize: 6 * unit, fontWeight: 700, opacity: 0.85 }, 'Tá Falado'));
-  }
-  lines.push(div({ fontSize: (content.series ? 11 : 16) * unit, fontWeight: 700, lineHeight: 1.05, marginTop: 2 * unit }, content.headline));
-  if (content.title) {
-    lines.push(div({ fontSize: 7 * unit, fontWeight: 700, lineHeight: 1.15, marginTop: 4 * unit, lineClamp: 4 }, content.title));
-  }
-  if (content.topic) {
-    lines.push(div({ fontSize: 5.5 * unit, lineHeight: 1.2, marginTop: 3 * unit, opacity: 0.85, lineClamp: 2 }, content.topic));
-  }
-  return div(
-    {
-      width,
-      height,
-      boxSizing: 'border-box', // the padding sits inside the canvas, not around it
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'flex-end',
-      padding: 8 * unit,
-      backgroundColor: colors.background,
-      color: colors.text,
-      fontFamily: 'Atkinson Hyperlegible',
-    },
-    lines,
-  );
-}
+type Font = { name: string; data: Buffer; weight: 700; style: 'normal' };
+let fontCache: Promise<Font[]> | undefined;
 
-let fontCache: Promise<{ name: string; data: Buffer; weight: 400 | 700; style: 'normal' }[]> | undefined;
-
-function fonts() {
+/**
+ * Alegreya and Alegreya Sans Bold (#52), from the same pinned @fontsource packages as the site.
+ * WOFF, not WOFF2, which Satori can't read. Latin covers Portuguese and Spanish; Latin Extended
+ * is there for anything rarer. Read from the project root: Astro bundles this module before
+ * running it, so import.meta.url doesn't point at src/.
+ */
+function fonts(): Promise<Font[]> {
   fontCache ??= Promise.all(
-    ([['Regular', 400], ['Bold', 700]] as const).map(async ([file, weight]) => ({
-      name: 'Atkinson Hyperlegible',
-      // From the project root: Astro bundles this module before running it, so import.meta.url
-      // doesn't point at src/.
-      data: await readFile(`src/assets/fonts/AtkinsonHyperlegible-${file}.ttf`),
-      weight,
-      style: 'normal' as const,
-    })),
+    (['latin', 'latin-ext'] as const).flatMap((subset) =>
+      ([['alegreya', SERIF], ['alegreya-sans', SANS]] as const).map(async ([pkg, family]) => ({
+        name: family,
+        data: await readFile(`node_modules/@fontsource/${pkg}/files/${pkg}-${subset}-700-normal.woff`),
+        weight: 700 as const,
+        style: 'normal' as const,
+      })),
+    ),
   );
   return fontCache;
 }
@@ -178,7 +252,7 @@ async function fontHash(): Promise<string> {
 /**
  * Writes RGBA pixels as an 8-bit RGB PNG (colour type 2), dropping the alpha channel. resvg's
  * own PNGs are RGBA, and Apple's artwork rules ask for RGB with no transparency. The pixels are
- * opaque already: resvg fills the background colour first.
+ * opaque already: resvg fills the paper colour first.
  */
 function encodeRgbPng(rgba: Buffer, width: number, height: number): Buffer {
   const stride = width * 3 + 1; // each row starts with its filter type (0, none)
