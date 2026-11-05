@@ -11,6 +11,10 @@ export const SAMPLES = ['grammar-17', 'grammar-15', 'pronunciation-11', 'pronunc
 export const VARIANTS = [
   { key: 'a', name: 'Liner notes' },
   { key: 'a2', name: 'Photo header' },
+  { key: 'a3', name: 'Snapshot' },
+  { key: 'a4', name: 'Play on photo' },
+  { key: 'a5', name: 'Print banner' },
+  { key: 'a6', name: 'Photo in title' },
   { key: 'b', name: 'Listening card' },
   { key: 'c', name: 'Number and rail' },
 ] as const;

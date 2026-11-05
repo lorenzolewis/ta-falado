@@ -1,0 +1,70 @@
+/* PROTOTYPE (#55): the parts of variant A's header that A3–A6 keep, so each file only holds what's
+   new about its photo. Global, prefixed .af-. */
+.af p {
+  margin: 0;
+}
+.af-series {
+  color: var(--accent);
+  font-size: var(--text-18);
+  font-weight: 700;
+}
+.af-title {
+  margin: var(--space-4) 0 var(--space-12);
+  font-size: clamp(var(--text-36), 7vw, var(--text-60));
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.af-facts {
+  color: var(--muted);
+}
+.af-listen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-16);
+  margin-block-start: var(--space-24);
+}
+.af-left {
+  color: var(--muted);
+  font-size: var(--text-14);
+  font-variant-numeric: tabular-nums;
+}
+[data-proto-play] .i-pause,
+[data-state='playing'] [data-proto-play] .i-play,
+[data-state='loading'] [data-proto-play] .i-play {
+  display: none;
+}
+[data-state='playing'] [data-proto-play] .i-pause,
+[data-state='loading'] [data-proto-play] .i-pause {
+  display: block;
+}
+.af-intro {
+  max-inline-size: 38rem;
+  margin-block-start: 40px;
+  padding-block-start: var(--space-24);
+  border-block-start: 1px solid var(--line);
+  font: var(--text-21) / 1.55 var(--font-serif);
+}
+.af-intro p + p {
+  margin-block-start: var(--space-16);
+}
+.af-intro .w-pt {
+  color: var(--accent);
+  font-weight: 500;
+}
+.af-pdf {
+  margin-block-start: var(--space-32);
+}
+.af-pdf a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  min-block-size: 44px;
+  font-size: var(--text-18);
+  font-weight: 700;
+}
+.af-pdf .size {
+  color: var(--muted);
+  font-weight: 400;
+}

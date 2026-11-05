@@ -1,0 +1,56 @@
+---
+// PROTOTYPE (#55) variant A6, "Photo in the title": the photo becomes a pill-shaped picture set
+// into the first line of the big title, like a word, the way some magazine covers do it. It costs
+// no extra height at all, and at that size the low-resolution photos look sharp. It's decorative
+// there (alt=""), so the culture topic moves into the facts line. No photo: A's title as it is.
+import Base from '../../../layouts/Base.astro';
+import Switcher from '../_Switcher.astro';
+import Parts from '../_AParts.astro';
+import { sampleStaticPaths, view } from '../_lesson';
+import '../_a-family.css';
+
+export const getStaticPaths = sampleStaticPaths;
+const { lesson } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="af a6" data-proto-lesson={v.trackJson}>
+    <header>
+      <p class="af-series">{v.series} {v.number}</p>
+      <h1 class="af-title">
+        {v.photo && <img src={v.photo.url} alt="" />}
+        {v.title}
+      </h1>
+      <p class="af-facts">
+        First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.
+        {v.topic && <> Culture talk: {v.topic}.</>}
+      </p>
+      <Parts part="play" v={v} />
+    </header>
+    <Parts part="body" v={v} />
+  </article>
+  <Switcher variant="a6" lesson={lesson.id} />
+</Base>
+
+<script>
+  import '../_play';
+</script>
+
+<style>
+  .a6 {
+    max-inline-size: 44rem;
+  }
+  .af-title {
+    line-height: 1.08;
+  }
+  .af-title img {
+    display: inline-block;
+    block-size: 0.9em;
+    inline-size: 1.5em;
+    margin-inline-end: 0.12em;
+    vertical-align: -0.12em;
+    object-fit: cover;
+    border-radius: var(--radius-pill);
+  }
+</style>

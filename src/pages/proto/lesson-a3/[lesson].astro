@@ -1,0 +1,82 @@
+---
+// PROTOTYPE (#55) variant A3, "Snapshot": the photo as a small printed snapshot, white border and
+// a wider bottom margin with the culture topic written on it, set at a slight tilt in the header's
+// top right. The title wraps round it, so the header stays as short as A's: the photo makes the
+// page feel like a 2007 lesson without pushing Play down. Small on purpose: the photos are ~225px.
+import Base from '../../../layouts/Base.astro';
+import Switcher from '../_Switcher.astro';
+import Parts from '../_AParts.astro';
+import { sampleStaticPaths, view } from '../_lesson';
+import '../_a-family.css';
+
+export const getStaticPaths = sampleStaticPaths;
+const { lesson } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="af a3" data-proto-lesson={v.trackJson}>
+    <header>
+      {
+        v.photo && (
+          <figure class="print">
+            <img src={v.photo.url} alt={v.photo.alt} />
+            {v.topic && <figcaption>{v.topic}</figcaption>}
+          </figure>
+        )
+      }
+      <p class="af-series">{v.series} {v.number}</p>
+      <h1 class="af-title">{v.title}</h1>
+      <p class="af-facts">First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.</p>
+      <Parts part="play" v={v} />
+    </header>
+    <Parts part="body" v={v} />
+  </article>
+  <Switcher variant="a3" lesson={lesson.id} />
+</Base>
+
+<script>
+  import '../_play';
+</script>
+
+<style>
+  .a3 {
+    max-inline-size: 44rem;
+  }
+  header::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+  .print {
+    float: inline-end;
+    inline-size: min(42%, 220px);
+    margin: var(--space-4) var(--space-4) var(--space-16) var(--space-16);
+    padding: 7px 7px 0;
+    border: 1px solid var(--line);
+    background: #fdfcf7;
+    rotate: 2.5deg;
+  }
+  .print img {
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  figcaption {
+    padding: 6px 2px 8px;
+    color: #3a463d;
+    font: italic 500 var(--text-16) / 1.15 var(--font-serif);
+  }
+  .af-title {
+    text-wrap: pretty;
+  }
+  @media (max-width: 30rem) {
+    .af-title {
+      font-size: var(--text-28);
+    }
+    figcaption {
+      font-size: var(--text-14);
+    }
+  }
+</style>

@@ -1,0 +1,36 @@
+---
+// PROTOTYPE (#55): A's Play row or A's intro + transcript, shared by A3–A6. `part` picks which.
+import Icon from '../../components/Icon.astro';
+import type { view } from './_lesson';
+
+interface Props {
+  part: 'play' | 'body';
+  v: ReturnType<typeof view>;
+}
+const { part, v } = Astro.props;
+---
+
+{
+  part === 'play' ? (
+    <p class="af-listen">
+      <button type="button" class="btn btn-ipe" data-proto-play>
+        <Icon name="play" class="i-play" />
+        <Icon name="pause" class="i-pause" />
+        <span data-proto-label>Play</span>
+      </button>
+      <span class="af-left" data-proto-left />
+    </p>
+  ) : (
+    <>
+      <div class="af-intro" set:html={v.intro} />
+      <p class="af-pdf">
+        <a href={v.pdf}>
+          <Icon name="doc" />
+          <span>
+            Read the transcript <span class="size">PDF{v.pdfSize && `, ${v.pdfSize}`}</span>
+          </span>
+        </a>
+      </p>
+    </>
+  )
+}
