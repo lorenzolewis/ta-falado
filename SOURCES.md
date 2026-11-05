@@ -21,7 +21,7 @@ The lesson data in `src/content/lessons/` and the media in `public/mp3/`, `publi
 | `date` | The date on the lesson page, not the feed's `pubDate` (the first six lessons, dated November 9, 2006 on their pages, are in the feed as November 12; every later lesson has the same date in both). |
 | `audio.durationSeconds` | Measured from each file with macOS `afinfo` ("estimated duration"), rounded to the nearest second. All but one match the page and feed's `m:ss`: Pronunciation 5 measures 570.59 s, so it is 571 here (9:31) where the original says 9:30. |
 | `audio.bytes` | The file's size on disk. Every value matches the feed's enclosure `length`. |
-| `photo.url`, `photo.alt` | The `<img>` inside the lesson intro and its original `alt` text. The supplementary lessons have no photo. Photo licensing is reviewed separately (lorenzolewis/ta-falado#4). |
+| `photo.url`, `photo.alt` | The `<img>` inside the lesson intro and its original `alt` text. The supplementary lessons have no photo. See [Lesson photos](#lesson-photos) for their licensing. |
 | body | The lesson page's intro paragraph; `<i>`/`<b>` became Markdown emphasis. The feed's dialogue text was not imported. |
 
 ## Pronunciation 13 and the "lower-bitrate file"
@@ -31,6 +31,14 @@ The survey in lorenzolewis/ta-falado#1 noted a second, lower-bitrate file for Pr
 What the survey saw is that `tafalado_13.mp3` is **48 kbps**, half the 96 kbps of most lessons, so it is much smaller for its length (3.93 MB for 11:11). Pronunciation 13–20 are all 48 kbps; every other lesson is 96 kbps. Pronunciation 13 is also an "(alt)" lesson: the same dialogue as Lesson 12 with guest speaker Vivian Flanzer, not a duplicate recording of 12.
 
 **Canonical:** `tafalado_13.mp3` as published, because it is the only file the original site, feed and home page ever pointed to, and no higher-bitrate original exists to replace it. Pronunciation 12 (`tafalado_12.mp3`) stays its own lesson.
+
+## Lesson photos
+
+**Decision:** all 44 photos are kept, on every lesson that has one, under the site's CC BY 3.0 license (lorenzolewis/ta-falado#4).
+
+The original site has no photo credits anywhere, so this is an assumption, not a confirmed grant. None of the 44 lesson pages, the About page, the 2010 copies of the old PHP site in the Wayback Machine, or COERLL's Portuguese collection page (which lists Tá Falado as "License: CC-BY") says who took the photos or licenses them separately. The JPEGs carry no camera, copyright or stock-agency metadata, only a generic Adobe marker from being saved for the web. Several photos show the team themselves, by the site's own captions and intros: Pronunciation 24, Grammar 9, 12, 18, 19 and 20. The others are everyday cultural scenes with no stated source. The site-wide CC BY 3.0 notice is taken to cover them all. The visitor-facing note is the "Photos" section of `CREDITS.md`.
+
+If a rights holder objects to a photo, drop it from that lesson (`photo` is optional; the lesson then shows no photo) and record it here. The generated podcast artwork never uses lesson photos (lorenzolewis/ta-falado#17).
 
 ## Checksums (SHA-256)
 
