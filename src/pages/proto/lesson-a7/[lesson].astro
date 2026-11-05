@@ -4,7 +4,8 @@
 // The series and title sit on the foot of the photo over a gradient that fades from clear to the
 // page colour, so the title keeps its contrast in both themes whatever the photo. The gradient
 // belongs to the title block, so it grows with a long title. Edge to edge across the pane on both
-// phone and desktop (desktop caps the height). No photo (Supplementary): A's header as it is.
+// phone and desktop (desktop caps the height). No photo (Supplementary): a placeholder of the same
+// size and print, with the lesson number, so the header doesn't jump between lessons.
 import Base from '../../../layouts/Base.astro';
 import Switcher from '../_Switcher.astro';
 import Parts from '../_AParts.astro';
@@ -19,11 +20,15 @@ const v = view(lesson);
 <Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
   <article class="af a7" data-proto-lesson={v.trackJson}>
     <header>
-      <div class:list={['cover', { bare: !v.photo }]}>
+      <div class="cover">
         {
-          v.photo && (
+          v.photo ? (
             <div class="print">
               <img src={v.photo.url} alt={v.photo.alt} />
+            </div>
+          ) : (
+            <div class="print placeholder" aria-hidden="true">
+              <span>{v.number}</span>
             </div>
           )
         }
@@ -97,12 +102,19 @@ const v = view(lesson);
       var(--surface) 80%
     );
   }
-  .cover.bare {
-    margin: 0;
+  /* No photo (the two Supplementary lessons): the same frame, printed the same way, with the lesson
+     number in place of a picture, so the header keeps its size from lesson to lesson. */
+  .placeholder {
+    display: grid;
+    place-items: start end;
   }
-  .cover.bare .name {
-    padding: 0;
-    background: none;
+  .placeholder span {
+    margin: -0.12em 0.06em 0 0;
+    color: #1b1b1b;
+    font: 700 clamp(14rem, 60vw, 30rem) / 1 var(--font-serif);
+    letter-spacing: -0.04em;
+    mix-blend-mode: multiply;
+    opacity: 0.85;
   }
   .af-title {
     margin-block-end: 0;
