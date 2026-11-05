@@ -16,13 +16,18 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     <p><a data-continue-link href="/"></a>, <span data-continue-time></span></p>
     <p><button type="button" data-continue-play>Resume</button></p>
   </section>
+  <search>
+    <label for="lesson-filter">Filter lessons</label>{' '}
+    <input type="search" id="lesson-filter" autocomplete="off" />
+  </search>
+  <p id="lesson-filter-status" role="status"></p>
   {
     series.map(({ id, lessons }) => (
-      <section aria-labelledby={`series-${id}`}>
+      <section aria-labelledby={`series-${id}`} data-series>
         <h2 id={`series-${id}`}>{SERIES_LABEL[id]}</h2>
         <ol>
-          {lessons.map(({ data }) => (
-            <li value={data.number}>
+          {lessons.map(({ data, body }) => (
+            <li value={data.number} data-filter-text={[data.title, data.topic, body].filter(Boolean).join(' ')}>
               <a href={lessonPath(data)}>{data.title}</a>
               {data.topic && <>, {data.topic}</>}
               {' · '}
@@ -37,3 +42,36 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     ))
   }
 </Base>
+
+<script>
+  import { createLessonFilter } from '../lib/lesson-filter';
+
+  // Runs on every visit to the home page, since the ClientRouter only runs this script once.
+  let page: AbortController | undefined;
+  document.addEventListener('astro:page-load', () => {
+    page?.abort();
+    page = new AbortController();
+    const input = document.querySelector<HTMLInputElement>('#lesson-filter');
+    if (!input) return;
+    const status = document.querySelector<HTMLElement>('#lesson-filter-status')!;
+    const sections = [...document.querySelectorAll<HTMLElement>('[data-series]')];
+    const rows = [...document.querySelectorAll<HTMLElement>('[data-filter-text]')];
+    const filter = createLessonFilter(rows.map((row) => row.dataset.filterText!));
+
+    function update() {
+      const matches = new Set(filter(input!.value));
+      rows.forEach((row, i) => (row.hidden = !matches.has(i)));
+      for (const section of sections) section.hidden = !section.querySelector('li:not([hidden])');
+      const count = matches.size;
+      status.textContent = !input!.value.trim()
+        ? ''
+        : count === 0
+          ? 'No lessons match. Try fewer or different words.'
+          : `${count} ${count === 1 ? 'lesson matches' : 'lessons match'}.`;
+    }
+
+    input.addEventListener('input', update, { signal: page.signal });
+    update(); // the browser may have restored a value
+  });
+  document.addEventListener('astro:before-swap', () => page?.abort());
+</script>
