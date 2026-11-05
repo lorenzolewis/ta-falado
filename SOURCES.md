@@ -1,6 +1,6 @@
 # Sources
 
-The lesson data in `src/content/lessons/` and the media in `public/mp3/`, `public/pdf/` and `public/images/` were extracted once, on **2026-11-04**, from the archived Tá Falado site (lorenzolewis/te-falado#3). The original is © the University of Texas at Austin / COERLL, licensed [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/); see `CREDITS.md`. No extraction script is kept: this file records what was fetched and how the data was derived.
+The lesson data in `src/content/lessons/` and the media in `public/mp3/`, `public/pdf/` and `public/images/` were extracted once, on **2026-11-04**, from the archived Tá Falado site (lorenzolewis/ta-falado#3). The original is © the University of Texas at Austin / COERLL, licensed [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/); see `CREDITS.md`. No extraction script is kept: this file records what was fetched and how the data was derived.
 
 ## Source URLs
 
@@ -21,12 +21,12 @@ The lesson data in `src/content/lessons/` and the media in `public/mp3/`, `publi
 | `date` | The date on the lesson page, not the feed's `pubDate` (the first six lessons, dated November 9, 2006 on their pages, are in the feed as November 12; every later lesson has the same date in both). |
 | `audio.durationSeconds` | Measured from each file with macOS `afinfo` ("estimated duration"), rounded to the nearest second. All but one match the page and feed's `m:ss`: Pronunciation 5 measures 570.59 s, so it is 571 here (9:31) where the original says 9:30. |
 | `audio.bytes` | The file's size on disk. Every value matches the feed's enclosure `length`. |
-| `photo.url`, `photo.alt` | The `<img>` inside the lesson intro and its original `alt` text. The supplementary lessons have no photo. Photo licensing is reviewed separately (lorenzolewis/te-falado#4). |
+| `photo.url`, `photo.alt` | The `<img>` inside the lesson intro and its original `alt` text. The supplementary lessons have no photo. Photo licensing is reviewed separately (lorenzolewis/ta-falado#4). |
 | body | The lesson page's intro paragraph; `<i>`/`<b>` became Markdown emphasis. The feed's dialogue text was not imported. |
 
 ## Pronunciation 13 and the "lower-bitrate file"
 
-The survey in lorenzolewis/te-falado#1 noted a second, lower-bitrate file for Pronunciation 13 on the home page. There isn't a second file: the home page shows Lesson 13 as its "Random Podcast Example" and links the same `mp3/tafalado_13.mp3` (4,028,140 bytes) as the lesson page and the feed. No other variant is linked anywhere on the site, and the obvious alternative names (`tafalado_13_lo.mp3`, `tafalado_13b.mp3`, …) return 404.
+The survey in lorenzolewis/ta-falado#1 noted a second, lower-bitrate file for Pronunciation 13 on the home page. There isn't a second file: the home page shows Lesson 13 as its "Random Podcast Example" and links the same `mp3/tafalado_13.mp3` (4,028,140 bytes) as the lesson page and the feed. No other variant is linked anywhere on the site, and the obvious alternative names (`tafalado_13_lo.mp3`, `tafalado_13b.mp3`, …) return 404.
 
 What the survey saw is that `tafalado_13.mp3` is **48 kbps**, half the 96 kbps of most lessons, so it is much smaller for its length (3.93 MB for 11:11). Pronunciation 13–20 are all 48 kbps; every other lesson is 96 kbps. Pronunciation 13 is also an "(alt)" lesson: the same dialogue as Lesson 12 with guest speaker Vivian Flanzer, not a duplicate recording of 12.
 

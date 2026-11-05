@@ -26,7 +26,7 @@ computed its footer year with a script, so 2025 is when the archive was frozen, 
 was made (2006–2007). The original pages carry only a CC BY 3.0 badge, with no copyright text.
 -->
 
-The site's own code is separate: it's MIT-licensed (see `LICENSE` in the [source repository](https://github.com/lorenzolewis/te-falado)). The CC BY 3.0 license above covers the content.
+The site's own code is separate: it's MIT-licensed (see `LICENSE` in the [source repository](https://github.com/lorenzolewis/ta-falado)). The CC BY 3.0 license above covers the content.
 
 ## The team
 

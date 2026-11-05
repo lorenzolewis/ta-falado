@@ -50,6 +50,6 @@ describe('storage', () => {
     vi.stubGlobal('localStorage', { getItem: (k: string) => items.get(k) ?? null, setItem: (k: string, v: string) => items.set(k, v) });
     const { progress } = await import('./progress');
     progress.finish('/pronunciation/01');
-    expect(JSON.parse(items.get('te-falado:v1:lessons')!)['/pronunciation/01']).toMatchObject({ position: 0, finished: true });
+    expect(JSON.parse(items.get('tafalado:v1:lessons')!)['/pronunciation/01']).toMatchObject({ position: 0, finished: true });
   });
 });

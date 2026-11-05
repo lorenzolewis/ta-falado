@@ -1,4 +1,4 @@
-# te-falado
+# ta-falado
 
 An independent, unofficial, mobile-friendly archive of *Tá Falado*, the Brazilian Portuguese podcast for speakers of Spanish originally published by COERLL at the University of Texas at Austin. It isn't affiliated with or endorsed by UT Austin or COERLL.
 
