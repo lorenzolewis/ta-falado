@@ -77,12 +77,44 @@ async function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
   );
 }
 
+/** The OG image's text column, left. With a photo, the print fills the rest of the width. */
+const OG_COLUMN = 520;
+
 /**
- * The lesson page's Open Graph image. A stopgap until #71 lands its own layout: the cover's
- * no-photo sheet (name at the top, the series, number and title at the foot) at 1200×630.
+ * A lesson page's Open Graph image (#71, "one sheet"): one sheet of the series paper under the dot
+ * screen. "Tá Falado" is in the upper left; the series and number, then the full title, are at the
+ * foot of a text column in ink; the photo is printed on the right of the same sheet with no frame
+ * between them. Without a photo the sheet is blank paper and the column spans it.
  */
-export function renderOgImage(lesson: Lesson): Promise<Buffer> {
-  return render(sheet(lesson, OG, { name: 88, title: [[34, 72], [99, 60]] }), OG.width);
+export async function renderOgImage(lesson: Lesson): Promise<Buffer> {
+  const { data } = lesson;
+  const photo = await lessonPhoto(lesson);
+  const titleSize = !photo ? 76 : data.title.length > 34 ? 60 : 72;
+  return render(
+    {
+      canvas: OG,
+      paper: PAPER[data.series],
+      photo: photo && { box: { x: OG_COLUMN, y: 0, width: OG.width - OG_COLUMN, height: OG.height }, image: photo },
+      over: [
+        at({ left: 0, top: 0, width: photo ? OG_COLUMN : OG.width, height: OG.height, boxSizing: 'border-box', padding: '56px 48px 56px 60px', justifyContent: 'space-between' }, [
+          name(88),
+          div({ display: 'flex', flexDirection: 'column' }, [
+            div({ fontFamily: SANS, fontSize: 42, lineHeight: 1, marginBottom: 12 }, `${SERIES_LABEL[data.series]} ${data.number}`),
+            // One box per word, as in caption(): Satori breaks lines after a slash ("Unstressed / a/").
+            // The gap is Alegreya Bold's own space (0.174em), so titles wrap as plain text would. A
+            // word wider than the column ("Topic-Comment") still breaks inside its box. No clip: a
+            // long word ("Pronunciation" at 72px) runs into the column's right padding, as in the
+            // prototype. Every title is 4 lines or fewer at these sizes.
+            div(
+              { display: 'flex', flexWrap: 'wrap', columnGap: 0.174 * titleSize, fontFamily: SERIF, fontSize: titleSize, lineHeight: 1 },
+              data.title.split(' ').map((word) => div({ flexShrink: 0, maxWidth: '100%' }, word)),
+            ),
+          ]),
+        ]),
+      ],
+    },
+    OG.width,
+  );
 }
 
 /** Paper and dots with no photo: the name at the top, the series, number and title at the foot. */
