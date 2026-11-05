@@ -17,6 +17,10 @@ export const VARIANTS = [
   { key: 'a6', name: 'Photo in title' },
   { key: 'a7', name: 'Print cover' },
   { key: 'a8', name: 'Print cover, name' },
+  { key: 'a9', name: 'Riso' },
+  { key: 'a10', name: 'Line screen' },
+  { key: 'a11', name: 'Poster' },
+  { key: 'a12', name: 'Film' },
   { key: 'b', name: 'Listening card' },
   { key: 'c', name: 'Number and rail' },
 ] as const;
