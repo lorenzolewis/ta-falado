@@ -1,6 +1,8 @@
 // PROTOTYPE (#53): the home page's real lesson data, flattened for the variants.
 import { formatDuration, isoDuration } from '../../lib/format';
-import { SERIES, lessonPath, lessonsBySeries, shortTitle } from '../../lib/lessons';
+import { episodeCoverPath } from '../../lib/artwork';
+import { SERIES, lessonPath, lessonsBySeries, shortTitle, toTrack } from '../../lib/lessons';
+import type { Track } from '../../lib/player';
 import { SERIES_LABEL, SERIES_SIZE, type Series } from '../../lib/series';
 
 export interface Row {
@@ -15,6 +17,10 @@ export interface Row {
   iso: string;
   path: string;
   filterText: string;
+  /** The intro (Markdown source, shown as plain text in the prototype). */
+  body: string;
+  cover: string;
+  track: Track;
 }
 
 export interface SeriesGroup {
@@ -30,7 +36,7 @@ export async function homeData(): Promise<SeriesGroup[]> {
       id,
       label: SERIES_LABEL[id],
       size: SERIES_SIZE[id],
-      rows: (await lessonsBySeries(id)).map(({ data, body }) => ({
+      rows: (await lessonsBySeries(id)).map((lesson) => ({ lesson, data: lesson.data, body: lesson.body ?? '' })).map(({ lesson, data, body }) => ({
         series: id,
         number: data.number,
         title: data.title,
@@ -41,6 +47,9 @@ export async function homeData(): Promise<SeriesGroup[]> {
         iso: isoDuration(data.audio.durationSeconds),
         path: lessonPath(data),
         filterText: [data.title, data.topic, body].filter(Boolean).join(' '),
+        body,
+        cover: episodeCoverPath(data),
+        track: toTrack(lesson),
       })),
     })),
   );

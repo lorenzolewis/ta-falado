@@ -8,6 +8,7 @@ const VARIANTS = [
   { key: 'a', name: 'Notebook index' },
   { key: 'b', name: 'Toolbar and tabs' },
   { key: 'c', name: 'Rail and map' },
+  { key: 'd', name: 'Sidebar app' },
 ];
 const i = VARIANTS.findIndex((v) => v.key === Astro.props.current);
 const prev = VARIANTS[(i + VARIANTS.length - 1) % VARIANTS.length]!;

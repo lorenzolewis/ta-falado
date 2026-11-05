@@ -7,5 +7,9 @@ export const ICON = {
   search: svg('<circle cx="10.5" cy="10.5" r="6.75"/><path d="m15.5 15.5 5.5 5.5"/>'),
   check: svg('<path d="M4 12.5 9 17.5 20 6.5"/>'),
   chevron: svg('<path class="f" d="M6 9h12l-6 7z"/>'),
+  home: svg('<path d="M3.5 10.5 12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/>'),
+  homeFilled: svg('<path class="f" d="M2 10.2 12 2l10 8.2V22h-8.2v-6.5h-3.6V22H2z"/>'),
+  library: svg('<path d="M4.5 3.5v17M10 3.5v17M15 4.5l5 15.5"/>'),
+  back: svg('<path d="M15 4.5 7.5 12l7.5 7.5"/>'),
   close: svg('<path d="m6 6 12 12M18 6 6 18"/>'),
 };

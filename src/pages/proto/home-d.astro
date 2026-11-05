@@ -1,0 +1,955 @@
+---
+// PROTOTYPE (#53), variant D "Sidebar app": the structure of a music app (inspired by Spotify,
+// not a copy of it) in the #52 identity. A sidebar holds a Home button, series pills, a filter and
+// every lesson; the main pane shows the home page when nothing is selected, or the selected
+// lesson's details (a placeholder: the lesson page is #55). The mini-player runs along the bottom.
+// On a phone, one view at a time with Home and Lessons tabs at the bottom.
+// Selection lives in the URL (?lesson=grammar/17, ?view=lessons) so it survives reloads and Back.
+import FinishedMark from '../../components/FinishedMark.astro';
+import { ICON } from '../../components/proto/icons';
+import { homeData } from '../../components/proto/home-data';
+import ProtoHead from '../../components/proto/ProtoHead.astro';
+import ProtoSwitcher from '../../components/proto/ProtoSwitcher.astro';
+import Base from '../../layouts/Base.astro';
+
+const groups = await homeData();
+const rows = groups.flatMap((g) => g.rows.map((r) => ({ ...r, label: g.label })));
+// Prototype-grade Markdown: paragraphs and *italics* only.
+const intro = (md: string) =>
+  md
+    .trim()
+    .split(/\n\s*\n/)
+    .map((p) => `<p>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*([^*]+)\*/g, '<i>$1</i>')}</p>`)
+    .join('');
+---
+
+<Base title="Home D (prototype)" noindex bare>
+  <ProtoHead slot="head" />
+  <div class="vd" data-variant="d" data-view="home">
+    <nav class="side" aria-label="Lessons">
+      <div class="panel top">
+        <a class="wordmark" href="/proto/home-d" lang="pt-BR" data-home>Tá Falado</a>
+        <a class="home-btn" href="/proto/home-d" data-home>
+          <span class="i-off" set:html={ICON.home} /><span class="i-on" set:html={ICON.homeFilled} />Home
+        </a>
+      </div>
+
+      <div class="panel lib" data-lib>
+        <div class="lib-head">
+          <h2>Lessons</h2>
+          <button type="button" class="icon-btn" data-search-toggle aria-expanded="false" aria-controls="d-search">
+            <Fragment set:html={ICON.search} /><span class="visually-hidden">Filter lessons</span>
+          </button>
+        </div>
+        <search class="field" id="d-search" hidden>
+          <label for="lesson-filter" class="visually-hidden">Filter lessons</label>
+          <Fragment set:html={ICON.search} />
+          <input type="search" id="lesson-filter" autocomplete="off" placeholder="nh, ão, ficar…" />
+        </search>
+        <div class="pills" role="group" aria-label="Series">
+          <button type="button" class="pill-x" data-pill-clear hidden>
+            <Fragment set:html={ICON.close} /><span class="visually-hidden">Show every series</span>
+          </button>
+          {
+            groups.map((g) => (
+              <button type="button" class="pill" data-pill={g.id} aria-pressed="false">
+                {g.label} <span class="pill-n" data-pill-n={g.id}>{g.size}</span>
+              </button>
+            ))
+          }
+        </div>
+        <p class="status" id="lesson-filter-status" role="status"></p>
+        <ol class="list">
+          {
+            rows.map((r) => (
+              <li data-filter-text={r.filterText} data-path={r.path} data-seconds={r.seconds} data-series-id={r.series}>
+                <a href={r.path} data-select={r.path}>
+                  <span class="tile" aria-hidden="true">
+                    <span class="tile-num">{r.number}</span>
+                    <span class="tile-check" set:html={ICON.check} />
+                  </span>
+                  <span class="row-text">
+                    <span class="row-title">{r.title}</span>
+                    <span class="row-sub">
+                      {r.label} {r.number}
+                      {r.topic && <>, {r.topic}</>}
+                    </span>
+                  </span>
+                  <span class="row-end">
+                    <time datetime={r.iso}>{r.duration}</time>
+                    <FinishedMark id={r.path} />
+                  </span>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="empty" data-empty hidden>
+          <p>No lessons match.</p>
+          <button type="button" class="link-btn" data-clear>Clear the filter</button>
+        </div>
+      </div>
+    </nav>
+
+    <main id="main" class="panel pane" data-pane tabindex="-1">
+      <section class="home" data-view-home aria-labelledby="d-title">
+        <h1 id="d-title" lang="pt-BR">Tá Falado</h1>
+        <p class="lede">Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
+
+        <section class="continue" aria-labelledby="d-continue" data-continue hidden>
+          <h2 id="d-continue">Continue where you left off</h2>
+          <p class="continue-title"><a data-continue-link href="/"></a></p>
+          <div class="meter" data-continue-bar><span></span></div>
+          <p class="continue-row">
+            <button type="button" class="btn btn-ipe" data-continue-play><Fragment set:html={ICON.play} />Resume</button>
+            <span data-continue-left></span>
+          </p>
+          <p class="visually-hidden" data-continue-time></p>
+        </section>
+
+        <h2 class="h-series">The three series</h2>
+        <ul class="series-list">
+          {
+            groups.map((g) => (
+              <li class="series" data-series-card={g.id}>
+                <div class="series-top">
+                  <h3>{g.label}</h3>
+                  <button type="button" class="link-btn" data-open-series={g.id}>
+                    All {g.size} lessons
+                  </button>
+                </div>
+                <p class="series-progress">
+                  <span data-finished-count={g.id}>0</span> of {g.size} finished
+                </p>
+                <span class="series-meter" data-finished-bar={g.id} data-size={g.size}>
+                  <span />
+                </span>
+                <p class="series-next">
+                  <span class="next-label" data-next-label>
+                    Start with
+                  </span>{' '}
+                  <a href={g.rows[0]!.path} data-select={g.rows[0]!.path} data-next-link>
+                    {g.label} {g.rows[0]!.number}: {g.rows[0]!.title}
+                  </a>
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+
+        <footer class="foot">
+          <p>
+            <b>An independent, unofficial archive.</b> The lessons are by COERLL at the University of Texas at Austin, licensed <a
+              href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a
+            >.
+          </p>
+          <p class="foot-links"><a href="/about">About this site</a><a href="/feed.xml">Podcast feed</a></p>
+        </footer>
+      </section>
+
+      {
+        rows.map((r) => (
+          <article class="detail" data-detail={r.path} hidden aria-labelledby={`d-l-${r.series}-${r.number}`}>
+            <button type="button" class="back" data-back>
+              <Fragment set:html={ICON.back} />
+              Lessons
+            </button>
+            <div class="detail-head">
+              <img src={r.cover} alt="" width="160" height="160" loading="lazy" />
+              <hgroup>
+                <p class="kicker">
+                  {r.label} {r.number}
+                </p>
+                <h1 id={`d-l-${r.series}-${r.number}`}>{r.title}</h1>
+                {r.topic && <p class="topic">{r.topic}</p>}
+              </hgroup>
+            </div>
+            <p class="detail-actions">
+              <button type="button" class="btn btn-accent" data-play={JSON.stringify(r.track)}>
+                <Fragment set:html={ICON.play} />
+                Play lesson
+              </button>
+              <time datetime={r.iso}>{r.duration}</time>
+            </p>
+            <div class="intro" set:html={intro(r.body)} />
+            <p class="placeholder">Placeholder. The full lesson details are designed in the lesson page prototype (#55).</p>
+          </article>
+        ))
+      }
+    </main>
+
+    <nav class="tabs" aria-label="Sections">
+      <a href="/proto/home-d" data-home data-tab="home">
+        <span class="i-off" set:html={ICON.home} /><span class="i-on" set:html={ICON.homeFilled} />Home
+      </a>
+      <a href="/proto/home-d?view=lessons" data-tab="lessons" data-lessons-tab>
+        <Fragment set:html={ICON.library} />Lessons
+      </a>
+    </nav>
+  </div>
+  <ProtoSwitcher current="d" />
+</Base>
+
+<style is:global>
+  .vd p {
+    margin-block: 0;
+  }
+  .vd {
+    --gap: 8px;
+    --tabs-h: 64px;
+    padding: var(--gap);
+    display: grid;
+    gap: var(--gap);
+  }
+  .vd .panel {
+    background: var(--surface);
+    border-radius: 20px;
+  }
+  :root[data-theme='light'] .vd .panel {
+    background: var(--surface);
+  }
+
+  /* Desktop: two panels side by side, each scrolling on its own, above the player. */
+  @media (min-width: 52rem) {
+    .vd {
+      grid-template-columns: minmax(18rem, 22rem) 1fr;
+      block-size: calc(100dvh - var(--player-block-size, 0px));
+    }
+    .vd .side {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      min-block-size: 0;
+    }
+    .vd .lib {
+      flex: 1;
+      min-block-size: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .vd .list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .vd .pane {
+      overflow-y: auto;
+      min-block-size: 0;
+    }
+    .vd .tabs,
+    .vd .detail .back {
+      display: none;
+    }
+  }
+
+  /* Phone: one view at a time, with tabs at the bottom and the player just above them. */
+  @media (max-width: 51.99rem) {
+    .vd {
+      padding-block-end: calc(var(--tabs-h) + var(--gap));
+    }
+    .vd .side .top {
+      display: none;
+    }
+    :root:has(.vd) [data-proto-bar] {
+      inset-block-end: calc(var(--player-block-size, 0px) + 72px) !important;
+    }
+    .vd[data-view='home'] .side,
+    .vd[data-view='lessons'] .pane,
+    .vd[data-view='lesson'] .side {
+      display: none;
+    }
+    .vd .panel {
+      border-radius: 20px;
+    }
+    :root:has(.vd) .player {
+      inset-block-end: var(--tabs-h);
+    }
+    .vd .tabs {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 5;
+      block-size: var(--tabs-h);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg);
+      border-block-start: 1px solid var(--line);
+    }
+    .vd .tabs a {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 2px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+    .vd .tabs a[aria-current='page'] {
+      color: var(--ink);
+    }
+  }
+
+  .vd .i-on {
+    display: none;
+  }
+  .vd [aria-current='page'] > .i-on {
+    display: contents;
+  }
+  .vd [aria-current='page'] > .i-off {
+    display: none;
+  }
+
+  /* Top panel */
+  .vd .top {
+    padding: 12px 12px 8px;
+    display: grid;
+    gap: 4px;
+  }
+  .vd .wordmark {
+    font: italic 700 1.3125rem/1 var(--serif);
+    color: var(--accent);
+    text-decoration: none;
+    padding: 8px 8px 4px;
+  }
+  .vd .home-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-block-size: 48px;
+    padding-inline: 8px;
+    border-radius: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.125rem;
+  }
+  .vd .home-btn[aria-current='page'] {
+    color: var(--ink);
+  }
+  .vd .home-btn:hover {
+    color: var(--ink);
+  }
+
+  /* Library */
+  .vd .lib {
+    padding: 8px 0 0;
+  }
+  .vd .lib-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 4px 20px;
+  }
+  .vd .lib-head h2 {
+    font: 700 1.5rem/1 var(--serif);
+    margin: 0;
+  }
+  .vd .icon-btn {
+    display: grid;
+    place-items: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .vd .icon-btn:hover,
+  .vd .icon-btn[aria-expanded='true'] {
+    color: var(--ink);
+    background: var(--bg);
+  }
+  .vd .icon-btn .icon {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .vd .field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 12px 0;
+    min-block-size: 44px;
+    padding-inline: 14px;
+    border: 2px solid var(--control);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  .vd .field[hidden] {
+    display: none;
+  }
+  .vd .field:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .vd .field .icon {
+    color: var(--muted);
+    inline-size: 18px;
+    block-size: 18px;
+  }
+  .vd .field input {
+    flex: 1;
+    min-inline-size: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-size: 1.0625rem;
+  }
+  .vd .pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 10px 12px 8px;
+  }
+  .vd .pill,
+  .vd .pill-x {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-block-size: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .vd .pill-x {
+    padding: 0;
+    inline-size: 36px;
+    justify-content: center;
+  }
+  .vd .pill-x[hidden],
+  .vd .pill[hidden] {
+    display: none;
+  }
+  .vd .pill-x .icon {
+    inline-size: 16px;
+    block-size: 16px;
+  }
+  .vd .pill[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .vd .pill-n {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    font-variant-numeric: tabular-nums;
+  }
+  .vd .status {
+    padding: 0 20px 4px;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .vd .status:empty {
+    display: none;
+  }
+  .vd .list {
+    list-style: none;
+    margin: 0;
+    padding: 0 8px 8px;
+  }
+  .vd .list li[hidden] {
+    display: none;
+  }
+  .vd .list a {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 12px;
+    color: var(--ink);
+    text-decoration: none;
+    min-block-size: 56px;
+  }
+  .vd .list a:hover {
+    background: var(--bg);
+  }
+  .vd .list a[aria-current='true'] {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  }
+  .vd .tile {
+    display: grid;
+    place-items: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--accent);
+    font: 700 1.25rem/1 var(--serif);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .vd .tile-check {
+    display: none;
+  }
+  .vd .tile-check .icon {
+    inline-size: 20px;
+    block-size: 20px;
+    stroke-width: 3;
+  }
+  .vd li[data-state='finished'] .tile {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .vd li[data-state='finished'] .tile-num {
+    display: none;
+  }
+  .vd li[data-state='finished'] .tile-check {
+    display: grid;
+  }
+  .vd li[data-state='started'] .tile {
+    background: var(--strong);
+    color: var(--ipe);
+  }
+  .vd .row-text {
+    display: grid;
+    min-inline-size: 0;
+  }
+  .vd .row-title {
+    font-weight: 500;
+    font-size: 1.0625rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .vd .row-sub {
+    font-size: 0.875rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .vd .row-end {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* The tile already shows finished; the real mark stays for screen readers. */
+  .vd .row-end [data-finished] {
+    position: absolute;
+    clip-path: inset(50%);
+  }
+  .vd .empty {
+    padding: 16px 20px;
+    display: grid;
+    gap: 4px;
+    justify-items: start;
+  }
+  .vd .empty[hidden] {
+    display: none;
+  }
+  .vd .link-btn {
+    border: 0;
+    background: none;
+    padding: 8px 0;
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .vd .link-btn:hover {
+    text-decoration: underline;
+  }
+
+  /* Main pane */
+  .vd .pane {
+    padding: 24px 20px 32px;
+  }
+  @media (min-width: 52rem) {
+    .vd .pane {
+      padding: 40px 48px 48px;
+    }
+  }
+  .vd .pane:focus {
+    outline: none;
+  }
+  .vd .home[hidden],
+  .vd .detail[hidden] {
+    display: none;
+  }
+  .vd .home,
+  .vd .detail {
+    max-inline-size: 48rem;
+  }
+  .vd .home h1 {
+    font: 700 3.75rem/1 var(--serif);
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+  }
+  .vd .lede {
+    font: 1.3125rem/1.45 var(--serif);
+    color: var(--muted);
+    max-inline-size: 34rem;
+  }
+  .vd .continue {
+    margin-block-start: 24px;
+    display: grid;
+    gap: 8px;
+    padding: 20px;
+    border-radius: 20px;
+    background: var(--strong);
+    color: var(--on-strong);
+  }
+  .vd .continue[hidden] {
+    display: none;
+  }
+  .vd .continue h2 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+  }
+  .vd .continue-title {
+    font: 700 1.75rem/1.1 var(--serif);
+  }
+  .vd .continue-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .vd .continue :focus-visible {
+    outline-color: var(--ipe);
+  }
+  .vd .continue-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.875rem;
+    margin-block-start: 4px;
+  }
+  .vd .meter {
+    block-size: 8px;
+    border-radius: 999px;
+    background: var(--track-on-strong);
+    margin-block: 4px;
+  }
+  .vd .meter > span {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--p, 0%);
+    border-radius: inherit;
+    background: var(--ipe);
+  }
+  .vd .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 48px;
+    padding: 0 22px 0 16px;
+    border: 0;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 1.125rem;
+    cursor: pointer;
+  }
+  .vd .btn .icon {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .vd .btn-ipe {
+    background: var(--ipe);
+    color: var(--on-ipe);
+  }
+  .vd .btn-accent {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .vd .h-series {
+    font: 700 2.25rem/1 var(--serif);
+    margin: 40px 0 8px;
+  }
+  .vd .series-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .vd .series {
+    display: grid;
+    gap: 6px;
+    padding-block: 16px;
+    border-block-end: 1px solid var(--line);
+  }
+  .vd .series-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .vd .series h3 {
+    font: 700 1.5rem/1.1 var(--serif);
+    margin: 0;
+  }
+  .vd .series-progress {
+    font-size: 0.875rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .vd .series-meter {
+    display: block;
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--line);
+  }
+  .vd .series-meter > span {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--p, 0%);
+    border-radius: inherit;
+    background: var(--accent);
+  }
+  .vd .series-next {
+    margin-block-start: 4px;
+  }
+  .vd .next-label {
+    color: var(--muted);
+  }
+  .vd .series-next a {
+    font-weight: 500;
+  }
+  .vd .foot {
+    margin-block-start: 40px;
+    color: var(--muted);
+    font-size: 0.875rem;
+    line-height: 1.45;
+    display: grid;
+    gap: 8px;
+  }
+  .vd .foot b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .vd .foot-links {
+    display: flex;
+    gap: 20px;
+  }
+  .vd .foot-links a {
+    font-weight: 500;
+    padding-block: 8px;
+  }
+
+  /* Lesson detail (placeholder for #55) */
+  .vd .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-block-size: 44px;
+    margin: -8px 0 8px -8px;
+    padding: 0 12px 0 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .vd .back .icon {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .vd .detail-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px;
+  }
+  .vd .detail-head img {
+    inline-size: 160px;
+    block-size: 160px;
+    border-radius: 20px;
+    flex: none;
+  }
+  .vd .detail-head hgroup {
+    flex: 1 1 16rem;
+  }
+  .vd .kicker {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .vd .detail h1 {
+    font: 700 2.25rem/1.05 var(--serif);
+    margin: 6px 0 8px;
+  }
+  .vd .topic {
+    font: italic 1.3125rem var(--serif);
+    color: var(--muted);
+  }
+  .vd .detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-block: 24px;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  .vd .intro {
+    font: 1.3125rem/1.6 var(--serif);
+    max-inline-size: 38rem;
+    display: grid;
+    gap: 16px;
+  }
+  .vd .placeholder {
+    margin-block-start: 32px;
+    padding: 12px 16px;
+    border: 2px dashed var(--control);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+</style>
+
+<script>
+  import { onPage, showProgress, wireFilter } from '../../components/proto/proto-client';
+
+  onPage((signal) => {
+    const root = document.querySelector<HTMLElement>('[data-variant="d"]');
+    if (!root) return;
+    showProgress();
+
+    const pane = root.querySelector<HTMLElement>('[data-pane]')!;
+    const home = root.querySelector<HTMLElement>('[data-view-home]')!;
+    const details = [...root.querySelectorAll<HTMLElement>('[data-detail]')];
+    const links = [...root.querySelectorAll<HTMLAnchorElement>('.list [data-select]')];
+    const pills = [...root.querySelectorAll<HTMLButtonElement>('[data-pill]')];
+    const pillClear = root.querySelector<HTMLButtonElement>('[data-pill-clear]')!;
+    const input = root.querySelector<HTMLInputElement>('#lesson-filter')!;
+    const search = root.querySelector<HTMLElement>('#d-search')!;
+    const searchToggle = root.querySelector<HTMLButtonElement>('[data-search-toggle]')!;
+    const status = root.querySelector<HTMLElement>('#lesson-filter-status')!;
+    const empty = root.querySelector<HTMLElement>('[data-empty]')!;
+
+    // --- Selection, from the URL ---------------------------------------------------------------
+    function render() {
+      const params = new URLSearchParams(location.search);
+      const lesson = params.get('lesson');
+      const path = lesson ? `/${lesson}` : null;
+      const view = path ? 'lesson' : params.get('view') === 'lessons' ? 'lessons' : 'home';
+      root!.dataset.view = view;
+      home.hidden = !!path;
+      for (const d of details) d.hidden = d.dataset.detail !== path;
+      for (const a of links) a.setAttribute('aria-current', String(a.dataset.select === path));
+      const mark = (el: Element, on: boolean) => (on ? el.setAttribute('aria-current', 'page') : el.removeAttribute('aria-current'));
+      for (const a of root!.querySelectorAll('[data-home]:not(.wordmark)')) mark(a, view === 'home');
+      mark(root!.querySelector('[data-lessons-tab]')!, view !== 'home');
+    }
+    function go(url: string) {
+      history.pushState(null, '', url);
+      render();
+      pane.scrollTo(0, 0);
+      scrollTo(0, 0);
+    }
+    const lessonUrl = (path: string) => `/proto/home-d?lesson=${path.slice(1)}`;
+
+    // Lesson links (in the list, the Continue card and the series blocks) select in place.
+    root.addEventListener(
+      'click',
+      (e) => {
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        const a = (e.target as HTMLElement).closest('a');
+        if (!a) return;
+        const url = new URL(a.href);
+        if (a.matches('[data-home]')) {
+          e.preventDefault();
+          go('/proto/home-d');
+        } else if (a.matches('[data-lessons-tab]')) {
+          e.preventDefault();
+          go('/proto/home-d?view=lessons');
+        } else if (/^\/(pronunciation|grammar|supplementary)\/\d\d$/.test(url.pathname)) {
+          e.preventDefault();
+          go(lessonUrl(url.pathname));
+          pane.focus({ preventScroll: true });
+        }
+      },
+      { signal },
+    );
+    for (const b of root.querySelectorAll('[data-back]'))
+      b.addEventListener('click', () => go('/proto/home-d?view=lessons'), { signal });
+    addEventListener('popstate', render, { signal });
+    render();
+
+    // --- Filter: series pills and the search field together ------------------------------------
+    let series: string | null = null;
+    const run = wireFilter(
+      input,
+      ({ query, matches, rows }) => {
+        let shown = 0;
+        const per: Record<string, number> = {};
+        rows.forEach((row, i) => {
+          const hit = matches.has(i);
+          const id = row.dataset.seriesId!;
+          if (hit) per[id] = (per[id] ?? 0) + 1;
+          row.hidden = !hit || (series !== null && id !== series);
+          if (!row.hidden) shown++;
+        });
+        for (const p of pills) {
+          const n = per[p.dataset.pill!] ?? 0;
+          p.querySelector('[data-pill-n]')!.textContent = String(n);
+          p.hidden = (series !== null && p.dataset.pill !== series) || (!!query && n === 0);
+          p.setAttribute('aria-pressed', String(p.dataset.pill === series));
+        }
+        pillClear.hidden = series === null;
+        empty.hidden = shown > 0;
+        status.textContent = query ? `${shown} ${shown === 1 ? 'lesson matches' : 'lessons match'}` : '';
+      },
+      signal,
+    );
+    const setSeries = (id: string | null) => {
+      series = id;
+      run();
+    };
+    for (const p of pills) p.addEventListener('click', () => setSeries(series === p.dataset.pill ? null : p.dataset.pill!), { signal });
+    pillClear.addEventListener('click', () => setSeries(null), { signal });
+    root.querySelector('[data-clear]')!.addEventListener(
+      'click',
+      () => {
+        input.value = '';
+        setSeries(null);
+      },
+      { signal },
+    );
+    searchToggle.addEventListener(
+      'click',
+      () => {
+        const open = search.hidden;
+        search.hidden = !open;
+        searchToggle.setAttribute('aria-expanded', String(open));
+        if (open) input.focus();
+        else if (input.value) ((input.value = ''), run());
+      },
+      { signal },
+    );
+    if (input.value) ((search.hidden = false), searchToggle.setAttribute('aria-expanded', 'true'));
+    // "All 24 lessons" on the home page opens the list on that series.
+    for (const b of root.querySelectorAll<HTMLButtonElement>('[data-open-series]')) {
+      b.addEventListener(
+        'click',
+        () => {
+          setSeries(b.dataset.openSeries!);
+          go('/proto/home-d?view=lessons');
+          root.querySelector<HTMLElement>('.list')!.scrollTo(0, 0);
+        },
+        { signal },
+      );
+    }
+
+    // --- The home page's "next up" per series, from progress -----------------------------------
+    for (const card of root.querySelectorAll<HTMLElement>('[data-series-card]')) {
+      const id = card.dataset.seriesCard!;
+      const items = links.filter((a) => a.dataset.select!.startsWith(`/${id}/`));
+      const states = items.map((a) => a.closest('li')!.dataset.state);
+      if (!states.some(Boolean)) continue;
+      const next = items.find((_, i) => states[i] !== 'finished');
+      const label = card.querySelector<HTMLElement>('[data-next-label]')!;
+      const link = card.querySelector<HTMLAnchorElement>('[data-next-link]')!;
+      if (!next) {
+        label.textContent = 'Every lesson finished.';
+        link.hidden = true;
+        continue;
+      }
+      label.textContent = 'Next up:';
+      link.href = next.dataset.select!;
+      const li = next.closest('li')!;
+      link.textContent = `${li.querySelector('.row-sub')!.textContent!.split(',')[0]}: ${li.querySelector('.row-title')!.textContent}`;
+    }
+  });
+</script>
