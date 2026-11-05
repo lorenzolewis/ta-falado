@@ -1,12 +1,14 @@
 // Validates the built podcast feed (dist/feed.xml): well-formed XML, the RSS 2.0 required
-// elements, Apple's required iTunes tags, ADR 0003, and every enclosure length against the file
-// on disk. Run after `pnpm build`: `pnpm validate:feed`. Exits non-zero on any error.
+// elements, Apple's required iTunes tags, ADR 0003, the permanent feed URL, and every
+// enclosure length against the file on disk. Run after `pnpm build`: `pnpm validate:feed`.
+// Exits non-zero on any error.
 
 import { readFileSync, statSync } from 'node:fs';
 import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 const DIST = new URL('../dist/', import.meta.url);
 const EPISODES = 46;
+const FEED_URL = 'https://tafalado.lorenzo.soy/feed.xml';
 
 const xml = readFileSync(new URL('feed.xml', DIST), 'utf8');
 const errors: string[] = [];
@@ -37,10 +39,22 @@ const requireText = (node: any, name: string, where: string) => {
 };
 const site = new URL(text(channel.link));
 
+// ADR 0003: subscriptions are tied to the exact feed URL, so pin it to the address chosen in
+// #46. Changing `site` in astro.config.ts must fail here rather than quietly move the feed.
+// Every link, image, enclosure and transcript must then be on that same origin.
+const feedOrigin = new URL(FEED_URL).origin;
+if (site.origin !== feedOrigin) fail(`channel: <link> ${site.href} is not on ${feedOrigin}`);
+const selfLink = [channel['atom:link']].flat().find((link: any) => link?.['@rel'] === 'self')?.['@href'];
+if (selfLink !== FEED_URL) fail(`channel: <atom:link rel="self"> is ${selfLink}, must be ${FEED_URL}`);
+const requireOnSite = (url: string | undefined, where: string) => {
+  if (url && !url.startsWith(`${site.origin}/`)) fail(`${where}: ${url} is not on ${site.origin}`);
+};
+
 // Channel: RSS 2.0 requires title, link, description; Apple requires title, description,
 // itunes:image, language, itunes:category and itunes:explicit.
 for (const name of ['title', 'link', 'description', 'language', 'copyright', 'itunes:author']) requireText(channel, name, 'channel');
 if (!channel['itunes:image']?.['@href']) fail('channel: missing <itunes:image href>');
+requireOnSite(channel['itunes:image']?.['@href'], 'channel <itunes:image>');
 const category = channel['itunes:category']?.[0];
 if (category?.['@text'] !== 'Education' || category?.['itunes:category']?.[0]?.['@text'] !== 'Language Learning') {
   fail('channel: category must be Education → Language Learning');
@@ -63,6 +77,9 @@ items.forEach((item, index) => {
   if (Number.isNaN(Date.parse(text(item.pubDate)))) fail(`${where}: <pubDate> is not a date`);
   if (!/^\d+$/.test(text(item['itunes:duration']))) fail(`${where}: <itunes:duration> must be whole seconds`);
   if (!item['itunes:image']?.['@href']) fail(`${where}: missing <itunes:image href>`);
+  requireOnSite(text(item.link), `${where} <link>`);
+  requireOnSite(item['itunes:image']?.['@href'], `${where} <itunes:image>`);
+  requireOnSite(item['podcast:transcript']?.['@url'], `${where} <podcast:transcript>`);
 
   const description = text(item.description);
   if (!description.includes('CC BY 3.0')) fail(`${where}: description lacks the CC BY 3.0 credit`);
@@ -79,7 +96,10 @@ items.forEach((item, index) => {
     return;
   }
   const audio = new URL(enclosure['@url']);
-  if (audio.origin !== site.origin) return; // hosted elsewhere: nothing on disk to compare
+  if (audio.origin !== site.origin) {
+    fail(`${where} <enclosure>: ${audio.href} is not on ${site.origin}`);
+    return;
+  }
   const size = statSync(new URL(`.${decodeURIComponent(audio.pathname)}`, DIST), { throwIfNoEntry: false })?.size;
   if (size === undefined) fail(`${where}: enclosure ${audio.pathname} is not in dist/`);
   else if (size !== Number(enclosure['@length'])) fail(`${where}: enclosure length ${enclosure['@length']} ≠ ${size} bytes on disk`);
@@ -93,6 +113,7 @@ if (errors.length) {
 }
 console.log('✓ RSS 2.0 required elements (channel title, link, description; item title, guid)');
 console.log('✓ Apple required tags (itunes:image, itunes:category, itunes:explicit, language, enclosure)');
+console.log(`✓ atom:link self is ${FEED_URL}; links, images, enclosures and transcripts on ${site.origin}`);
 console.log('✓ ADR 0003: itunes:type serial, itunes:episode 1–46 in order, no itunes:season, series in titles');
 console.log(`✓ ${items.length} enclosures, every length matches the file size in dist/`);
 console.log(`✓ first episode: ${text(items[0].title)}`);
