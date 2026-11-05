@@ -1,0 +1,161 @@
+---
+// PROTOTYPE (#55) variants A7 and A8, "Print cover" (they differ only in the no-photo placeholder,
+// see Props): A5's two-colour dot-screen print, but framed at 9:7,
+// the photos' average shape (mean 1.28, median 1.29), so most of each photo survives the crop.
+// The series and title sit on the foot of the photo over a gradient that fades from clear to the
+// page colour, so the title keeps its contrast in both themes whatever the photo. The gradient
+// belongs to the title block, so it grows with a long title. Edge to edge across the pane on both
+// phone and desktop (desktop caps the height). No photo (Supplementary): a placeholder of the same
+// size and print, with the lesson number, so the header doesn't jump between lessons.
+import Base from '../../layouts/Base.astro';
+import Switcher from './_Switcher.astro';
+import Parts from './_AParts.astro';
+import { view } from './_lesson';
+import type { Lesson } from '../../lib/lessons';
+import './_a-family.css';
+
+interface Props {
+  lesson: Lesson;
+  variant: 'a7' | 'a8';
+  /** What a lesson with no photo prints in the frame: its number (A7) or the site's name (A8). */
+  placeholder: 'number' | 'name';
+}
+const { lesson, variant, placeholder } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="af a7" data-proto-lesson={v.trackJson}>
+    <header>
+      <div class="cover">
+        {
+          v.photo ? (
+            <div class="print">
+              <img src={v.photo.url} alt={v.photo.alt} />
+            </div>
+          ) : (
+            <div class:list={['print', 'placeholder', `ph-${placeholder}`]} aria-hidden="true">
+              {placeholder === 'number' ? <span>{v.number}</span> : <span lang="pt-BR">Tá Falado</span>}
+            </div>
+          )
+        }
+        <div class="name">
+          <p class="af-series">{v.series} {v.number}</p>
+          <h1 class="af-title">{v.title}</h1>
+        </div>
+      </div>
+      <p class="af-facts">
+        First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.
+        {v.topic && <> Culture talk: {v.topic}.</>}
+      </p>
+      <Parts part="play" v={v} />
+    </header>
+    <Parts part="body" v={v} />
+  </article>
+  <Switcher variant={variant} lesson={lesson.id} />
+</Base>
+
+<script>
+  import './_play';
+</script>
+
+<style>
+  .a7 {
+    --bleed-x: 20px;
+    --bleed-y: var(--space-24);
+    max-inline-size: 44rem;
+  }
+
+  /* The photo and the title share one grid cell; the title block sits on the photo's foot. */
+  .cover {
+    display: grid;
+    margin: calc(-1 * var(--bleed-y)) calc(-1 * var(--bleed-x)) 0;
+  }
+  .cover > * {
+    grid-area: 1 / 1;
+  }
+  .print {
+    position: relative;
+    aspect-ratio: 9 / 7;
+    overflow: hidden;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    background: var(--ipe);
+  }
+  .print img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.35) brightness(1.05);
+    mix-blend-mode: multiply;
+  }
+  /* The dot screen. */
+  .print::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, var(--ipe) 0.9px, transparent 1.5px) 0 0 / 4px 4px;
+    opacity: 0.55;
+  }
+  .name {
+    position: relative;
+    align-self: end;
+    padding: 112px var(--bleed-x) 0;
+    /* Clear at the top, the page colour by the series line, so the text always has the page behind it. */
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--surface) 70%, transparent) 45%,
+      var(--surface) 80%
+    );
+  }
+  /* No photo (the two Supplementary lessons): the same frame, printed the same way, with the lesson
+     number in place of a picture, so the header keeps its size from lesson to lesson. */
+  .placeholder {
+    display: grid;
+    place-items: start end;
+  }
+  .placeholder span {
+    margin: -0.12em 0.06em 0 0;
+    color: #1b1b1b;
+    font: 700 clamp(14rem, 60vw, 30rem) / 1 var(--font-serif);
+    letter-spacing: -0.04em;
+    mix-blend-mode: multiply;
+    opacity: 0.85;
+  }
+  /* A8: the site's name on one line across the top, sized to the frame's width, clear of the title. */
+  .placeholder.ph-name {
+    container-type: inline-size;
+    place-items: start start;
+  }
+  .placeholder.ph-name span {
+    margin: 0.16em 0 0 0.1em;
+    font-size: 18.5cqi;
+    white-space: nowrap;
+    line-height: 0.82;
+    letter-spacing: -0.03em;
+  }
+  .af-title {
+    margin-block-end: 0;
+  }
+  .af-facts {
+    margin-block-start: var(--space-12);
+  }
+
+  /* Desktop: edge to edge across the pane, as on the phone. At full pane width 9:7 would be taller
+     than the window, so the height is capped and the photo crops wider there. */
+  @media (min-width: 52rem) {
+    .a7 {
+      --bleed-x: 48px;
+      --bleed-y: 40px;
+      max-inline-size: none !important;
+    }
+    :where(.a7 > :not(header), .a7 header > :not(.cover), .name > *) {
+      max-inline-size: 44rem;
+    }
+    .print {
+      max-block-size: min(62vh, 560px);
+      inline-size: 100%;
+    }
+  }
+</style>
