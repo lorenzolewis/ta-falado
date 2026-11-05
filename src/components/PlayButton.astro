@@ -1,21 +1,10 @@
 ---
 // Loads its lesson into the persistent player (wired in src/lib/player-ui.ts).
-import { lessonPath, type Lesson } from '../lib/lessons';
-import type { Track } from '../lib/player';
-import { SERIES_LABEL } from '../lib/series';
+import { toTrack, type Lesson } from '../lib/lessons';
 
 interface Props {
   lesson: Lesson;
 }
-
-const { data } = Astro.props.lesson;
-const track: Track = {
-  id: lessonPath(data),
-  title: `${SERIES_LABEL[data.series]} ${data.number}: ${data.title}`,
-  src: data.audio.url,
-  durationSeconds: data.audio.durationSeconds,
-  episode: data.episode,
-};
 ---
 
-<button type="button" data-play={JSON.stringify(track)}>Play lesson</button>
+<button type="button" data-play={JSON.stringify(toTrack(Astro.props.lesson))}>Play lesson</button>

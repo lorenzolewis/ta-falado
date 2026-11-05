@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import type { Series } from './series';
+import type { Track } from './player';
+import { SERIES_LABEL, type Series } from './series';
 
 export { SERIES, type Series } from './series';
 export type Lesson = CollectionEntry<'lessons'>;
@@ -36,6 +37,17 @@ export async function nextLesson(lesson: Lesson): Promise<Lesson | undefined> {
 /** `/pronunciation/01`, `/grammar/12`, `/supplementary/02`. */
 export function lessonPath({ series, number }: { series: Series; number: number }): string {
   return `/${series}/${String(number).padStart(2, '0')}`;
+}
+
+/** What the player needs to know about a lesson (also keys its saved progress by path). */
+export function toTrack({ data }: Lesson): Track {
+  return {
+    id: lessonPath(data),
+    title: `${SERIES_LABEL[data.series]} ${data.number}: ${data.title}`,
+    src: data.audio.url,
+    durationSeconds: data.audio.durationSeconds,
+    episode: data.episode,
+  };
 }
 
 function assertUnique(lessons: Lesson[], key: (lesson: Lesson) => string): void {
