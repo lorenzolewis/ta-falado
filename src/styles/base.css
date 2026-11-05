@@ -17,6 +17,9 @@
   --control: #7b887e;
   /* The unfilled track of a bar on --strong. */
   --track-on-strong: color-mix(in srgb, var(--on-strong) 25%, var(--strong));
+  /* Secondary text on --strong (the mini-player's times and series), and the player sheet's backdrop. */
+  --on-strong-muted: color-mix(in srgb, var(--on-strong) 78%, var(--strong));
+  --scrim: color-mix(in srgb, var(--strong) 55%, transparent);
   /* The current row in the sidebar (#53). */
   --selected: color-mix(in srgb, var(--accent) 14%, var(--surface));
 
@@ -51,6 +54,8 @@
   --panel-gap: 8px;
   /* The phone's tab bar; 0 on desktop, where there is none. */
   --tabs-block-size: 0px;
+  /* The player pads its foot by the home-indicator inset where no tab bar does it (desktop, iPad). */
+  --player-safe-b: env(safe-area-inset-bottom, 0px);
 
   font-family: var(--font-sans);
   font-size: 100%;
@@ -83,7 +88,9 @@
 /* The phone layout, below 52rem: one view at a time over a tab bar. */
 @media (max-width: 51.99rem) {
   :root {
-    --tabs-block-size: 64px;
+    /* Plus the home-indicator inset (viewport-fit=cover, src/layouts/Base.astro). */
+    --tabs-block-size: calc(64px + env(safe-area-inset-bottom, 0px));
+    --player-safe-b: 0px;
   }
 }
 

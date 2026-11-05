@@ -1,7 +1,14 @@
 ---
-// The persistent mini-player (#15, ADR 0001). It is on every page under the same persist name, so
-// <ClientRouter /> keeps this element (and its focus) across navigations. The audio itself lives in
-// src/lib/player.ts. Minimal on purpose: the visual design is #29.
+// The persistent mini-player (#15, ADR 0001), styled as the #59 decision ("bar and sheet", #60).
+// It is on every page under the same persist name, so <ClientRouter /> keeps this element (and its
+// focus) across navigations. The audio itself lives in src/lib/player.ts; src/lib/player-ui.ts wires
+// this markup to it.
+//
+// Phone (below 52rem): a slim bar with back 10s and play, which opens a modal sheet with everything.
+// Desktop: one full row, with no sheet. Some controls appear twice (in the bar and in the sheet);
+// player-ui.ts binds and updates every copy. The sheet's copies are hidden while it is closed, and
+// the row's desktop-only copies on a phone, so each name is on one visible control at a time.
+import Icon from './Icon.astro';
 import { getLessons, toTrack } from '../lib/lessons';
 import { RATES } from '../lib/player';
 
@@ -9,26 +16,88 @@ import { RATES } from '../lib/player';
 const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<', '\\u003c');
 ---
 
-<section class="player" aria-label="Audio player" data-player hidden transition:persist="player">
-  <p class="wrap"><a data-title href="/"></a></p>
-  <div class="wrap controls">
-    <button type="button" data-action="back" aria-keyshortcuts="ArrowLeft">Back 10s</button>
-    <button type="button" data-action="toggle" aria-keyshortcuts="Space">Play</button>
-    <button type="button" data-action="forward" aria-keyshortcuts="ArrowRight">Forward 30s</button>
-    <button type="button" data-action="mute" aria-pressed="false" aria-keyshortcuts="M">Mute</button>
-    <label>
-      Speed
-      <select data-rate>
-        {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
-      </select>
-    </label>
+<section class="player" aria-label="Audio player" data-player data-state="idle" hidden transition:persist="player">
+  <div class="line" aria-hidden="true"></div>
+  <div class="row">
+    <!-- Phone: the lesson, which opens the sheet. -->
+    <button type="button" class="open phone" data-sheet="open" aria-haspopup="dialog" data-open-label>
+      <img class="art" alt="" decoding="async" width="44" height="44" data-art />
+      <span class="text">
+        <span class="title" data-text="title"></span>
+        <span class="meta" data-text="left"></span>
+        <span class="status" aria-hidden="true" data-status></span>
+      </span>
+    </button>
+    <!-- Desktop: the lesson, as a link. -->
+    <div class="id desktop">
+      <img class="art" alt="" decoding="async" width="56" height="56" data-art />
+      <span class="text">
+        <a class="title" data-title href="/"></a>
+        <span class="meta" data-text="series"></span>
+        <span class="status" aria-hidden="true" data-status></span>
+      </span>
+    </div>
+    <div class="transport">
+      <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft"><Icon name="back10" /></button>
+      <button type="button" class="play" data-action="toggle" aria-label="Play" aria-keyshortcuts="Space">
+        <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="spin"></span>
+      </button>
+      <button type="button" class="ctl desktop" data-action="forward" aria-label="Forward 30 seconds" aria-keyshortcuts="ArrowRight">
+        <Icon name="forward30" />
+      </button>
+    </div>
+    <div class="seek desktop">
+      <span data-current>0:00</span>
+      <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+      <span data-duration>0:00</span>
+    </div>
+    <div class="extras desktop">
+      <span class="speed">
+        <select data-rate aria-label="Speed" aria-keyshortcuts="< >">
+          {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+        </select>
+        <Icon name="chevron" />
+      </span>
+      <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false" aria-keyshortcuts="M">
+        <Icon name="volume" class="i-volume" /><Icon name="mute" class="i-mute" />
+      </button>
+    </div>
   </div>
-  <div class="wrap seek">
-    <span data-current>0:00</span>
-    <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
-    <span data-duration>0:00</span>
-  </div>
-  <p class="wrap" role="status" data-status></p>
+
+  <!-- The one live region for the error line: the phone's visible copy is inside a button, whose
+       content screen readers don't announce, so both visible copies are hidden from them. -->
+  <p class="visually-hidden" role="status" data-status></p>
+
+  <dialog class="sheet" aria-label="Player" data-sheet-dialog>
+    <button type="button" class="ctl close" data-sheet="close" aria-label="Close the player"><Icon name="chevron" /></button>
+    <img class="art big" alt="" decoding="async" width="288" height="288" data-art />
+    <p class="sheet-title"><a data-title href="/"></a></p>
+    <p class="meta" data-text="series"></p>
+    <div class="sheet-seek">
+      <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+      <span data-current>0:00</span>
+      <span data-duration>0:00</span>
+    </div>
+    <div class="sheet-transport">
+      <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds"><Icon name="back10" /></button>
+      <button type="button" class="play big" data-action="toggle" aria-label="Play">
+        <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="spin"></span>
+      </button>
+      <button type="button" class="ctl" data-action="forward" aria-label="Forward 30 seconds"><Icon name="forward30" /></button>
+    </div>
+    <div class="sheet-extras">
+      <span class="speed">
+        <select data-rate aria-label="Speed">
+          {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+        </select>
+        <Icon name="chevron" />
+      </span>
+      <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false">
+        <Icon name="volume" class="i-volume" /><Icon name="mute" class="i-mute" />
+      </button>
+    </div>
+  </dialog>
+
   <script type="application/json" data-tracks is:inline set:html={tracks} />
 </section>
 
@@ -40,44 +109,382 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
 <style>
   .player {
     position: sticky;
-    /* Just above the phone's tab bar (src/styles/base.css). */
-    inset-block-end: var(--tabs-block-size, 0px);
+    /* Just above the phone's tab bar, which already includes the home-indicator inset. */
+    inset-block-end: var(--tabs-block-size);
     z-index: 4;
-    background: Canvas;
-    border-block-start: 1px solid;
-    padding-block: 0.5rem;
+    margin-inline: var(--panel-gap);
+    border-radius: var(--radius-player) var(--radius-player) 0 0;
+    overflow: hidden;
+    background: var(--strong);
+    color: var(--on-strong);
   }
   .player[hidden] {
     display: none;
   }
+  .player :focus-visible {
+    outline-color: var(--ipe);
+  }
   p {
-    margin-block: 0;
+    margin: 0;
   }
-  [data-status]:empty {
-    display: none;
+  a {
+    color: inherit;
+    text-decoration: none;
   }
-  .controls,
-  .seek {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    margin-block: 0.25rem;
+  a:hover {
+    text-decoration: underline;
   }
-  .seek input {
-    flex: 1;
-    min-inline-size: 8rem;
+
+  /* The lesson's progress, along the top edge (set by player-ui.ts as --progress, 0 to 1). */
+  .line {
+    position: absolute;
+    inset: 0 auto auto 0;
+    inline-size: calc(var(--progress, 0) * 100%);
+    block-size: 3px;
+    background: var(--ipe);
   }
-  .seek span {
+
+  .art {
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--radius-row);
+    background: var(--track-on-strong);
+    object-fit: cover;
+  }
+  /* No broken-image icon before the first lesson is loaded. */
+  .art:not([src]) {
+    visibility: hidden;
+  }
+  .text {
+    display: grid;
+    min-inline-size: 0;
+  }
+  .title {
+    overflow: hidden;
+    font-family: var(--font-serif);
+    font-size: var(--text-18);
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .meta {
+    color: var(--on-strong-muted);
+    font-size: var(--text-14);
     font-variant-numeric: tabular-nums;
   }
-  button,
-  select {
-    min-block-size: 2.75rem;
+  /* The error line takes the place of the time left. */
+  .status {
+    color: var(--ipe);
+    font-size: var(--text-14);
+    font-weight: 500;
   }
-  /* Mute keeps its label (it's a toggle button), so show the pressed state visually. */
-  [aria-pressed='true'] {
-    box-shadow: inset 0 0 0 2px currentColor;
-    text-decoration: line-through;
+  .status:empty,
+  [data-state='error'] .open .meta {
+    display: none;
+  }
+
+  /* Icon buttons, and play/pause. */
+  .ctl,
+  .play {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 48px;
+    block-size: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: inherit;
+  }
+  .ctl:hover {
+    background: var(--track-on-strong);
+  }
+  .play {
+    background: var(--ipe);
+    color: var(--on-ipe);
+  }
+  .play :global(.icon) {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+  /* Play, pause or the loading ring, from the player's state. */
+  .play :global(.i-pause),
+  .spin,
+  [data-state='playing'] .play :global(.i-play),
+  [data-state='loading'] .play :global(.i-play) {
+    display: none;
+  }
+  [data-state='playing'] .play :global(.i-pause) {
+    display: block;
+  }
+  [data-state='loading'] .spin {
+    display: block;
+    inline-size: 24px;
+    block-size: 24px;
+    border: 3px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-state='loading'] .spin {
+      animation: none;
+      border-style: dotted;
+    }
+  }
+  .ctl :global(.i-mute),
+  [aria-pressed='true'] :global(.i-volume) {
+    display: none;
+  }
+  [aria-pressed='true'] :global(.i-mute) {
+    display: block;
+  }
+
+  /* Seek: an 8px pill track filled in ipê up to the position (--seek), a 20px thumb, a 48px tall target. */
+  input[type='range'] {
+    --fill: linear-gradient(to right, var(--ipe) var(--seek, 0%), var(--track-on-strong) var(--seek, 0%));
+    appearance: none;
+    inline-size: 100%;
+    min-inline-size: 0;
+    block-size: 48px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--fill);
+  }
+  input[type='range']::-moz-range-track {
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--fill);
+  }
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-block-start: -6px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ipe);
+  }
+  input[type='range']::-moz-range-thumb {
+    inline-size: 20px;
+    block-size: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ipe);
+  }
+  input[type='range']:focus-visible {
+    outline-offset: -8px;
+  }
+
+  /* Speed: a pill select with a 2px currentColor border. */
+  .speed {
+    position: relative;
+    display: inline-grid;
+    align-items: center;
+  }
+  .speed select {
+    appearance: none;
+    min-block-size: 48px;
+    padding: 0 34px 0 var(--space-16);
+    border: 2px solid currentColor;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: inherit;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .speed option {
+    color: var(--ink);
+    background: var(--surface);
+  }
+  .speed :global(.icon) {
+    position: absolute;
+    inset-inline-end: 10px;
+    inline-size: 18px;
+    block-size: 18px;
+    pointer-events: none;
+  }
+
+  /* ── Phone bar ── */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-8) var(--space-8) calc(var(--space-8) + var(--player-safe-b));
+  }
+  .open {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-12);
+    min-inline-size: 0;
+    min-block-size: 56px;
+    padding: 0 var(--space-8) 0 0;
+    border: 0;
+    border-radius: var(--radius-row);
+    background: none;
+    color: inherit;
+    text-align: start;
+  }
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  /* Shown from 52rem (below); the later rules there win over this one. */
+  .desktop {
+    display: none;
+  }
+
+  /* ── Phone sheet ── */
+  .sheet {
+    inset-block: auto 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: calc(100dvh - max(2rem, env(safe-area-inset-top)));
+    margin: 0;
+    padding: var(--space-8) max(var(--space-24), env(safe-area-inset-left)) calc(var(--space-32) + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: var(--radius-player) var(--radius-player) 0 0;
+    background: var(--strong);
+    color: var(--on-strong);
+    text-align: center;
+  }
+  .sheet[open] {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-12);
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .sheet::backdrop {
+    background: var(--scrim);
+  }
+  @keyframes sheet-up {
+    from {
+      translate: 0 40%;
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet[open] {
+      animation: none;
+    }
+  }
+  .close {
+    justify-self: start;
+  }
+  .art.big {
+    inline-size: min(68vw, 18rem, 34dvh);
+    block-size: auto;
+    aspect-ratio: 1;
+    border-radius: var(--radius-card);
+  }
+  .sheet-title {
+    margin-block-start: var(--space-8);
+    font-family: var(--font-serif);
+    font-size: var(--text-24);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .sheet-seek {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    inline-size: 100%;
+    color: var(--on-strong-muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  .sheet-seek input {
+    grid-column: 1 / -1;
+  }
+  .sheet-seek [data-current],
+  .sheet-seek [data-duration] {
+    margin-block-start: -10px;
+  }
+  .sheet-seek [data-current] {
+    justify-self: start;
+  }
+  .sheet-seek [data-duration] {
+    justify-self: end;
+  }
+  .sheet-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-32);
+  }
+  .play.big {
+    inline-size: 72px;
+    block-size: 72px;
+  }
+  .play.big :global(.icon) {
+    inline-size: 30px;
+    block-size: 30px;
+  }
+  .sheet-extras {
+    display: flex;
+    justify-content: space-between;
+    inline-size: 100%;
+    margin-block-start: var(--space-8);
+  }
+
+  /* ── Desktop row, from 52rem: everything in one row, no sheet ── */
+  @media (min-width: 52rem) {
+    .row {
+      display: grid;
+      /* 12rem minimums (not #59's 16rem and 14rem), so the row fits at 52rem (decided on #60). */
+      grid-template-columns: minmax(12rem, 1.3fr) auto minmax(12rem, 1.5fr) auto;
+      align-items: center;
+      gap: var(--space-24);
+      padding: var(--space-12) var(--space-24) calc(var(--space-12) + var(--player-safe-b));
+    }
+    .phone {
+      display: none;
+    }
+    .id {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      min-inline-size: 0;
+    }
+    .id .art {
+      inline-size: 56px;
+      block-size: 56px;
+    }
+    .transport .play {
+      inline-size: 60px;
+      block-size: 60px;
+    }
+    .seek {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--space-12);
+      color: var(--on-strong-muted);
+      font-size: var(--text-14);
+      font-variant-numeric: tabular-nums;
+    }
+    .extras {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+    .ctl.desktop {
+      display: inline-grid;
+    }
   }
 </style>

@@ -36,6 +36,8 @@ export interface PlayerState {
   muted: boolean;
   /** True when the audio failed to load. */
   error: boolean;
+  /** Enough audio is buffered to play on (readyState ≥ HAVE_FUTURE_DATA); false while loading or stalled. */
+  ready: boolean;
 }
 
 export const RATES = [0.75, 1, 1.25, 1.5] as const;
@@ -54,7 +56,10 @@ class Player extends EventTarget {
     const audio = (this.#audio = new Audio());
     audio.preload = 'metadata';
     const changed = () => this.dispatchEvent(new Event('change'));
-    for (const type of ['play', 'pause', 'timeupdate', 'durationchange', 'ratechange', 'volumechange', 'emptied', 'error', 'seeked']) {
+    // The last six are for `ready`: the audio starts, stops or resumes loading.
+    const types = ['play', 'pause', 'timeupdate', 'durationchange', 'ratechange', 'volumechange', 'emptied', 'error', 'seeked',
+      'loadstart', 'seeking', 'waiting', 'stalled', 'canplay', 'playing'];
+    for (const type of types) {
       audio.addEventListener(type, changed);
     }
     audio.addEventListener('ended', () => this.dispatchEvent(new Event('ended')));
@@ -72,6 +77,7 @@ class Player extends EventTarget {
       rate: audio.playbackRate,
       muted: audio.muted,
       error: audio.error !== null,
+      ready: audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA,
     };
   }
 

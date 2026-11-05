@@ -4,59 +4,106 @@
 import { formatDuration } from './format';
 import { bindMediaSession } from './media-session';
 import { JUMP_BACK, JUMP_FORWARD, player, type Track } from './player';
+import { playerStatus, progress, timeLeft } from './player-view';
 import { allTracks } from './tracks';
 
 const time = (seconds: number) => formatDuration(Math.floor(seconds));
 
 const bound = new WeakSet<Element>();
 
+/** The phone's sheet (src/components/Player.astro) is phone-only; the desktop row has everything. */
+const DESKTOP = '(min-width: 52rem)';
+
 /**
  * The mini-player is persisted across navigations, so it must be wired up only once: binding it
  * again on each page load would stack listeners and make every click act twice (or more).
+ * Some controls are in both the bar and the sheet, so every copy is bound and updated.
  */
 function bindMiniPlayer(root: HTMLElement) {
   if (bound.has(root)) return;
   bound.add(root);
 
-  const $ = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
-  const title = $<HTMLAnchorElement>('[data-title]');
-  const toggle = $<HTMLButtonElement>('[data-action="toggle"]');
-  const mute = $<HTMLButtonElement>('[data-action="mute"]');
-  const rate = $<HTMLSelectElement>('[data-rate]');
-  const seek = $<HTMLInputElement>('[data-seek]');
-  const current = $<HTMLElement>('[data-current]');
-  const duration = $<HTMLElement>('[data-duration]');
-  const status = $<HTMLElement>('[data-status]');
+  const $$ = <T extends Element>(selector: string) => [...root.querySelectorAll<T>(selector)];
+  const titles = $$<HTMLAnchorElement>('[data-title]');
+  const texts = $$<HTMLElement>('[data-text]');
+  const arts = $$<HTMLImageElement>('[data-art]');
+  const toggles = $$<HTMLButtonElement>('[data-action="toggle"]');
+  const mutes = $$<HTMLButtonElement>('[data-action="mute"]');
+  const rates = $$<HTMLSelectElement>('[data-rate]');
+  const seeks = $$<HTMLInputElement>('[data-seek]');
+  const currents = $$<HTMLElement>('[data-current]');
+  const durations = $$<HTMLElement>('[data-duration]');
+  const statuses = $$<HTMLElement>('[data-status]');
+  const sheet = root.querySelector<HTMLDialogElement>('[data-sheet-dialog]')!;
+  const openSheet = root.querySelector<HTMLButtonElement>('[data-open-label]')!;
 
+  const closeSheet = () => sheet.open && sheet.close();
   root.addEventListener('click', (event) => {
-    const action = (event.target as Element).closest<HTMLElement>('[data-action]')?.dataset.action;
+    const target = event.target as Element;
+    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'toggle') player.toggle();
     else if (action === 'back') player.skip(-JUMP_BACK);
     else if (action === 'forward') player.skip(JUMP_FORWARD);
     else if (action === 'mute') player.toggleMute();
+
+    const sheetAction = target.closest<HTMLElement>('[data-sheet]')?.dataset.sheet;
+    if (sheetAction === 'open') sheet.showModal();
+    else if (sheetAction === 'close') closeSheet();
   });
+  // A tap on the backdrop lands on the dialog itself, outside its box (not on its padding).
+  sheet.addEventListener('click', (event) => {
+    if (event.target !== sheet) return;
+    const box = sheet.getBoundingClientRect();
+    const inside =
+      event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+    if (!inside) closeSheet();
+  });
+  matchMedia(DESKTOP).addEventListener('change', (event) => event.matches && closeSheet());
+  document.addEventListener('astro:before-swap', closeSheet);
+
   // The player is sticky at the bottom, so keep focused and scrolled-to content clear of it.
   new ResizeObserver(() => {
     document.documentElement.style.setProperty('--player-block-size', `${root.offsetHeight}px`);
   }).observe(root);
-  rate.addEventListener('change', () => player.setRate(Number(rate.value)));
-  seek.addEventListener('input', () => player.seek(Number(seek.value)));
+  for (const rate of rates) rate.addEventListener('change', () => player.setRate(Number(rate.value)));
+  for (const seek of seeks) seek.addEventListener('input', () => player.seek(Number(seek.value)));
+
+  const setText = (el: Element, text: string) => {
+    if (el.textContent !== text) el.textContent = text;
+  };
 
   player.subscribe((state) => {
-    if (!state.track) return;
+    const { track } = state;
+    if (!track) return;
     root.hidden = false;
-    title.textContent = state.track.title;
-    title.href = state.track.id;
-    toggle.textContent = state.paused ? 'Play' : 'Pause';
-    mute.setAttribute('aria-pressed', String(state.muted));
-    rate.value = String(state.rate);
-    seek.max = String(Math.floor(state.duration));
-    seek.value = String(Math.floor(state.currentTime));
-    seek.setAttribute('aria-valuetext', `${time(state.currentTime)} of ${time(state.duration)}`);
-    current.textContent = time(state.currentTime);
-    duration.textContent = time(state.duration);
+    root.dataset.state = playerStatus(state);
+
+    for (const title of titles) {
+      setText(title, track.title);
+      if (title.getAttribute('href') !== track.id) title.href = track.id;
+    }
+    openSheet.setAttribute('aria-label', `${track.title}, open the player`);
+    const text = { title: track.title, series: track.series, left: timeLeft(state) };
+    for (const el of texts) setText(el, text[el.dataset.text as keyof typeof text] ?? '');
+    // Only on a new lesson, so the image isn't touched on every time update.
+    for (const art of arts) if (art.getAttribute('src') !== track.artwork) art.src = track.artwork;
+
+    const label = state.paused ? 'Play' : 'Pause';
+    for (const toggle of toggles) toggle.setAttribute('aria-label', label);
+    for (const mute of mutes) mute.setAttribute('aria-pressed', String(state.muted));
+    for (const rate of rates) rate.value = String(state.rate);
+    const fraction = progress(state);
+    root.style.setProperty('--progress', String(fraction));
+    for (const seek of seeks) {
+      seek.max = String(Math.floor(state.duration));
+      seek.value = String(Math.floor(state.currentTime));
+      seek.setAttribute('aria-valuetext', `${time(state.currentTime)} of ${time(state.duration)}`);
+      seek.style.setProperty('--seek', `${fraction * 100}%`);
+    }
+    for (const el of currents) setText(el, time(state.currentTime));
+    for (const el of durations) setText(el, time(state.duration));
     const message = state.error ? 'The audio could not be loaded.' : '';
-    if (status.textContent !== message) status.textContent = message;
+    for (const status of statuses) setText(status, message);
   });
 }
 
