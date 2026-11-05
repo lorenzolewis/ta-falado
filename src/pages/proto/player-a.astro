@@ -1,0 +1,86 @@
+---
+// PROTOTYPE (#59), never merged: a page for trying the chosen mini-player (variant A,
+// src/components/proto/PlayerProto.astro) with real lessons, real pages to navigate to, and a long
+// page to scroll. Add ?state=idle|loading|playing|paused|error to force a state.
+import { render } from 'astro:content';
+import PlayButton from '../../components/PlayButton.astro';
+import Base from '../../layouts/Base.astro';
+import { formatDuration } from '../../lib/format';
+import { getLesson, getLessons, lessonPath, lessonTitle } from '../../lib/lessons';
+
+const lessons = (await getLessons()).filter((_, i) => [0, 7, 24, 40, 44, 45].includes(i));
+const long = (await getLesson('grammar', 17))!;
+const { Content } = await render(long);
+---
+
+<Base title="Mini-player A (prototype)" noindex>
+  <div class="proto">
+    <h1>Mini-player A: bar and sheet</h1>
+    <p class="lede">
+      A slim bar with back 10s and play. On a phone, tap the title to open a full sheet with the cover, seek, forward
+      30s, speed and mute. On desktop it is one full row and has no sheet.
+    </p>
+    <p>
+      Play a lesson, then open others from the lesson list, Home and About: the audio should carry on. Add
+      <code>?state=loading</code> (or idle, playing, paused, error) to any page to see that state.
+    </p>
+
+    <h2>Try a lesson</h2>
+    <ul class="lessons">
+      {
+        lessons.map((lesson) => (
+          <li>
+            <a href={lessonPath(lesson.data)}>{lessonTitle(lesson.data)}</a>
+            <span>{formatDuration(lesson.data.audio.durationSeconds)}</span>
+            <PlayButton lesson={lesson} />
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>A long page, for scrolling and focus</h2>
+    <p>Tab through the links below to the end of the page: the focused link should never sit under the player.</p>
+    <article>
+      <Content />
+      <p><a href={lessonPath(long.data)}>Open {lessonTitle(long.data)}</a></p>
+      <p><a href="/about">About this site</a></p>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .proto p {
+    margin-block: 0 var(--space-16);
+  }
+  .lede {
+    font-family: var(--font-serif);
+    font-size: var(--text-21);
+    line-height: 1.45;
+  }
+  .lessons {
+    margin: 0 0 var(--space-32);
+    padding: 0;
+    list-style: none;
+  }
+  .lessons li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--space-12);
+    min-block-size: 56px;
+    border-block-end: 1px solid var(--line);
+  }
+  .lessons span {
+    color: var(--muted);
+    font-size: var(--text-14);
+  }
+  .lessons :global(button) {
+    min-block-size: 44px;
+    padding: 0 var(--space-16);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+</style>
