@@ -4,7 +4,7 @@
 
 /** Bump when a stored shape changes incompatibly; old keys are then simply ignored. */
 export const SCHEMA_VERSION = 1;
-const PREFIX = `te-falado:v${SCHEMA_VERSION}:`;
+const PREFIX = `ta-falado:v${SCHEMA_VERSION}:`;
 
 const memory = new Map<string, string>();
 
