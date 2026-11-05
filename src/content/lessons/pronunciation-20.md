@@ -11,6 +11,7 @@ audio:
   bytes: 4549126
 pdf:
   url: /pdf/tafalado_20.pdf
+  bytes: 147090
 photo:
   url: /images/lesson_pic_20.jpg
   alt: "Automatic sprinklers"

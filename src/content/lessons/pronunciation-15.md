@@ -11,6 +11,7 @@ audio:
   bytes: 3674389
 pdf:
   url: /pdf/tafalado_15.pdf
+  bytes: 159257
 photo:
   url: /images/lesson_pic_15.jpg
   alt: "Good Tippers"

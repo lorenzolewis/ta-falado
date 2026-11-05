@@ -30,6 +30,8 @@ export default defineConfig({
 				variants: fontsource("alegreya", [
 					[400, "normal"],
 					[400, "italic"],
+					// Portuguese words in lesson intros (#56).
+					[500, "italic"],
 					[700, "normal"],
 					[700, "italic"],
 				]),

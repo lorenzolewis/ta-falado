@@ -1,0 +1,72 @@
+---
+// A lesson's print (#55, #56): its photo in black ink on its series' paper under a dot screen, in a
+// 9:7 frame. Without a photo the frame shows "Tá Falado" printed across the top, so the header is the
+// same height on every lesson. Paper and ink come from src/lib/print.ts. The frame fills its
+// container; the lesson page bleeds it to the pane's edges and caps its height on desktop.
+import { INK, PAPER } from '../lib/print';
+import type { Series } from '../lib/series';
+
+interface Props {
+  series: Series;
+  photo?: { url: string; alt: string };
+  class?: string;
+}
+
+const { series, photo, class: className } = Astro.props;
+---
+
+<div class:list={['print', className, { blank: !photo }]} style={`--paper: ${PAPER[series]}; --print-ink: ${INK}`}>
+  {
+    photo ? (
+      <img src={photo.url} alt={photo.alt} decoding="async" />
+    ) : (
+      <span class="name" lang="pt-BR" aria-hidden="true">
+        Tá Falado
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .print {
+    position: relative;
+    aspect-ratio: 9 / 7;
+    overflow: hidden;
+    background: var(--paper);
+  }
+  .print img {
+    display: block;
+    inline-size: 100%;
+    max-inline-size: none;
+    block-size: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.35) brightness(1.05);
+    mix-blend-mode: multiply;
+  }
+  /* The dot screen: paper-coloured dots 4px apart over the ink. */
+  .print::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, var(--paper) 0.9px, transparent 1.5px) 0 0 / 4px 4px;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* No photo: the name on one line across the top, sized to the frame's width. A page that lays
+     something over the print's top (the phone's "Lessons" link) sets --print-inset-top to keep the
+     name clear of it. */
+  .blank {
+    container-type: inline-size;
+  }
+  .name {
+    display: block;
+    margin: calc(0.16em + var(--print-inset-top, 0px)) 0 0 0.1em;
+    color: var(--print-ink);
+    font: 700 18.5cqi / 0.82 var(--font-serif);
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    mix-blend-mode: multiply;
+    opacity: 0.85;
+  }
+</style>

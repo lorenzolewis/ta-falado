@@ -11,6 +11,7 @@ audio:
   bytes: 5412107
 pdf:
   url: /pdf/tafalado_17.pdf
+  bytes: 149537
 photo:
   url: /images/lesson_pic_17.jpg
   alt: "Wearing That Tiny Bikini"

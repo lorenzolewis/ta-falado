@@ -1,5 +1,8 @@
 ---
-// Loads its lesson into the persistent player (wired in src/lib/player-ui.ts).
+// A lesson page's Play pill (#56): it follows the mini-player (Play, Resume, Pause, Play again) and
+// shows the time left beside it once started. src/lib/player-ui.ts wires it to the persistent player
+// and fills the label and the time; `data-state` is a PlayControl status from src/lib/player-view.ts.
+import Icon from './Icon.astro';
 import { toTrack, type Lesson } from '../lib/lessons';
 
 interface Props {
@@ -7,4 +10,36 @@ interface Props {
 }
 ---
 
-<button type="button" data-play={JSON.stringify(toTrack(Astro.props.lesson))}>Play lesson</button>
+<p class="listen" data-play={JSON.stringify(toTrack(Astro.props.lesson))} data-state="fresh">
+  <button type="button" class="btn btn-ipe">
+    <Icon name="play" class="i-play" />
+    <Icon name="pause" class="i-pause" />
+    <span data-play-label>Play</span>
+  </button>
+  <span class="left" data-play-left></span>
+</p>
+
+<style>
+  .listen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-16);
+    margin: var(--space-24) 0 0;
+  }
+  .left {
+    color: var(--muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  .left:empty {
+    display: none;
+  }
+  .listen :global(.i-pause),
+  .listen:is([data-state='playing'], [data-state='loading']) :global(.i-play) {
+    display: none;
+  }
+  .listen:is([data-state='playing'], [data-state='loading']) :global(.i-pause) {
+    display: block;
+  }
+</style>

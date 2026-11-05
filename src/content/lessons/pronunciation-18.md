@@ -11,6 +11,7 @@ audio:
   bytes: 4577181
 pdf:
   url: /pdf/tafalado_18.pdf
+  bytes: 148128
 photo:
   url: /images/lesson_pic_18.jpg
   alt: "You call that a steak house?"

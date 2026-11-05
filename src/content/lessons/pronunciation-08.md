@@ -11,6 +11,7 @@ audio:
   bytes: 9458683
 pdf:
   url: /pdf/tafalado_08.pdf
+  bytes: 274631
 photo:
   url: /images/lesson_pic_08.jpg
   alt: "Buying Fruits and Vegetables"

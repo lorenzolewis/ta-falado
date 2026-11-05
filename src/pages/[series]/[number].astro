@@ -1,11 +1,15 @@
 ---
+// A lesson page (#56), the #55 decision ("A8, print cover"): the lesson's print bleeds across the top
+// of the pane with the series and title on its foot, then the facts, the Play pill, the intro and the
+// transcript link. Portuguese and Spanish words in the intro are marked as in docs/lesson-schema.md.
 import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
-import FinishedMark from '../../components/FinishedMark.astro';
+import Icon from '../../components/Icon.astro';
 import PlayButton from '../../components/PlayButton.astro';
+import Print from '../../components/Print.astro';
 import Base from '../../layouts/Base.astro';
 import { ogImagePath } from '../../lib/artwork';
-import { formatDate, formatDuration, isoDate, isoDuration } from '../../lib/format';
+import { formatDate, formatKilobytes, formatMinutes, isoDate, isoDuration } from '../../lib/format';
 import { getLessons, lessonPath, lessonTitle, type Lesson } from '../../lib/lessons';
 import { lessonDescription, podcastEpisodeLd } from '../../lib/seo';
 import { SERIES_LABEL } from '../../lib/series';
@@ -21,7 +25,6 @@ export const getStaticPaths = (async () => {
 const { lesson } = Astro.props as { lesson: Lesson };
 const { data } = lesson;
 const { Content } = await render(lesson);
-const heading = `${SERIES_LABEL[data.series]} ${data.number}`;
 const description = lessonDescription(lesson.rendered?.html ?? '');
 ---
 
@@ -31,21 +34,160 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
   ogImage={ogImagePath(data)}
   jsonLd={podcastEpisodeLd(data, description, Astro.site!)}
 >
-  <article>
-    <hgroup>
-      <p>{heading} <FinishedMark id={lessonPath(data)} /></p>
-      <h1>{data.title}</h1>
-      {data.topic && <p>{data.topic}</p>}
-    </hgroup>
-    <p>
-      Originally published <time datetime={isoDate(data.date)}>{formatDate(data.date)}</time>{" · "}
-      <time datetime={isoDuration(data.audio.durationSeconds)}>
-        {formatDuration(data.audio.durationSeconds)}
-      </time>
+  <article class="lesson">
+    <header>
+      <div class="cover">
+        <Print series={data.series} photo={data.photo} />
+        <hgroup class="name">
+          <p class="series">{SERIES_LABEL[data.series]} {data.number}</p>
+          <h1>{data.title}</h1>
+        </hgroup>
+      </div>
+      <p class="facts">
+        First published <time datetime={isoDate(data.date)}>{formatDate(data.date)}</time>.{' '}
+        <time datetime={isoDuration(data.audio.durationSeconds)}>{formatMinutes(data.audio.durationSeconds)}</time> of
+        audio.{data.topic && ` Culture talk: ${data.topic}.`}
+      </p>
+      <PlayButton lesson={lesson} />
+    </header>
+    <div class="intro">
+      <Content />
+    </div>
+    <p class="transcript">
+      <a href={data.pdf.url}>
+        <Icon name="doc" />
+        <span>Read the transcript <span class="size">PDF, {formatKilobytes(data.pdf.bytes)}</span></span>
+      </a>
     </p>
-    <p><PlayButton lesson={lesson} /></p>
-    {data.photo && <img src={data.photo.url} alt={data.photo.alt} loading="lazy" decoding="async" />}
-    <Content />
-    <p><a href={data.pdf.url}>Transcript (PDF)</a></p>
   </article>
 </Base>
+
+<style>
+  /* How far the print reaches past the pane's padding (src/layouts/Base.astro) to its edges. */
+  .lesson {
+    --bleed-x: 20px;
+    --bleed-y: var(--space-24);
+  }
+  .lesson :where(p) {
+    margin: 0;
+  }
+
+  /* The print and the title share one grid cell; the title block sits on the print's foot. */
+  .cover {
+    display: grid;
+    margin: calc(-1 * var(--bleed-y)) calc(-1 * var(--bleed-x)) 0;
+  }
+  .cover > :global(*) {
+    grid-area: 1 / 1;
+  }
+  .cover :global(.print) {
+    border-start-start-radius: var(--radius-card);
+    border-start-end-radius: var(--radius-card);
+  }
+  /* The gradient belongs to the title block, so a long title moves the fade higher and the text
+     always has the page colour behind it. */
+  .name {
+    position: relative;
+    align-self: end;
+    margin: 0;
+    padding: 112px var(--bleed-x) 0;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--surface) 70%, transparent) 45%,
+      var(--surface) 80%
+    );
+  }
+  .series {
+    color: var(--accent);
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  h1 {
+    margin: var(--space-4) 0 0;
+    font-size: clamp(var(--text-36), 7vw, var(--text-60));
+    line-height: 1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .facts {
+    margin-block-start: var(--space-12);
+    color: var(--muted);
+  }
+
+  .intro {
+    max-inline-size: 38rem;
+    margin-block-start: 40px;
+    padding-block-start: var(--space-24);
+    border-block-start: 1px solid var(--line);
+    font: var(--text-21) / 1.55 var(--font-serif);
+  }
+  .intro :global(p) {
+    margin: 0;
+  }
+  .intro :global(p + p) {
+    margin-block-start: var(--space-16);
+  }
+  .intro :global(i[lang='pt-BR']) {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .transcript {
+    margin-block-start: var(--space-32);
+  }
+  .transcript a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-block-size: 44px;
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  .size {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Phone: the "Lessons" link (src/layouts/Base.astro) sits over the print's top corner, on a
+     page-coloured pill so it reads on any paper, and the print still bleeds to the pane's top. */
+  @media (max-width: 51.99rem) {
+    :global(.pane):has(> .lesson) {
+      position: relative;
+    }
+    :global(.pane > .back):has(+ .lesson) {
+      position: absolute;
+      inset-block-start: var(--space-12);
+      inset-inline-start: var(--space-12);
+      z-index: 1;
+      margin: 0;
+      background: var(--surface);
+    }
+    /* "Tá Falado" on a print with no photo starts below the link (12px down, 44px tall). */
+    :global(.back) + .lesson {
+      --print-inset-top: calc(var(--space-12) + 44px);
+    }
+  }
+
+  /* Desktop: at the pane's full width 9:7 would be taller than the window, so the height is capped
+     and the photo crops wider there. The text stays within 44rem. */
+  @media (min-width: 52rem) {
+    .lesson {
+      --bleed-x: 48px;
+      --bleed-y: 40px;
+    }
+    /* Over the pane's own cap on its children (src/layouts/Base.astro). */
+    :global(.pane) > .lesson {
+      max-inline-size: none;
+    }
+    .lesson > :not(header, .intro),
+    header > :not(.cover),
+    .name > * {
+      max-inline-size: 44rem;
+    }
+    .cover :global(.print) {
+      inline-size: 100%;
+      max-block-size: min(62vh, 560px);
+    }
+  }
+</style>

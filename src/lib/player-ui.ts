@@ -4,7 +4,8 @@
 import { formatDuration } from './format';
 import { bindMediaSession } from './media-session';
 import { JUMP_BACK, JUMP_FORWARD, player, type Track } from './player';
-import { playerStatus, progress, timeLeft } from './player-view';
+import { playControl, playerStatus, progress as fractionDone, timeLeft } from './player-view';
+import { progress } from './progress';
 import { allTracks } from './tracks';
 
 const time = (seconds: number) => formatDuration(Math.floor(seconds));
@@ -92,7 +93,7 @@ function bindMiniPlayer(root: HTMLElement) {
     for (const toggle of toggles) toggle.setAttribute('aria-label', label);
     for (const mute of mutes) mute.setAttribute('aria-pressed', String(state.muted));
     for (const rate of rates) rate.value = String(state.rate);
-    const fraction = progress(state);
+    const fraction = fractionDone(state);
     root.style.setProperty('--progress', String(fraction));
     for (const seek of seeks) {
       seek.max = String(Math.floor(state.duration));
@@ -107,10 +108,17 @@ function bindMiniPlayer(root: HTMLElement) {
   });
 }
 
-/** "Play lesson" buttons belong to a page, so they are wired on every page load and released on swap. */
+/**
+ * Lesson pages' Play pills (src/components/PlayButton.astro) belong to a page, so they are wired on
+ * every page load and released on swap. Only the label and the time beside the pill are written, so
+ * the pill's icons stay; `data-state` on the pill's row picks the Play or Pause icon.
+ */
 function bindPlayButtons(signal: AbortSignal) {
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-play]')) {
-    const track: Track = JSON.parse(button.dataset.play!);
+  for (const row of document.querySelectorAll<HTMLElement>('[data-play]')) {
+    const track: Track = JSON.parse(row.dataset.play!);
+    const button = row.querySelector<HTMLButtonElement>('button')!;
+    const label = row.querySelector<HTMLElement>('[data-play-label]')!;
+    const left = row.querySelector<HTMLElement>('[data-play-left]')!;
     button.addEventListener(
       'click',
       () => {
@@ -119,12 +127,14 @@ function bindPlayButtons(signal: AbortSignal) {
       },
       { signal },
     );
-    player.subscribe(
-      ({ track: current, paused }) => {
-        button.textContent = current?.id === track.id && !paused ? 'Pause lesson' : 'Play lesson';
-      },
-      { signal },
-    );
+    const update = () => {
+      const control = playControl(player.state, track, progress.get(track.id));
+      if (row.dataset.state !== control.status) row.dataset.state = control.status;
+      if (label.textContent !== control.label) label.textContent = control.label;
+      if (left.textContent !== control.left) left.textContent = control.left;
+    };
+    player.subscribe(update, { signal });
+    progress.subscribe(update, { signal });
   }
 }
 

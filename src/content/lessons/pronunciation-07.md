@@ -11,6 +11,7 @@ audio:
   bytes: 9206967
 pdf:
   url: /pdf/tafalado_07.pdf
+  bytes: 368718
 photo:
   url: /images/lesson_pic_07.jpg
   alt: "Invitations to Parties"
