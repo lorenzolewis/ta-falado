@@ -7,10 +7,13 @@ const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"'
 
 /** Search engines show about this many characters of a description. */
 const DESCRIPTION_MAX = 160;
+/** Whole sentences shorter than this say too little ("Just look at that barriga!"), so fill up to the max. */
+const DESCRIPTION_MIN = 100;
 
 /**
  * A lesson's meta description from its rendered intro: plain text, at most 160 characters. A long
- * intro ends after its last whole sentence that fits, or, if even the first is too long, at a word.
+ * intro ends after its last whole sentence that fits, unless that leaves under 100 characters: then
+ * it is cut at a word, with an ellipsis.
  */
 export function lessonDescription(html: string): string {
   const text = html
@@ -20,13 +23,14 @@ export function lessonDescription(html: string): string {
     .trim();
   if (text.length <= DESCRIPTION_MAX) return text;
 
-  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [];
-  let fit = '';
-  for (const sentence of sentences) {
-    if ((fit + sentence).trim().length > DESCRIPTION_MAX) break;
-    fit += sentence;
+  // A sentence ends at . ! or ?, then any closing quotes or brackets, then a space: `Russian?” That`.
+  let fit = 0;
+  for (const end of text.matchAll(/[.!?]+["'”’)\]]*(?= )/g)) {
+    const at = end.index + end[0].length;
+    if (at > DESCRIPTION_MAX) break;
+    fit = at;
   }
-  if (fit) return fit.trim();
+  if (fit >= DESCRIPTION_MIN) return text.slice(0, fit);
 
   const cut = text.slice(0, DESCRIPTION_MAX); // leaves room for the ellipsis after trimming a word
   return `${cut.slice(0, cut.lastIndexOf(' ')).replace(/[\s,;:]+$/, '')}…`;
@@ -53,7 +57,7 @@ export function podcastEpisodeLd(lesson: EpisodeRef, description: string, site: 
     url: url(lessonPath(lesson)),
     episodeNumber: lesson.episode,
     datePublished: isoDate(lesson.date),
-    timeRequired: duration,
+    duration,
     image: url(episodeCoverPath(lesson)),
     inLanguage: 'en',
     license: LICENSE_URL,

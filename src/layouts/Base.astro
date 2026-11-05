@@ -14,7 +14,7 @@ interface Props {
   ogImage?: string;
   /** schema.org data for the page, from src/lib/seo.ts. */
   jsonLd?: object;
-  /** Keep the page out of search results and the sitemap's company (the 404 page). */
+  /** Keep the page out of search results, with no canonical URL (the 404 page). @astrojs/sitemap leaves the 404 out by itself. */
   noindex?: boolean;
 }
 

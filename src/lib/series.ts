@@ -1,4 +1,5 @@
-// Shared by the collection schema (src/content.config.ts) and the helpers (src/lib/lessons.ts).
+// Series facts and lesson naming, with no `astro:content` import, so the collection schema
+// (src/content.config.ts), the helpers (src/lib/lessons.ts) and unit-tested modules (./seo) can all use it.
 
 export const SERIES = ['pronunciation', 'grammar', 'supplementary'] as const;
 export type Series = (typeof SERIES)[number];

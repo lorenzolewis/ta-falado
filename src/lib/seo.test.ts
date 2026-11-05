@@ -17,6 +17,21 @@ describe('lessonDescription', () => {
     expect(lessonDescription(`<p>${first} ${second} ${third}</p>`)).toBe(`${first} ${second}`);
   });
 
+  it('fills up to 160 characters at a word when the sentences that fit are too short to describe the lesson', () => {
+    const second = Array.from({ length: 40 }, (_, i) => `word${i}`).join(' ');
+    const description = lessonDescription(`<p>Just look at that barriga! ${second}.</p>`);
+    expect(description).toBe(
+      `Just look at that barriga! ${Array.from({ length: 20 }, (_, i) => `word${i}`).join(' ')}…`,
+    );
+  });
+
+  it('keeps a sentence that ends inside quotation marks', () => {
+    const quote = '“Is it true that Portuguese sounds like Russian?”';
+    const rest = 'That is what many people say the first time they hear Brazilian Portuguese spoken quickly.';
+    const third = 'In this lesson, we look at the nasal vowels that might explain it, and why they matter.';
+    expect(lessonDescription(`<p>${quote} ${rest} ${third}</p>`)).toBe(`${quote} ${rest}`);
+  });
+
   it('cuts a long first sentence at a word, with an ellipsis', () => {
     const words = Array.from({ length: 40 }, (_, i) => `word${i}`).join(' ');
     const description = lessonDescription(`<p>${words}.</p>`);
@@ -43,7 +58,7 @@ describe('podcastEpisodeLd', () => {
       url: 'https://tafalado.example/grammar/01',
       episodeNumber: 27,
       datePublished: '2007-05-08',
-      timeRequired: 'PT10M49S',
+      duration: 'PT10M49S',
       image: 'https://tafalado.example/artwork/grammar-01.png',
       inLanguage: 'en',
       license: 'https://creativecommons.org/licenses/by/3.0/',
