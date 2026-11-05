@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "ta-falado",
+  "name": "tafalado",
+  "routes": [{ "pattern": "tafalado.lorenzo.soy", "custom_domain": true }],
   "compatibility_date": "2026-11-04",
   // The site is fully static (Astro's build output). This Worker only answers byte ranges
   // for MP3s, which static assets don't (ADR 0002).
