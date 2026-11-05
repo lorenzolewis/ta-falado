@@ -49,3 +49,19 @@ jobs:
       # Well-formed XML, RSS 2.0 and Apple's required tags, ADR 0003, enclosure lengths vs. files.
       - name: Validate feed
         run: pnpm validate:feed
+
+      # The browser version is tied to the pinned @playwright/test, so this follows the lockfile.
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Smoke test of the persistent player on `wrangler dev` (serves /mp3/* through the range Worker).
+      - name: Browser tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
