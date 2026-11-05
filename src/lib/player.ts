@@ -4,7 +4,7 @@
 //
 // Other features attach through events rather than by reaching into the UI:
 //   player.subscribe((state) => …)            every state change (time, play/pause, rate, track…)
-//   player.addEventListener('trackchange', …) a new lesson was loaded (Media Session metadata, #18)
+//   player.addEventListener('trackchange', …) a new lesson was loaded (Media Session, src/lib/media-session.ts)
 //   player.addEventListener('ended', …)       the lesson finished (progress, autoplay-next, #19)
 
 /** What the player needs to know about a lesson. Built on the server from the collection. */
@@ -13,6 +13,10 @@ export interface Track {
   id: string;
   /** Display title, e.g. `Pronunciation 1: Pronunciation of /i/`. */
   title: string;
+  /** The series as shown in the interface, e.g. `Pronunciation`. */
+  series: string;
+  /** The episode cover's path (EPISODE_COVER_SIZE square PNG), e.g. `/artwork/pronunciation-01.png`. */
+  artwork: string;
   /** The lesson's `audio.url`, used as is. */
   src: string;
   /** From the collection; used until the browser knows the real duration. */
