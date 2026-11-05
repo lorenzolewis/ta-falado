@@ -1,0 +1,389 @@
+---
+// The sidebar (#53): the site rows, every lesson with series pills and a filter, and the footer.
+// It is on every page under the same persist name, so <ClientRouter /> keeps it, with its scroll,
+// pill and query, across navigations, like the player (ADR 0001). Wired in src/lib/sidebar-ui.ts.
+import { formatDuration, isoDuration } from '../lib/format';
+import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
+import { LESSONS_ID, pagePath, sectionOf } from '../lib/nav';
+import { SERIES_LABEL } from '../lib/series';
+import Credit from './Credit.astro';
+import FinishedMark from './FinishedMark.astro';
+import Icon from './Icon.astro';
+
+const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await lessonsBySeries(id) })));
+const section = sectionOf(Astro.url.pathname);
+const here = pagePath(Astro.url.pathname);
+const current = (on: boolean) => (on ? 'page' : undefined);
+---
+
+<nav class="side panel" id={LESSONS_ID} aria-label="Site and lessons" data-sidebar transition:persist="sidebar">
+  <div class="site-rows">
+    <a class="wordmark" href="/" lang="pt-BR">Tá Falado</a>
+    <a class="site-row home-row" href="/" aria-current={current(section === 'home')} data-nav="home">
+      <Icon name="home" class="off" /><Icon name="homeFilled" class="on" />Home
+    </a>
+    <a class="site-row" href="/about" aria-current={current(section === 'about')} data-nav="about">
+      <Icon name="info" />About this site
+    </a>
+  </div>
+
+  <div class="lessons">
+    <div class="lessons-head">
+      <h2>Lessons</h2>
+      <button type="button" class="round" aria-expanded="false" aria-controls="lesson-search" data-search-toggle>
+        <Icon name="search" /><span class="visually-hidden">Filter lessons</span>
+      </button>
+    </div>
+    <search class="field" id="lesson-search" hidden>
+      <label for="lesson-filter" class="visually-hidden">Filter lessons</label>
+      <Icon name="search" />
+      <input type="search" id="lesson-filter" autocomplete="off" placeholder="nh, ão, ficar…" />
+    </search>
+    <div class="pills" role="group" aria-label="Series">
+      <button type="button" class="pill pill-clear" hidden data-pill-clear>
+        <Icon name="close" /><span class="visually-hidden">Show every series</span>
+      </button>
+      {
+        series.map(({ id, lessons }) => (
+          <button type="button" class="pill" aria-pressed="false" data-pill={id}>
+            {SERIES_LABEL[id]} <span class="pill-count" data-pill-count>{lessons.length}</span>
+          </button>
+        ))
+      }
+    </div>
+    <p class="status" id="lesson-filter-status" role="status"></p>
+    <div class="empty" hidden data-empty>
+      <button type="button" class="link-btn" data-clear>Clear the filter</button>
+    </div>
+    <ol class="list">
+      {
+        series.flatMap(({ id, lessons }) =>
+          lessons.map(({ data, body }) => (
+            <li
+              data-lesson={lessonPath(data)}
+              data-series={id}
+              data-filter-text={[data.title, data.topic, body].filter(Boolean).join(' ')}
+            >
+              <a href={lessonPath(data)} aria-current={current(here === lessonPath(data))}>
+                <span class="square" aria-hidden="true">
+                  <span class="number">{data.number}</span>
+                  <Icon name="check" class="check" />
+                </span>
+                <span class="row-text">
+                  <span class="row-title">{data.title}</span>
+                  <span class="row-sub">
+                    {SERIES_LABEL[id]} {data.number}
+                    {data.topic && <>, {data.topic}</>}
+                  </span>
+                </span>
+                <span class="row-end">
+                  <time datetime={isoDuration(data.audio.durationSeconds)}>
+                    {formatDuration(data.audio.durationSeconds)}
+                  </time>
+                  <FinishedMark id={lessonPath(data)} />
+                </span>
+              </a>
+            </li>
+          )),
+        )
+      }
+    </ol>
+  </div>
+
+  <footer class="side-foot">
+    <Credit />
+  </footer>
+</nav>
+
+<script>
+  import '../lib/sidebar-ui';
+</script>
+
+<style>
+  .side {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+  }
+  p {
+    margin: 0;
+  }
+
+  /* Site rows */
+  .site-rows {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-12) var(--space-12) var(--space-8);
+    border-block-end: 1px solid var(--line);
+  }
+  .wordmark {
+    padding: var(--space-8) var(--space-8) var(--space-4);
+    color: var(--accent);
+    font: italic 700 var(--text-21) / 1 var(--font-serif);
+    text-decoration: none;
+  }
+  .site-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-block-size: 48px;
+    padding-inline: var(--space-8);
+    border-radius: var(--radius-row);
+    color: var(--muted);
+    font-size: var(--text-18);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .site-row:hover,
+  .site-row[aria-current='page'] {
+    color: var(--ink);
+  }
+  .site-row[aria-current='page'] {
+    background: var(--selected);
+  }
+  .home-row :global(.on),
+  .home-row[aria-current='page'] :global(.off) {
+    display: none;
+  }
+  .home-row[aria-current='page'] :global(.on) {
+    display: block;
+  }
+
+  /* Lessons */
+  .lessons {
+    display: flex;
+    flex-direction: column;
+    padding-block-start: var(--space-8);
+  }
+  .lessons-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-8) var(--space-4) 20px;
+  }
+  .lessons-head h2 {
+    margin: 0;
+    font-size: var(--text-24);
+    line-height: 1;
+  }
+  .round {
+    display: grid;
+    place-items: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--muted);
+  }
+  .round:hover,
+  .round[aria-expanded='true'] {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .round :global(.icon) {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-block-size: 44px;
+    margin: var(--space-4) var(--space-12) 0;
+    padding-inline: 14px;
+    border: 2px solid var(--control);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+  }
+  .field[hidden] {
+    display: none;
+  }
+  .field:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .field :global(.icon) {
+    inline-size: 18px;
+    block-size: 18px;
+    color: var(--muted);
+  }
+  .field input {
+    flex: 1;
+    min-inline-size: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-size: 1.0625rem;
+  }
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    padding: 10px var(--space-12) var(--space-8);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-6);
+    min-block-size: 36px;
+    padding: 0 var(--space-12);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .pill[hidden] {
+    display: none;
+  }
+  .pill[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .pill-clear {
+    justify-content: center;
+    inline-size: 36px;
+    padding: 0;
+  }
+  .pill-clear :global(.icon) {
+    inline-size: 16px;
+    block-size: 16px;
+  }
+  .pill-count {
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+  }
+  .status {
+    padding: 0 20px var(--space-4);
+    color: var(--muted);
+    font-size: var(--text-14);
+  }
+  .status:empty {
+    display: none;
+  }
+
+  /* Lesson rows */
+  .list {
+    margin: 0;
+    padding: 0 var(--space-8) var(--space-8);
+    list-style: none;
+  }
+  .list li[hidden] {
+    display: none;
+  }
+  .list a {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: var(--space-12);
+    align-items: center;
+    min-block-size: 56px;
+    padding: var(--space-6) var(--space-8);
+    border-radius: var(--radius-row);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .list a:hover {
+    background: var(--bg);
+  }
+  .list a[aria-current='page'] {
+    background: var(--selected);
+  }
+  .square {
+    display: grid;
+    place-items: center;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--radius-row);
+    background: var(--bg);
+    color: var(--accent);
+    font: 700 1.25rem / 1 var(--font-serif);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .square :global(.check) {
+    display: none;
+    inline-size: 20px;
+    block-size: 20px;
+    stroke-width: 3;
+  }
+  [data-state='started'] .square {
+    background: var(--strong);
+    color: var(--ipe);
+  }
+  [data-state='finished'] .square {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  [data-state='finished'] .number {
+    display: none;
+  }
+  [data-state='finished'] .square :global(.check) {
+    display: block;
+  }
+  .row-text {
+    display: grid;
+    min-inline-size: 0;
+  }
+  .row-title,
+  .row-sub {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .row-title {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .row-sub {
+    color: var(--muted);
+    font-size: var(--text-14);
+  }
+  .row-end {
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+  /* The square already shows a finished lesson; the mark stays for screen readers. */
+  .row-end :global([data-finished]) {
+    position: absolute;
+    clip-path: inset(50%);
+  }
+  .empty {
+    padding: 0 20px var(--space-16);
+  }
+  .empty[hidden] {
+    display: none;
+  }
+
+  .side-foot {
+    padding: var(--space-12) 20px var(--space-16);
+    border-block-start: 1px solid var(--line);
+  }
+
+  /* Desktop: the list scrolls inside the sidebar, and the footer stays pinned to its foot. */
+  @media (min-width: 52rem) {
+    .side {
+      min-block-size: 0;
+      overflow: hidden;
+    }
+    .lessons {
+      flex: 1;
+      min-block-size: 0;
+    }
+    .list {
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+
+  /* Phone: the tabs stand in for the wordmark and Home row; About stays. */
+  @media (max-width: 51.99rem) {
+    .wordmark,
+    .home-row {
+      display: none;
+    }
+  }
+</style>

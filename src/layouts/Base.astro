@@ -1,7 +1,12 @@
 ---
+import { Font } from 'astro:assets';
 import { ClientRouter } from 'astro:transitions';
+import Credit from '../components/Credit.astro';
+import Icon from '../components/Icon.astro';
 import Player from '../components/Player.astro';
+import Sidebar from '../components/Sidebar.astro';
 import { COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_PATH } from '../lib/artwork';
+import { LESSONS_ID, pagePath, viewOf } from '../lib/nav';
 import { PODCAST_TITLE } from '../lib/podcast';
 import { jsonLdScript } from '../lib/seo';
 import '../styles/base.css';
@@ -28,11 +33,15 @@ const {
 // Canonical, og:url and og:image need absolute URLs, so they come from `site` (astro.config.ts).
 if (!Astro.site) throw new Error('Set `site` in astro.config.ts: canonical URLs and og:image need it.');
 const fullTitle = title ? `${title} · ${PODCAST_TITLE}` : PODCAST_TITLE;
-const canonical = new URL(Astro.url.pathname.replace(/(\/index)?\.html$/, '') || '/', Astro.site).href;
+const canonical = new URL(pagePath(Astro.url.pathname), Astro.site).href;
 // Lesson pages have a 1200×630 card; other pages fall back to the square podcast cover.
 const image = ogImage
   ? { url: new URL(ogImage, Astro.site).href, width: OG_WIDTH, height: OG_HEIGHT, card: 'summary_large_image' }
   : { url: new URL(PODCAST_COVER_PATH, Astro.site).href, width: COVER_SIZE, height: COVER_SIZE, card: 'summary' };
+// The phone shows one view at a time (#53): this page's own (home or page), or the Lessons view,
+// which src/lib/sidebar-ui.ts switches to when the URL ends in #lessons.
+const { section, view, homeTab, lessonsTab } = viewOf(Astro.url.pathname);
+const current = (on: boolean) => (on ? 'page' : undefined);
 ---
 
 <!doctype html>
@@ -57,26 +66,139 @@ const image = ogImage
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLdScript(jsonLd)} />}
+    <!-- Preload only what every page shows first: the headings and the UI text. -->
+    <Font cssVariable="--font-serif" preload={[{ weight: 700, style: 'normal' }]} />
+    <Font cssVariable="--font-sans" preload={[{ weight: 400 }, { weight: 500 }, { weight: 700 }]} />
     <ClientRouter />
+    <!-- Without JavaScript the phone can't switch views, so it shows the lessons below the page. -->
+    <noscript><style>@media (max-width: 51.99rem) { .app .side { display: flex !important; order: 1; } }</style></noscript>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="wrap">
-      <p><a href="/" lang="pt-BR">Tá Falado</a></p>
-    </header>
-    <main id="main" class="wrap">
-      <slot />
-    </main>
-    <footer class="wrap">
-      <p>
-        <small>
-          An independent, unofficial archive. Original lessons by COERLL at the University of Texas at Austin, licensed{' '}
-          <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.{' '}
-          <a href="/about">About this site</a>
-        </small>
-      </p>
-    </footer>
+    <div class="app" data-view={view} data-app>
+      <Sidebar />
+      <main id="main" class="pane" tabindex="-1">
+        {
+          (section === 'lesson' || section === 'about') && (
+            <a class="back" href={`#${LESSONS_ID}`}>
+              <Icon name="back" />
+              Lessons
+            </a>
+          )
+        }
+        <slot />
+        <footer class="pane-foot">
+          <Credit about />
+        </footer>
+      </main>
+      <nav class="tabs" aria-label="Sections">
+        <a href="/" aria-current={current(homeTab)} data-tab="home">
+          <Icon name="home" class="off" /><Icon name="homeFilled" class="on" />Home
+        </a>
+        <a href={`#${LESSONS_ID}`} aria-current={current(lessonsTab)} data-tab="lessons">
+          <Icon name="library" />Lessons
+        </a>
+      </nav>
+    </div>
     <!-- Outside <main>, and on every page, so it is kept across navigations (ADR 0001). -->
     <Player />
   </body>
 </html>
+
+<style>
+  .app {
+    display: grid;
+    gap: var(--panel-gap);
+    padding: var(--panel-gap);
+  }
+  .pane {
+    min-inline-size: 0;
+    padding: var(--space-24) 20px var(--space-32);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+  }
+  .pane:focus {
+    outline: none;
+  }
+  .pane > :global(*) {
+    max-inline-size: 48rem;
+  }
+  .pane-foot {
+    margin-block-start: 40px;
+    padding-block-start: var(--space-16);
+    border-block-start: 1px solid var(--line);
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-block-size: 44px;
+    margin: calc(-1 * var(--space-8)) 0 var(--space-8) calc(-1 * var(--space-8));
+    padding: 0 var(--space-12) 0 var(--space-4);
+    border-radius: var(--radius-pill);
+    color: var(--accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .back :global(.icon) {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .tabs :global(.on),
+  .tabs [aria-current='page'] :global(.off) {
+    display: none;
+  }
+  .tabs [aria-current='page'] :global(.on) {
+    display: block;
+  }
+
+  /* Desktop: the sidebar beside the main pane, each scrolling on its own, both ending above the player. */
+  @media (min-width: 52rem) {
+    .app {
+      grid-template-columns: minmax(var(--sidebar-min), var(--sidebar-max)) 1fr;
+      block-size: calc(100dvh - var(--player-block-size, 0px));
+    }
+    .pane {
+      min-block-size: 0;
+      overflow-y: auto;
+      padding: 40px 48px 48px;
+    }
+    .tabs,
+    .back,
+    .pane-foot {
+      display: none;
+    }
+  }
+
+  /* Phone: one view at a time, over a fixed tab bar. */
+  @media (max-width: 51.99rem) {
+    .app:not([data-view='lessons']) > :global(.side),
+    .app[data-view='lessons'] > .pane {
+      display: none;
+    }
+    .tabs {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      block-size: var(--tabs-block-size);
+      border-block-start: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .tabs a {
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .tabs a[aria-current='page'] {
+      color: var(--ink);
+    }
+  }
+</style>

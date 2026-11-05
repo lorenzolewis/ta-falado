@@ -40,7 +40,9 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
 <style>
   .player {
     position: sticky;
-    inset-block-end: 0;
+    /* Just above the phone's tab bar (src/styles/base.css). */
+    inset-block-end: var(--tabs-block-size, 0px);
+    z-index: 4;
     background: Canvas;
     border-block-start: 1px solid;
     padding-block: 0.5rem;
