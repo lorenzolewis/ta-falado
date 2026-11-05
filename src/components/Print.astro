@@ -53,13 +53,15 @@ const { series, photo, class: className } = Astro.props;
     pointer-events: none;
   }
 
-  /* No photo: the name on one line across the top, sized to the frame's width. */
+  /* No photo: the name on one line across the top, sized to the frame's width. A page that lays
+     something over the print's top (the phone's "Lessons" link) sets --print-inset-top to keep the
+     name clear of it. */
   .blank {
     container-type: inline-size;
   }
   .name {
     display: block;
-    margin: 0.16em 0 0 0.1em;
+    margin: calc(0.16em + var(--print-inset-top, 0px)) 0 0 0.1em;
     color: var(--print-ink);
     font: 700 18.5cqi / 0.82 var(--font-serif);
     letter-spacing: -0.03em;

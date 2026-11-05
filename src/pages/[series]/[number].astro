@@ -163,6 +163,10 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
       margin: 0;
       background: var(--surface);
     }
+    /* "Tá Falado" on a print with no photo starts below the link (12px down, 44px tall). */
+    :global(.back) + .lesson {
+      --print-inset-top: calc(var(--space-12) + 44px);
+    }
   }
 
   /* Desktop: at the pane's full width 9:7 would be taller than the window, so the height is capped
