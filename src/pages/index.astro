@@ -1,8 +1,9 @@
 ---
-import FinishedMark from '../components/FinishedMark.astro';
+// The home page (#53): the name and lede, the Continue card, and one block per series with its
+// progress and the next lesson. The lesson list and its filter are in the sidebar (Base.astro).
+import Icon from '../components/Icon.astro';
 import Base from '../layouts/Base.astro';
-import { formatDuration, isoDuration } from '../lib/format';
-import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
+import { SERIES, lessonPath, lessonTitle, lessonsBySeries } from '../lib/lessons';
 import { podcastSeriesLd } from '../lib/seo';
 import { SERIES_LABEL } from '../lib/series';
 
@@ -10,69 +11,189 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
 ---
 
 <Base jsonLd={podcastSeriesLd(Astro.site!)}>
-  <h1 lang="pt-BR">Tá Falado</h1>
-  <p>Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
-  <section aria-labelledby="continue" data-continue hidden>
-    <h2 id="continue">Continue where you left off</h2>
-    <p><a data-continue-link href="/"></a>, <span data-continue-time></span></p>
-    <p><button type="button" data-continue-play>Resume</button></p>
-  </section>
-  <search>
-    <label for="lesson-filter">Filter lessons</label>{' '}
-    <input type="search" id="lesson-filter" autocomplete="off" />
-  </search>
-  <p id="lesson-filter-status" role="status"></p>
-  {
-    series.map(({ id, lessons }) => (
-      <section aria-labelledby={`series-${id}`} data-series>
-        <h2 id={`series-${id}`}>{SERIES_LABEL[id]}</h2>
-        <ol>
-          {lessons.map(({ data, body }) => (
-            <li value={data.number} data-filter-text={[data.title, data.topic, body].filter(Boolean).join(' ')}>
-              <a href={lessonPath(data)}>{data.title}</a>
-              {data.topic && <>, {data.topic}</>}
-              {' · '}
-              <time datetime={isoDuration(data.audio.durationSeconds)}>
-                {formatDuration(data.audio.durationSeconds)}
-              </time>{' '}
-              <FinishedMark id={lessonPath(data)} />
-            </li>
-          ))}
-        </ol>
-      </section>
-    ))
-  }
+  <div class="home">
+    <h1 lang="pt-BR">Tá Falado</h1>
+    <p class="lede">Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
+
+    <section class="continue" aria-labelledby="continue" data-continue hidden>
+      <h2 id="continue">Continue where you left off</h2>
+      <p class="continue-title"><a data-continue-link href="/"></a></p>
+      <div class="meter"><span data-continue-bar></span></div>
+      <p class="continue-row">
+        <button type="button" class="btn btn-ipe" data-continue-play><Icon name="play" />Resume</button>
+        <span data-continue-left></span>
+      </p>
+      <p class="visually-hidden" data-continue-time></p>
+    </section>
+
+    <h2 class="series-heading">The three series</h2>
+    <ul class="series-list">
+      {
+        series.map(({ id, lessons }) => (
+          <li class="series" data-series-progress={id}>
+            <div class="series-top">
+              <h3>{SERIES_LABEL[id]}</h3>
+              <button type="button" class="link-btn" data-open-series={id}>
+                All {lessons.length} lessons
+              </button>
+            </div>
+            <p class="series-count">
+              <span data-finished-count>0</span> of {lessons.length} finished
+            </p>
+            <span class="series-meter">
+              <span data-finished-bar />
+            </span>
+            <p>
+              <span class="next-label" data-next-label>
+                Start with
+              </span>{' '}
+              <a href={lessonPath(lessons[0]!.data)} data-next-link>
+                {lessonTitle(lessons[0]!.data)}
+              </a>
+            </p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 </Base>
 
 <script>
-  import { createLessonFilter } from '../lib/lesson-filter';
+  import { showSeries } from '../lib/sidebar-ui';
 
   // Runs on every visit to the home page, since the ClientRouter only runs this script once.
   let page: AbortController | undefined;
   document.addEventListener('astro:page-load', () => {
     page?.abort();
     page = new AbortController();
-    const input = document.querySelector<HTMLInputElement>('#lesson-filter');
-    if (!input) return;
-    const status = document.querySelector<HTMLElement>('#lesson-filter-status')!;
-    const sections = [...document.querySelectorAll<HTMLElement>('[data-series]')];
-    const rows = [...document.querySelectorAll<HTMLElement>('[data-filter-text]')];
-    const filter = createLessonFilter(rows.map((row) => row.dataset.filterText!));
-
-    function update() {
-      const matches = new Set(filter(input!.value));
-      rows.forEach((row, i) => (row.hidden = !matches.has(i)));
-      for (const section of sections) section.hidden = !section.querySelector('li:not([hidden])');
-      const count = matches.size;
-      status.textContent = !input!.value.trim()
-        ? ''
-        : count === 0
-          ? 'No lessons match. Try fewer or different words.'
-          : `${count} ${count === 1 ? 'lesson matches' : 'lessons match'}.`;
+    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-open-series]')) {
+      button.addEventListener('click', () => showSeries(button.dataset.openSeries!), { signal: page.signal });
     }
-
-    input.addEventListener('input', update, { signal: page.signal });
-    update(); // the browser may have restored a value
   });
   document.addEventListener('astro:before-swap', () => page?.abort());
 </script>
+
+<style>
+  p {
+    margin: 0;
+  }
+  h1 {
+    margin: 0 0 var(--space-12);
+    font-size: var(--text-60);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .lede {
+    max-inline-size: 34rem;
+    color: var(--muted);
+    font: var(--text-21) / 1.45 var(--font-serif);
+  }
+
+  /* The Continue card (#52): filled --strong, with an ipê bar and Resume button. */
+  .continue {
+    display: grid;
+    gap: var(--space-8);
+    margin-block-start: var(--space-24);
+    padding: 20px;
+    border-radius: var(--radius-card);
+    background: var(--strong);
+    color: var(--on-strong);
+  }
+  .continue[hidden] {
+    display: none;
+  }
+  .continue h2 {
+    margin: 0;
+    font: 500 var(--text-14) / 1.4 var(--font-sans);
+  }
+  .continue-title {
+    font: 700 var(--text-28) / 1.1 var(--font-serif);
+  }
+  .continue-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .continue :focus-visible {
+    outline-color: var(--ipe);
+  }
+  .meter {
+    block-size: 8px;
+    margin-block: var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--track-on-strong);
+  }
+  .meter > span,
+  .series-meter > span {
+    display: block;
+    block-size: 100%;
+    inline-size: 0;
+    border-radius: inherit;
+  }
+  .meter > span {
+    background: var(--ipe);
+  }
+  .continue-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-16);
+    margin-block-start: var(--space-4);
+    font-size: var(--text-14);
+  }
+
+  /* The three series */
+  .series-heading {
+    margin: 40px 0 var(--space-8);
+    font-size: var(--text-36);
+    line-height: 1;
+  }
+  .series-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .series {
+    display: grid;
+    gap: var(--space-6);
+    padding-block: var(--space-16);
+    border-block-end: 1px solid var(--line);
+  }
+  .series-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-12);
+  }
+  .series h3 {
+    margin: 0;
+    font-size: var(--text-24);
+    line-height: 1.1;
+  }
+  .series-count {
+    color: var(--muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  .series-meter {
+    display: block;
+    block-size: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--line);
+  }
+  .series-meter > span {
+    background: var(--accent);
+  }
+  .series p:last-child {
+    margin-block-start: var(--space-4);
+  }
+  .next-label {
+    color: var(--muted);
+  }
+  .series a {
+    font-weight: 500;
+  }
+  [data-next-link][hidden] {
+    display: none;
+  }
+</style>

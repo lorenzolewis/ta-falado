@@ -36,6 +36,33 @@ export function latestUnfinished(lessons: ProgressMap): string | undefined {
   return latest?.[0];
 }
 
+export interface SeriesProgress {
+  finished: number;
+  /** The first unfinished lesson, in series order; undefined once every lesson is finished. */
+  next: string | undefined;
+  /** Any lesson of the series has been played, so "Next up" rather than "Start with". */
+  started: boolean;
+}
+
+/** One series' progress for the home page (#53), from its lesson ids in series order. */
+export function seriesProgress(ids: readonly string[], lessons: ProgressMap): SeriesProgress {
+  return {
+    finished: ids.filter((id) => lessons[id]?.finished).length,
+    next: ids.find((id) => !lessons[id]?.finished),
+    started: ids.some((id) => id in lessons),
+  };
+}
+
+/** For the Continue card: how far into a lesson, and "7 min left" (rounded up, so never "0 min"). */
+export function timeLeft(position: number, duration: number): { percent: number; label: string } {
+  if (duration <= 0) return { percent: 0, label: '' };
+  const left = Math.max(0, duration - position);
+  return {
+    percent: Math.min(100, (position / duration) * 100),
+    label: `${Math.max(1, Math.ceil(left / 60))} min left`,
+  };
+}
+
 const isEntry = (value: unknown): value is LessonProgress => {
   const v = value as LessonProgress;
   return typeof v?.position === 'number' && typeof v.finished === 'boolean' && typeof v.playedAt === 'number';

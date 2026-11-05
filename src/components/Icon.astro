@@ -1,0 +1,13 @@
+---
+// One icon from src/lib/icons.ts, decorative (hidden from screen readers): label its control instead.
+import { ICONS, type IconName } from '../lib/icons';
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+
+const { name, class: className } = Astro.props;
+---
+
+<svg class:list={['icon', className]} viewBox="0 0 24 24" aria-hidden="true" focusable="false" set:html={ICONS[name]} />

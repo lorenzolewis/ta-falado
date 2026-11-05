@@ -1,8 +1,20 @@
 ---
+import Icon from '../components/Icon.astro';
 import Base from '../layouts/Base.astro';
 ---
 
 <Base title="Page not found" noindex>
-  <h1>Page not found</h1>
-  <p><a href="/">Back to the home page</a></p>
+  <div>
+    <h1>Page not found</h1>
+    <p><a class="btn btn-accent" href="/"><Icon name="home" />Back to the home page</a></p>
+  </div>
 </Base>
+
+<style>
+  h1 {
+    margin: 0 0 var(--space-12);
+  }
+  p {
+    margin: 0;
+  }
+</style>
