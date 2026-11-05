@@ -18,3 +18,7 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# playwright
+test-results/
+playwright-report/
