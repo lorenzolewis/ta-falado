@@ -14,6 +14,8 @@ import satori from 'satori';
 import { INK, PAPER } from '../src/lib/print.ts';
 
 type Series = keyof typeof PAPER;
+/** A print with nothing on it: just the paper and the dots. */
+const BLANK = 'blank';
 const W = 1200;
 const H = 630;
 const SERIES_LABEL: Record<Series, string> = { pronunciation: 'Pronunciation', grammar: 'Grammar', supplementary: 'Supplementary' };
@@ -76,7 +78,9 @@ async function printLayer(lesson: Lesson, box: Box, id: string): Promise<string>
   const [r, g, b] = hex(paper);
   const { x, y, w, h } = box;
   let ink: string;
-  if (lesson.photo) {
+  if (lesson.photo === BLANK) {
+    ink = '';
+  } else if (lesson.photo) {
     ink = `
       <filter id="${id}-ink" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
         <feColorMatrix type="matrix" values="
@@ -170,16 +174,16 @@ async function variantB(l: Lesson, withName = false) {
   const col = 520;
   const print = await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b-paper').then(async (bg) =>
     // Draw the whole sheet as paper and dots, then print the photo only in the right part.
-    l.photo ? bg.replace(/<image[^>]*\/>/, '') + (await printLayer(l, { x: col, y: 0, w: W - col, h: H }, 'b')) : printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b'),
+    l.photo ? bg.replace(/<image[^>]*\/>/, '') + (await printLayer(l, { x: col, y: 0, w: W - col, h: H }, 'b')) : withName ? printLayer({ ...l, photo: BLANK }, { x: 0, y: 0, w: W, h: H }, 'b') : printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b'),
   );
   const overlay = div(
     { width: W, height: H, display: 'flex', flexDirection: l.photo ? 'row' : 'column', justifyContent: l.photo ? 'flex-start' : 'flex-end' },
     div(
-      { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: l.photo ? col : W, height: l.photo ? H : 'auto', padding: '56px 48px 56px 60px', color: INK },
+      { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: l.photo ? col : W, height: l.photo || withName ? H : 'auto', padding: '56px 48px 56px 60px', color: INK },
       [
-        // B2: the site name in the upper left. Without a photo the placeholder already prints it.
-        withName && l.photo
-          ? el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 44, lineHeight: 1, letterSpacing: -0.03 * 44 }, 'Tá Falado', { lang: 'pt-BR' })
+        // B3: the site name in the upper left, on every card (no placeholder without a photo).
+        withName
+          ? el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 88, lineHeight: 0.9, letterSpacing: -0.03 * 88 }, 'Tá Falado', { lang: 'pt-BR' })
           : div({ display: 'flex' }),
         div({ display: 'flex', flexDirection: 'column' }, [
           div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 34, marginBottom: 10 }, label(l)),
@@ -208,7 +212,7 @@ async function variantC(l: Lesson) {
 
 // ---- Run ------------------------------------------------------------------------------------
 const LESSONS = ['pronunciation-16', 'pronunciation-11', 'pronunciation-04', 'grammar-17', 'grammar-14', 'supplementary-01'];
-const VARIANTS = { B2: (l: Lesson) => variantB(l, true) };
+const VARIANTS = { B3: (l: Lesson) => variantB(l, true) };
 const out = 'prototype-renders';
 await mkdir(out, { recursive: true });
 const lessons = await Promise.all(LESSONS.map(loadLesson));
