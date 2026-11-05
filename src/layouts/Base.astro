@@ -48,7 +48,7 @@ const current = (on: boolean) => (on ? 'page' : undefined);
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
@@ -109,7 +109,9 @@ const current = (on: boolean) => (on ? 'page' : undefined);
   .app {
     display: grid;
     gap: var(--panel-gap);
-    padding: var(--panel-gap);
+    /* viewport-fit=cover lets the page run under the notch in landscape, so keep clear of it. */
+    padding: max(var(--panel-gap), env(safe-area-inset-top)) max(var(--panel-gap), env(safe-area-inset-right))
+      var(--panel-gap) max(var(--panel-gap), env(safe-area-inset-left));
   }
   .pane {
     min-inline-size: 0;
@@ -184,6 +186,8 @@ const current = (on: boolean) => (on ? 'page' : undefined);
       display: grid;
       grid-template-columns: 1fr 1fr;
       block-size: var(--tabs-block-size);
+      /* --tabs-block-size includes the home indicator, which the bar sits over. */
+      padding-block-end: env(safe-area-inset-bottom, 0px);
       border-block-start: 1px solid var(--line);
       background: var(--bg);
     }
