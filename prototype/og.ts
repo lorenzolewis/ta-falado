@@ -1,5 +1,6 @@
 // Prototype for #71: OG images (1200×630) in the lesson page's print style (#55). Throwaway.
-// Run: node prototype/og.ts  → prototype-renders/<variant>-<lesson>.png and sheet-<variant>.png
+// The chosen layout is B4, "one sheet" (see PROTOTYPE.md).
+// Run: node prototype/og.ts  → prototype-renders/<lesson>.png and prototype-renders/sheet.png
 //
 // The print is drawn as plain SVG for resvg (Satori has no `filter` or `mix-blend-mode`):
 //   paper rect → photo through an feColorMatrix/feComponentTransfer chain that reproduces
@@ -7,22 +8,16 @@
 //   paper-coloured dots 4px apart at 55%. Satori lays out the text as a second SVG on top.
 // Converge with #61: the print layer (printLayer) and compose() are what #61's renderer needs
 // for the covers too; in the build, they belong in src/lib/artwork-render.ts beside the cover
-// template, and only the OG layouts (the overlays below) stay specific to #71.
+// template, and only the OG layout (ogImage's overlay) stays specific to #71.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
 import { INK, PAPER } from '../src/lib/print.ts';
 
 type Series = keyof typeof PAPER;
-/** A print with nothing on it: just the paper and the dots. */
-const BLANK = 'blank';
 const W = 1200;
 const H = 630;
 const SERIES_LABEL: Record<Series, string> = { pronunciation: 'Pronunciation', grammar: 'Grammar', supplementary: 'Supplementary' };
-// The lesson page's own colours (src/styles/base.css, light): the title sits on --surface.
-const SURFACE = '#ffffff';
-const PAGE_INK = '#1b2a20';
-const ACCENT = '#1c6a43';
 
 interface Lesson {
   slug: string;
@@ -70,17 +65,15 @@ interface Box {
 const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16) / 255);
 
 /**
- * The print as SVG: paper, the photo in ink (or "Tá Falado" when there is none), the dot screen.
+ * The print as SVG: paper, the photo in ink (if there is one), the dot screen.
  * CSS order: grayscale → contrast(1.35) → brightness(1.05), each clamped; then multiply by paper.
  */
-async function printLayer(lesson: Lesson, box: Box, id: string): Promise<string> {
+async function printLayer(lesson: Pick<Lesson, 'series' | 'photo'>, box: Box, id: string): Promise<string> {
   const paper = PAPER[lesson.series];
   const [r, g, b] = hex(paper);
   const { x, y, w, h } = box;
   let ink: string;
-  if (lesson.photo === BLANK) {
-    ink = '';
-  } else if (lesson.photo) {
+  if (lesson.photo) {
     ink = `
       <filter id="${id}-ink" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
         <feColorMatrix type="matrix" values="
@@ -106,18 +99,7 @@ async function printLayer(lesson: Lesson, box: Box, id: string): Promise<string>
       </filter>
       <image href="${lesson.photo}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice" filter="url(#${id}-ink)"/>`;
   } else {
-    // "Tá Falado" on one line across the top: 18.5% of the frame's width, line-height 0.82,
-    // letter-spacing -0.03em, margin 0.16em 0 0 0.1em; ink at 85%.
-    const size = 0.185 * w;
-    const name = await layout(
-      div(
-        { display: 'flex', width: w, height: h, fontFamily: 'Alegreya', fontWeight: 700, color: INK },
-        el('span', { fontSize: size, lineHeight: 0.82, letterSpacing: -0.03 * size, marginTop: 0.16 * size, marginLeft: 0.1 * size, whiteSpace: 'nowrap' }, 'Tá Falado', { lang: 'pt-BR' }),
-      ),
-      w,
-      h,
-    );
-    ink = `<g opacity="0.85" transform="translate(${x} ${y})">${name}</g>`;
+    ink = '';
   }
   return `
     <clipPath id="${id}-clip"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>
@@ -142,52 +124,26 @@ async function compose(print: string, overlay: El): Promise<Buffer> {
   return new Resvg(svg, { fitTo: { mode: 'width', value: W }, background: '#ffffff' }).render().asPng();
 }
 
-// ---- The variants ---------------------------------------------------------------------------
+// ---- The layout: B4, one sheet ---------------------------------------------------------------
 const label = (l: Lesson) => `${SERIES_LABEL[l.series]} ${l.number}`;
-const titleSize = (t: string, big: number, small: number) => (t.length > 34 ? small : big);
+const COLUMN = 520; // the text column, left; the photo is printed on the rest
 
-/** A: the page header. The print fills the card; the series and title sit on its foot over a
- *  fade into the page's white, as on the lesson page. */
-async function variantA(l: Lesson) {
-  const print = await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'a');
+/** One sheet of paper. "Tá Falado" in the upper left, the series and title at the foot of a column
+ *  of text in ink, and the photo printed on the right of the same paper with no frame between
+ *  them. Without a photo the whole sheet is blank paper and the text column spans it. */
+async function ogImage(l: Lesson) {
+  const print = l.photo
+    ? (await printLayer({ series: l.series }, { x: 0, y: 0, w: W, h: H }, 'sheet')) + (await printLayer(l, { x: COLUMN, y: 0, w: W - COLUMN, h: H }, 'photo'))
+    : await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'sheet');
   const overlay = div(
-    { width: W, height: H, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' },
+    { width: W, height: H, display: 'flex' },
     div(
-      {
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '150px 64px 52px',
-        backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.7) 45%, ${SURFACE} 80%)`,
-      },
+      { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: l.photo ? COLUMN : W, height: H, padding: '56px 48px 56px 60px', color: INK },
       [
-        div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 34, color: ACCENT, marginBottom: 6 }, label(l)),
-        div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: titleSize(l.title, 80, 68), lineHeight: 1, color: PAGE_INK, lineClamp: 2 }, l.title),
-      ],
-    ),
-  );
-  return compose(print, overlay);
-}
-
-/** B: one sheet of paper. The text is printed in ink on the left of the paper; the photo is
- *  printed on its right, on the same paper, with no frame between them. */
-async function variantB(l: Lesson, withName = false) {
-  const col = 520;
-  const print = await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b-paper').then(async (bg) =>
-    // Draw the whole sheet as paper and dots, then print the photo only in the right part.
-    l.photo ? bg.replace(/<image[^>]*\/>/, '') + (await printLayer(l, { x: col, y: 0, w: W - col, h: H }, 'b')) : withName ? printLayer({ ...l, photo: BLANK }, { x: 0, y: 0, w: W, h: H }, 'b') : printLayer(l, { x: 0, y: 0, w: W, h: H }, 'b'),
-  );
-  const overlay = div(
-    { width: W, height: H, display: 'flex', flexDirection: l.photo ? 'row' : 'column', justifyContent: l.photo ? 'flex-start' : 'flex-end' },
-    div(
-      { display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box', width: l.photo ? col : W, height: l.photo || withName ? H : 'auto', padding: '56px 48px 56px 60px', color: INK },
-      [
-        // B3: the site name in the upper left, on every card (no placeholder without a photo).
-        withName
-          ? el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 88, lineHeight: 0.9, letterSpacing: -0.03 * 88 }, 'Tá Falado', { lang: 'pt-BR' })
-          : div({ display: 'flex' }),
+        el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 88, lineHeight: 0.9, letterSpacing: -0.03 * 88 }, 'Tá Falado', { lang: 'pt-BR' }),
         div({ display: 'flex', flexDirection: 'column' }, [
           div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 42, marginBottom: 12 }, label(l)),
-          div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: l.photo ? titleSize(l.title, 72, 60) : 76, lineHeight: 1, lineClamp: 4 }, l.title),
+          div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: !l.photo ? 76 : l.title.length > 34 ? 60 : 72, lineHeight: 1, lineClamp: 4 }, l.title),
         ]),
       ],
     ),
@@ -195,34 +151,18 @@ async function variantB(l: Lesson, withName = false) {
   return compose(print, overlay);
 }
 
-/** C: the caption strip. The print fills the top; a band of solid ink along the foot carries the
- *  series and title in the paper colour, like a caption under a plate. */
-async function variantC(l: Lesson) {
-  const paper = PAPER[l.series];
-  const print = await printLayer(l, { x: 0, y: 0, w: W, h: H }, 'c');
-  const overlay = div(
-    { width: W, height: H, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' },
-    div({ display: 'flex', flexDirection: 'column', padding: '34px 60px 44px', backgroundColor: INK, color: paper }, [
-      div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 30, marginBottom: 4 }, label(l)),
-      div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: titleSize(l.title, 70, 60), lineHeight: 1.02, lineClamp: 2 }, l.title),
-    ]),
-  );
-  return compose(print, overlay);
-}
-
 // ---- Run ------------------------------------------------------------------------------------
 const LESSONS = ['pronunciation-16', 'pronunciation-11', 'pronunciation-04', 'grammar-17', 'grammar-14', 'supplementary-01'];
-const VARIANTS = { B4: (l: Lesson) => variantB(l, true) };
 const out = 'prototype-renders';
 await mkdir(out, { recursive: true });
 const lessons = await Promise.all(LESSONS.map(loadLesson));
 
-for (const [name, render] of Object.entries(VARIANTS)) {
+{
   const pngs: Buffer[] = [];
   for (const l of lessons) {
-    const png = await render(l);
+    const png = await ogImage(l);
     pngs.push(png);
-    await writeFile(`${out}/${name}-${l.slug}.png`, png);
+    await writeFile(`${out}/${l.slug}.png`, png);
   }
   // A contact sheet at link-preview sizes: Slack/social (~400px) and an iMessage bubble (~260px),
   // plus a 120px thumbnail (a compact card or a notification).
@@ -242,6 +182,6 @@ for (const [name, render] of Object.entries(VARIANTS)) {
     });
   });
   const sheet = `<svg xmlns="http://www.w3.org/2000/svg" width="${sheetW}" height="${sheetH}"><rect width="100%" height="100%" fill="#f6f7f2"/>${imgs.join('')}</svg>`;
-  await writeFile(`${out}/sheet-${name}.png`, new Resvg(sheet, { fitTo: { mode: 'zoom', value: 2 } }).render().asPng());
+  await writeFile(`${out}/sheet.png`, new Resvg(sheet, { fitTo: { mode: 'zoom', value: 2 } }).render().asPng());
 }
 console.log('done');
