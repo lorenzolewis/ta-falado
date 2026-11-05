@@ -1,0 +1,126 @@
+---
+// PROTOTYPE (#55) variant A7, "Print cover": A5's two-colour dot-screen print, but framed at 9:7,
+// the photos' average shape (mean 1.28, median 1.29), so most of each photo survives the crop.
+// The series and title sit on the foot of the photo over a gradient that fades from clear to the
+// page colour, so the title keeps its contrast in both themes whatever the photo. The gradient
+// belongs to the title block, so it grows with a long title. Phone: edge to edge. Desktop: a
+// rounded cover, no wider than 40rem. No photo (Supplementary): A's header as it is.
+import Base from '../../../layouts/Base.astro';
+import Switcher from '../_Switcher.astro';
+import Parts from '../_AParts.astro';
+import { sampleStaticPaths, view } from '../_lesson';
+import '../_a-family.css';
+
+export const getStaticPaths = sampleStaticPaths;
+const { lesson } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="af a7" data-proto-lesson={v.trackJson}>
+    <header>
+      <div class:list={['cover', { bare: !v.photo }]}>
+        {
+          v.photo && (
+            <div class="print">
+              <img src={v.photo.url} alt={v.photo.alt} />
+            </div>
+          )
+        }
+        <div class="name">
+          <p class="af-series">{v.series} {v.number}</p>
+          <h1 class="af-title">{v.title}</h1>
+        </div>
+      </div>
+      <p class="af-facts">
+        First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.
+        {v.topic && <> Culture talk: {v.topic}.</>}
+      </p>
+      <Parts part="play" v={v} />
+    </header>
+    <Parts part="body" v={v} />
+  </article>
+  <Switcher variant="a7" lesson={lesson.id} />
+</Base>
+
+<script>
+  import '../_play';
+</script>
+
+<style>
+  .a7 {
+    --bleed-x: 20px;
+    --bleed-y: var(--space-24);
+    max-inline-size: 44rem;
+  }
+
+  /* The photo and the title share one grid cell; the title block sits on the photo's foot. */
+  .cover {
+    display: grid;
+    margin: calc(-1 * var(--bleed-y)) calc(-1 * var(--bleed-x)) 0;
+  }
+  .cover > * {
+    grid-area: 1 / 1;
+  }
+  .print {
+    position: relative;
+    aspect-ratio: 9 / 7;
+    overflow: hidden;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    background: var(--ipe);
+  }
+  .print img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.35) brightness(1.05);
+    mix-blend-mode: multiply;
+  }
+  /* The dot screen. */
+  .print::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, var(--ipe) 0.9px, transparent 1.5px) 0 0 / 4px 4px;
+    opacity: 0.55;
+  }
+  .name {
+    position: relative;
+    align-self: end;
+    padding: 112px var(--bleed-x) 0;
+    /* Clear at the top, the page colour by the series line, so the text always has the page behind it. */
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--surface) 70%, transparent) 45%,
+      var(--surface) 80%
+    );
+  }
+  .cover.bare {
+    margin: 0;
+  }
+  .cover.bare .name {
+    padding: 0;
+    background: none;
+  }
+  .af-title {
+    margin-block-end: 0;
+  }
+  .af-facts {
+    margin-block-start: var(--space-12);
+  }
+
+  @media (min-width: 52rem) {
+    .a7 {
+      --bleed-x: 0px;
+      --bleed-y: 0px;
+    }
+    .cover {
+      max-inline-size: 40rem;
+    }
+    .print {
+      border-radius: var(--radius-card);
+    }
+  }
+</style>
