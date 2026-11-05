@@ -16,6 +16,8 @@ interface Props {
   jsonLd?: object;
   /** Keep the page out of search results, with no canonical URL (the 404 page). @astrojs/sitemap leaves the 404 out by itself. */
   noindex?: boolean;
+  /** PROTOTYPE (#53): render only the slot, with no header, main or footer. */
+  bare?: boolean;
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   ogImage,
   jsonLd,
   noindex = false,
+  bare = false,
 } = Astro.props;
 // Canonical, og:url and og:image need absolute URLs, so they come from `site` (astro.config.ts).
 if (!Astro.site) throw new Error('Set `site` in astro.config.ts: canonical URLs and og:image need it.');
@@ -58,24 +61,30 @@ const image = ogImage
     <meta name="twitter:description" content={description} />
     {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLdScript(jsonLd)} />}
     <ClientRouter />
+    <slot name="head" />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="wrap">
-      <p><a href="/" lang="pt-BR">Tá Falado</a></p>
-    </header>
-    <main id="main" class="wrap">
-      <slot />
-    </main>
-    <footer class="wrap">
-      <p>
-        <small>
-          An independent, unofficial archive. Original lessons by COERLL at the University of Texas at Austin, licensed{' '}
-          <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.{' '}
-          <a href="/about">About this site</a>
-        </small>
-      </p>
-    </footer>
+    {/* PROTOTYPE (#53): a `bare` page brings its own header, main and footer. */}
+    {bare ? <slot /> : (
+      <>
+        <header class="wrap">
+          <p><a href="/" lang="pt-BR">Tá Falado</a></p>
+        </header>
+        <main id="main" class="wrap">
+          <slot />
+        </main>
+        <footer class="wrap">
+          <p>
+            <small>
+              An independent, unofficial archive. Original lessons by COERLL at the University of Texas at Austin, licensed{' '}
+              <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.{' '}
+              <a href="/about">About this site</a>
+            </small>
+          </p>
+        </footer>
+      </>
+    )}
     <!-- Outside <main>, and on every page, so it is kept across navigations (ADR 0001). -->
     <Player />
   </body>

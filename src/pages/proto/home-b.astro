@@ -1,0 +1,477 @@
+---
+// PROTOTYPE (#53), variant B "Toolbar and tabs": the filter lives in a sticky top bar with the
+// wordmark, and series tabs stick under it. No big name: a one-line intro, a slim Continue strip,
+// and rows led by a number badge that turns into a ✓ when the lesson is finished.
+import FinishedMark from '../../components/FinishedMark.astro';
+import { ICON } from '../../components/proto/icons';
+import { homeData } from '../../components/proto/home-data';
+import ProtoHead from '../../components/proto/ProtoHead.astro';
+import ProtoSwitcher from '../../components/proto/ProtoSwitcher.astro';
+import Base from '../../layouts/Base.astro';
+
+const groups = await homeData();
+const SUGGESTIONS = ['nh', 'ficar', 'restaurant'];
+---
+
+<Base title="Home B (prototype)" noindex bare>
+  <ProtoHead slot="head" />
+  <div class="vb" data-variant="b">
+    <header class="bar">
+      <div class="bar-in">
+        <a class="wordmark" href="/proto/home-b" lang="pt-BR">Tá Falado</a>
+        <search class="field">
+          <label for="lesson-filter" class="visually-hidden">Filter lessons</label>
+          <Fragment set:html={ICON.search} />
+          <input type="search" id="lesson-filter" autocomplete="off" placeholder="Filter lessons" />
+        </search>
+      </div>
+      <nav class="tabs" aria-label="Series">
+        {
+          groups.map((g) => (
+            <a href={`#b-${g.id}`} data-tab={g.id}>
+              {g.label} <span class="tab-count" data-tab-count>{g.size}</span>
+            </a>
+          ))
+        }
+      </nav>
+    </header>
+
+    <main id="main">
+      <div class="intro" data-intro>
+        <p class="lede">
+          Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers, from the podcast <i lang="pt-BR"
+            >Tá Falado</i
+          >.
+        </p>
+
+        <section class="continue" aria-labelledby="b-continue" data-continue hidden>
+          <button type="button" class="play" data-continue-play aria-label="Resume">
+            <Fragment set:html={ICON.play} />
+          </button>
+          <div class="continue-text">
+            <h2 id="b-continue">Continue</h2>
+            <p class="continue-title"><a data-continue-link href="/"></a></p>
+            <div class="meter" data-continue-bar><span></span></div>
+            <p class="continue-time"><span data-continue-left></span><span class="visually-hidden" data-continue-time></span></p>
+          </div>
+        </section>
+      </div>
+
+      <p class="status" id="lesson-filter-status" role="status"></p>
+
+      <div class="empty" data-empty hidden>
+        <p class="empty-title">Nothing matches “<span data-empty-query></span>”.</p>
+        <p>Search by sound, word or topic. Try:</p>
+        <p class="chips">{SUGGESTIONS.map((s) => <button type="button" data-suggest={s}>{s}</button>)}</p>
+      </div>
+
+      {
+        groups.map((g) => (
+          <section class="series" id={`b-${g.id}`} aria-labelledby={`b-h-${g.id}`} data-series={g.id}>
+            <div class="series-head">
+              <h2 id={`b-h-${g.id}`}>{g.label}</h2>
+              <p class="series-progress" data-has-finished hidden>
+                <span data-finished-count={g.id}>0</span> of {g.size} finished
+                <span class="meter small" data-finished-bar={g.id} data-size={g.size}><span /></span>
+              </p>
+            </div>
+            <ol class="lessons">
+              {g.rows.map((r) => (
+                <li class="lesson" data-filter-text={r.filterText} data-path={r.path} data-seconds={r.seconds}>
+                  <span class="badge" aria-hidden="true">
+                    <span class="badge-num">{r.number}</span>
+                    <span class="badge-check" set:html={ICON.check} />
+                  </span>
+                  <a href={r.path}>
+                    <span class="visually-hidden">{g.label} {r.number}: </span>
+                    <span class="title">{r.title}</span>
+                  </a>
+                  <span class="meta">
+                    {r.topic && <span class="topic">{r.topic}</span>}
+                    <time datetime={r.iso}>{r.duration}</time>
+                    <FinishedMark id={r.path} />
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))
+      }
+    </main>
+
+    <footer class="foot">
+      <p>
+        An independent, unofficial archive of lessons by COERLL, University of Texas at Austin (<a
+          href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a
+        >). <a href="/about">About</a> · <a href="/feed.xml">Feed</a>
+      </p>
+    </footer>
+  </div>
+  <ProtoSwitcher current="b" />
+</Base>
+
+<style is:global>
+  .vb p {
+    margin-block: 0;
+  }
+  .vb .bar {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 3;
+    background: var(--bg);
+    border-block-end: 1px solid var(--line);
+  }
+  .vb .bar-in,
+  .vb .tabs,
+  .vb main,
+  .vb .foot {
+    max-inline-size: 44rem;
+    margin-inline: auto;
+    padding-inline: 16px;
+  }
+  .vb .bar-in {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-block: 8px;
+  }
+  .vb .wordmark {
+    font: italic 700 1.3125rem/1 var(--serif);
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+    padding-block: 12px;
+  }
+  .vb .field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 44px;
+    padding-inline: 14px;
+    border: 2px solid var(--control);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  .vb .field:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .vb .field .icon {
+    color: var(--muted);
+    inline-size: 18px;
+    block-size: 18px;
+  }
+  .vb .field input {
+    flex: 1;
+    min-inline-size: 0;
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-size: 1.0625rem;
+  }
+  .vb .field input::placeholder {
+    color: var(--muted);
+  }
+  .vb .tabs {
+    display: flex;
+    gap: 6px;
+    padding-block: 0 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .vb .tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-block-size: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+    border: 1px solid var(--line);
+  }
+  .vb .tabs a[aria-current='true'] {
+    background: var(--accent);
+    color: var(--on-accent);
+    border-color: var(--accent);
+  }
+  .vb .tabs a.none {
+    opacity: 0.45;
+  }
+  .vb .tab-count {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+  .vb main {
+    padding-block: 16px 0;
+  }
+  /* Room for the sticky bar when jumping to a series. */
+  .vb .series {
+    scroll-margin-block-start: 120px;
+  }
+  .vb .intro[hidden],
+  .vb .continue[hidden],
+  .vb .series[hidden],
+  .vb .lesson[hidden],
+  .vb .empty[hidden] {
+    display: none;
+  }
+  .vb .lede {
+    font: 1.3125rem/1.45 var(--serif);
+    color: var(--muted);
+  }
+  .vb .continue {
+    margin-block-start: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 18px 14px 14px;
+    border-radius: 20px;
+    background: var(--strong);
+    color: var(--on-strong);
+  }
+  .vb .play {
+    display: grid;
+    place-items: center;
+    inline-size: 56px;
+    block-size: 56px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--ipe);
+    color: var(--on-ipe);
+    cursor: pointer;
+  }
+  .vb .continue :focus-visible {
+    outline-color: var(--ipe);
+  }
+  .vb .continue-text {
+    display: grid;
+    gap: 4px;
+    min-inline-size: 0;
+  }
+  .vb .continue h2 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0;
+  }
+  .vb .continue-title {
+    font: 700 1.25rem/1.15 var(--serif);
+  }
+  .vb .continue-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .vb .continue-time {
+    font-size: 0.875rem;
+  }
+  .vb .meter {
+    block-size: 6px;
+    border-radius: 999px;
+    background: var(--track-on-strong);
+    margin-block: 4px 2px;
+  }
+  .vb .meter > span {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--p, 0%);
+    border-radius: inherit;
+    background: var(--ipe);
+  }
+  .vb .meter.small {
+    display: inline-block;
+    inline-size: 64px;
+    block-size: 6px;
+    margin: 0 0 0 6px;
+    vertical-align: middle;
+    background: var(--line);
+  }
+  .vb .meter.small > span {
+    background: var(--accent);
+  }
+  .vb .status {
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+  .vb .status:empty {
+    display: none;
+  }
+  .vb .empty {
+    margin-block: 32px;
+    display: grid;
+    gap: 8px;
+  }
+  .vb .empty-title {
+    font: 700 1.5rem/1.2 var(--serif);
+  }
+  .vb .chips {
+    display: flex;
+    gap: 8px;
+  }
+  .vb .chips button {
+    min-block-size: 44px;
+    padding: 0 16px;
+    border: 2px solid var(--accent);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .vb .series-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4px 12px;
+    margin-block: 28px 8px;
+  }
+  .vb .series h2 {
+    font: 700 1.75rem/1.1 var(--serif);
+    margin: 0;
+  }
+  .vb .series-progress {
+    font-size: 0.875rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .vb .series-progress[hidden] {
+    display: none;
+  }
+  .vb .lessons {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .vb .lesson {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    grid-template-areas: 'badge title' 'badge meta';
+    column-gap: 12px;
+    align-items: center;
+    padding-block: 10px;
+    border-block-end: 1px solid var(--line);
+  }
+  .vb .badge {
+    grid-area: badge;
+    display: grid;
+    place-items: center;
+    inline-size: 40px;
+    block-size: 40px;
+    border-radius: 999px;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    font: 700 1.125rem/1 var(--serif);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .vb .badge-check {
+    display: none;
+  }
+  .vb .badge-check .icon {
+    inline-size: 20px;
+    block-size: 20px;
+    stroke-width: 3;
+  }
+  .vb .lesson[data-state='finished'] .badge {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .vb .lesson[data-state='finished'] .badge-num {
+    display: none;
+  }
+  .vb .lesson[data-state='finished'] .badge-check {
+    display: grid;
+  }
+  .vb .lesson[data-state='started'] .badge {
+    border-color: var(--ipe);
+    box-shadow: inset 0 0 0 3px var(--ipe);
+  }
+  .vb .lesson a {
+    grid-area: title;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .vb .lesson a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .vb .lesson a:hover .title {
+    text-decoration: underline;
+  }
+  .vb .meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 10px;
+    font-size: 0.875rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* The badge already shows finished; the real mark stays for screen readers. */
+  .vb .meta [data-finished] {
+    position: absolute;
+    clip-path: inset(50%);
+  }
+  .vb .foot {
+    margin-block: 40px 0;
+    padding-block: 16px 32px;
+    color: var(--muted);
+    font-size: 0.875rem;
+    line-height: 1.45;
+  }
+</style>
+
+<script>
+  import { onPage, showProgress, wireFilter } from '../../components/proto/proto-client';
+
+  onPage((signal) => {
+    if (!document.querySelector('[data-variant="b"]')) return;
+    showProgress();
+    const input = document.querySelector<HTMLInputElement>('#lesson-filter')!;
+    const status = document.querySelector<HTMLElement>('#lesson-filter-status')!;
+    const intro = document.querySelector<HTMLElement>('[data-intro]')!;
+    const empty = document.querySelector<HTMLElement>('[data-empty]')!;
+    const sections = [...document.querySelectorAll<HTMLElement>('[data-series]')];
+    const tabs = [...document.querySelectorAll<HTMLAnchorElement>('[data-tab]')];
+
+    const run = wireFilter(
+      input,
+      ({ query, matches, rows }) => {
+        rows.forEach((row, i) => (row.hidden = !matches.has(i)));
+        // While typing, the intro and Continue strip step aside so results start right under the bar.
+        intro.hidden = !!query;
+        sections.forEach((s, i) => {
+          const shown = s.querySelectorAll('li:not([hidden])').length;
+          s.hidden = shown === 0;
+          tabs[i]!.querySelector('[data-tab-count]')!.textContent = String(shown);
+          tabs[i]!.classList.toggle('none', shown === 0);
+        });
+        empty.hidden = !query || matches.size > 0;
+        empty.querySelector('[data-empty-query]')!.textContent = query;
+        status.textContent = !query || !matches.size ? '' : `${matches.size} ${matches.size === 1 ? 'lesson matches' : 'lessons match'}`;
+      },
+      signal,
+    );
+    for (const b of document.querySelectorAll<HTMLButtonElement>('[data-suggest]')) {
+      b.addEventListener('click', () => ((input.value = b.dataset.suggest!), run(), input.focus()), { signal });
+    }
+
+    // The tab of the series at the top of the screen is the current one.
+    const spy = () => {
+      const top = sections.find((s) => !s.hidden && s.getBoundingClientRect().bottom > 130);
+      tabs.forEach((t) => t.setAttribute('aria-current', String(t.dataset.tab === top?.dataset.series)));
+    };
+    addEventListener('scroll', spy, { signal, passive: true });
+    input.addEventListener('input', spy, { signal });
+    spy();
+  });
+</script>

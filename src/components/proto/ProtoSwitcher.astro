@@ -1,0 +1,151 @@
+---
+// PROTOTYPE (#53): the floating bar that flips between home-page variants and fakes progress.
+// Deliberately unlike the design (black pill, system font) so it is never mistaken for it.
+interface Props {
+  current: string;
+}
+const VARIANTS = [
+  { key: 'a', name: 'Notebook index' },
+  { key: 'b', name: 'Toolbar and tabs' },
+  { key: 'c', name: 'Rail and map' },
+];
+const i = VARIANTS.findIndex((v) => v.key === Astro.props.current);
+const prev = VARIANTS[(i + VARIANTS.length - 1) % VARIANTS.length]!;
+const next = VARIANTS[(i + 1) % VARIANTS.length]!;
+const cur = VARIANTS[i]!;
+---
+
+<nav class="proto-bar" aria-label="Prototype variants" data-proto-bar>
+  <div class="row">
+    <a href={`/proto/home-${prev.key}`} data-prev aria-label={`Previous: ${prev.name}`}>‹</a>
+    <span class="label"><b>{cur.key.toUpperCase()}</b> {cur.name}</span>
+    <a href={`/proto/home-${next.key}`} data-next aria-label={`Next: ${next.name}`}>›</a>
+  </div>
+  <div class="row small">
+    <button type="button" data-proto-progress></button>
+    <button type="button" data-proto-theme></button>
+  </div>
+  <output class="state" data-proto-state></output>
+</nav>
+
+<style>
+  .proto-bar {
+    position: fixed;
+    z-index: 100;
+    inset-block-end: calc(var(--player-block-size, 0px) + 8px);
+    inset-inline-end: 8px;
+    display: grid;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 14px;
+    background: #000;
+    color: #fff;
+    font: 13px/1.3 ui-monospace, Menlo, monospace;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+    max-inline-size: calc(100vw - 16px);
+    opacity: 0.92;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .label {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+  }
+  a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 20px;
+    padding: 0 8px;
+  }
+  button {
+    font: inherit;
+    color: #fff;
+    background: #333;
+    border: 0;
+    border-radius: 8px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .state {
+    color: #9f9;
+    font-size: 11px;
+  }
+  .proto-bar :focus-visible {
+    outline: 2px solid #ff0;
+  }
+</style>
+
+<script>
+  // Fake progress, written in the real storage shape so the real progress-ui shows it.
+  const KEY = 'tafalado:v1:lessons';
+  function demo() {
+    const now = Date.now();
+    const done = (id: string, d: number) => ({ [id]: { position: d, finished: true, playedAt: now - 86_400_000 } });
+    return {
+      ...done('/pronunciation/01', 632),
+      ...done('/pronunciation/02', 567),
+      ...done('/pronunciation/03', 525),
+      ...done('/grammar/01', 600),
+      '/grammar/17': { position: 185, finished: false, playedAt: now - 60_000 },
+    };
+  }
+  const get = (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  };
+  const set = (k: string, v: string | null) => {
+    try {
+      v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+    } catch {}
+  };
+  function applyTheme() {
+    const t = get('proto:theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    else delete document.documentElement.dataset.theme;
+  }
+  document.addEventListener('astro:after-swap', applyTheme);
+
+  document.addEventListener('astro:page-load', () => {
+    const bar = document.querySelector<HTMLElement>('[data-proto-bar]');
+    if (!bar) return;
+    applyTheme();
+    const progressBtn = bar.querySelector<HTMLButtonElement>('[data-proto-progress]')!;
+    const themeBtn = bar.querySelector<HTMLButtonElement>('[data-proto-theme]')!;
+    const state = bar.querySelector<HTMLElement>('[data-proto-state]')!;
+    function render() {
+      const raw = get(KEY);
+      const map = raw ? (JSON.parse(raw) as Record<string, { finished: boolean }>) : {};
+      const finished = Object.values(map).filter((e) => e.finished).length;
+      const open = Object.entries(map).filter(([, e]) => !e.finished).map(([id]) => id);
+      progressBtn.textContent = raw ? 'Clear progress' : 'Fake progress';
+      themeBtn.textContent = `Theme: ${get('proto:theme') ?? 'auto'}`;
+      state.textContent = `${finished} finished · continue: ${open[0] ?? 'none'}`;
+    }
+    progressBtn.onclick = () => {
+      set(KEY, get(KEY) ? null : JSON.stringify(demo()));
+      location.reload(); // progress.ts reads storage once per visit
+    };
+    themeBtn.onclick = () => {
+      const order = [null, 'light', 'dark'];
+      set('proto:theme', order[(order.indexOf(get('proto:theme')) + 1) % 3] ?? null);
+      applyTheme();
+      render();
+    };
+    render();
+  });
+
+  // ← → flip variants, unless typing or the player (which owns those keys) is open.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return;
+    if (!document.querySelector<HTMLElement>('[data-player]')?.hidden) return;
+    document.querySelector<HTMLAnchorElement>(e.key === 'ArrowLeft' ? '[data-prev]' : '[data-next]')?.click();
+  });
+</script>

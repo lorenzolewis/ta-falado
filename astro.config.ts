@@ -7,5 +7,7 @@ export default defineConfig({
 	build: { format: "file" },
 	// Lists every page (not the 404) at /sitemap-index.xml, with URLs from `site`.
 	integrations: [sitemap()],
+	// PROTOTYPE (#53): the dev toolbar covers the variant switcher.
+	devToolbar: { enabled: false },
 	experimental: { incrementalBuild: true },
 });

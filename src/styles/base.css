@@ -1,15 +1,85 @@
-/* Minimal base styles. The visual design is the UI pass (#29). */
+/* Base styles. PROTOTYPE branch (#53): tokens copied from the #52 identity decision. */
 :root {
   color-scheme: light dark;
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
+  --bg: #f6f7f2;
+  --surface: #ffffff;
+  --ink: #1b2a20;
+  --muted: #4e5d53;
+  --accent: #1c6a43;
+  --on-accent: #ffffff;
+  --strong: #1d3b2a;
+  --on-strong: #ffffff;
+  --ipe: #f5c842;
+  --on-ipe: #1b2a20;
+  --line: #d8ddd3;
+  --control: #7b887e;
+  --track-on-strong: color-mix(in srgb, var(--on-strong) 25%, var(--strong));
+  --serif: 'Alegreya', Georgia, serif;
+  --sans: 'Alegreya Sans', system-ui, sans-serif;
+
+  font-family: var(--sans);
+  font-size: 100%;
+  line-height: 1.4;
   overflow-wrap: break-word;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   /* Set by the sticky mini-player (src/lib/player-ui.ts) so it never covers focused content. */
   scroll-padding-block-end: var(--player-block-size, 0px);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #111813;
+    --surface: #18221b;
+    --ink: #e8ede5;
+    --muted: #a7b3a9;
+    --accent: #86d4a8;
+    --on-accent: #0f2017;
+    --strong: #21402e;
+    --on-strong: #f1f5ee;
+    --ipe: #e9bc2e;
+    --on-ipe: #1b1806;
+    --line: #2a362d;
+    --control: #6d7c71;
+  }
+}
+/* Prototype-only theme override, set by the switcher bar. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #111813;
+  --surface: #18221b;
+  --ink: #e8ede5;
+  --muted: #a7b3a9;
+  --accent: #86d4a8;
+  --on-accent: #0f2017;
+  --strong: #21402e;
+  --on-strong: #f1f5ee;
+  --ipe: #e9bc2e;
+  --on-ipe: #1b1806;
+  --line: #2a362d;
+  --control: #6d7c71;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
 }
 
 .wrap {
@@ -23,9 +93,28 @@ img {
   block-size: auto;
 }
 
+a {
+  color: var(--accent);
+}
+
 :focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.icon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.icon .f {
+  fill: currentColor;
+  stroke: none;
 }
 
 .visually-hidden,
@@ -36,4 +125,37 @@ img {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* The mini-player, restyled with the tokens just enough that Resume looks right (its design is the lesson prototype). */
+.player {
+  background: var(--strong) !important;
+  color: var(--on-strong);
+  border: 0 !important;
+  border-radius: 24px 24px 0 0;
+  padding: 12px 0 !important;
+}
+.player a {
+  color: var(--on-strong);
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+}
+.player button,
+.player select {
+  min-block-size: 44px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  padding-inline: 12px;
+  font-weight: 700;
+}
+.player button[data-action='toggle'] {
+  background: var(--ipe);
+  color: var(--on-ipe);
+  border-color: var(--ipe);
+}
+.player :focus-visible {
+  outline-color: var(--ipe);
 }
