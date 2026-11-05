@@ -4,6 +4,7 @@ import { render } from 'astro:content';
 import FinishedMark from '../../components/FinishedMark.astro';
 import PlayButton from '../../components/PlayButton.astro';
 import Base from '../../layouts/Base.astro';
+import { ogImagePath } from '../../lib/artwork';
 import { formatDate, formatDuration, isoDate, isoDuration } from '../../lib/format';
 import { getLessons, lessonPath, type Lesson } from '../../lib/lessons';
 import { SERIES_LABEL } from '../../lib/series';
@@ -22,7 +23,7 @@ const { Content } = await render(lesson);
 const heading = `${SERIES_LABEL[data.series]} ${data.number}`;
 ---
 
-<Base title={`${heading}: ${data.title}`}>
+<Base title={`${heading}: ${data.title}`} ogImage={ogImagePath(data)}>
   <article>
     <hgroup>
       <p>{heading} <FinishedMark id={lessonPath(data)} /></p>
