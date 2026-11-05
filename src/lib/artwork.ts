@@ -6,8 +6,10 @@ import type { Series } from './series';
 
 type LessonRef = { series: Series; number: number };
 
+/** The podcast cover's file name, beside the episode covers (never a lesson's `series-NN`). */
+export const PODCAST_COVER_SLUG = 'cover';
 /** The podcast cover (3000×3000, RGB, no transparency). */
-export const PODCAST_COVER_PATH = '/artwork/cover.png';
+export const PODCAST_COVER_PATH = `/artwork/${PODCAST_COVER_SLUG}.png`;
 
 /** One cover per episode, for `itunes:image` and Media Session: `/artwork/pronunciation-01.png`. */
 export function episodeCoverPath(lesson: LessonRef): string {

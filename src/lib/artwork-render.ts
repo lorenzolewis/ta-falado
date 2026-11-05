@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
-import { artworkSlug, OG_HEIGHT, OG_WIDTH } from './artwork';
+import { artworkSlug, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
 import { getLessons, shortTitle, type Lesson } from './lessons';
 import { SERIES_LABEL, type Series } from './series';
 
@@ -44,12 +44,12 @@ const COLORS: Record<Series | 'site', { background: string; text: string }> = {
   supplementary: { background: '#7a3e00', text: '#ffffff' },
 };
 
-export function renderPodcastCover(): Promise<Buffer> {
+function renderPodcastCover(): Promise<Buffer> {
   const content = { headline: 'Tá Falado', title: 'Brazilian Portuguese pronunciation and grammar for Spanish speakers' };
   return render(content, SQUARE, COVER_SIZE);
 }
 
-export function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
+function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
   return render(lessonContent(lesson), SQUARE, EPISODE_COVER_SIZE);
 }
 
@@ -72,6 +72,22 @@ export async function lessonArtworkPaths() {
     if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
     return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${fontKey}` };
   });
+}
+
+/**
+ * getStaticPaths for the covers in /artwork/: the podcast cover, then one per episode. They share
+ * one route because Astro only caches routes with getStaticPaths, and a second dynamic route
+ * beside `[slug].png` would collide with it. The podcast cover's text lives in this module, so
+ * its key only needs the fonts.
+ */
+export async function coverArtworkPaths() {
+  const podcastCover = { params: { slug: PODCAST_COVER_SLUG }, props: { lesson: undefined }, cacheKey: await fontHash() };
+  return [podcastCover, ...(await lessonArtworkPaths())];
+}
+
+/** Draws a cover from `coverArtworkPaths`: the podcast cover when there is no lesson. */
+export function renderCover(lesson: Lesson | undefined): Promise<Buffer> {
+  return lesson ? renderEpisodeCover(lesson) : renderPodcastCover();
 }
 
 /** The response a build endpoint returns for a rendered image. */
