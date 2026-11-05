@@ -28,6 +28,7 @@ img {
   outline-offset: 2px;
 }
 
+.visually-hidden,
 .skip-link:not(:focus) {
   position: absolute;
   inline-size: 1px;

@@ -1,0 +1,9 @@
+---
+// A ✓ for a finished lesson. Hidden until src/lib/progress-ui.ts finds the lesson finished on this device.
+interface Props {
+  /** The lesson's path, as in `Track.id`. */
+  id: string;
+}
+---
+
+<span data-finished={Astro.props.id} hidden><span aria-hidden="true">✓</span><span class="visually-hidden">Finished</span></span>

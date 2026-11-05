@@ -2,7 +2,11 @@
 // The persistent mini-player (#15, ADR 0001). It is on every page under the same persist name, so
 // <ClientRouter /> keeps this element (and its focus) across navigations. The audio itself lives in
 // src/lib/player.ts. Minimal on purpose: the visual design is #29.
+import { getLessons, toTrack } from '../lib/lessons';
 import { RATES } from '../lib/player';
+
+// Every lesson in episode order, for autoplay-next and the Continue card (src/lib/progress-ui.ts).
+const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<', '\\u003c');
 ---
 
 <section class="player" aria-label="Audio player" data-player hidden transition:persist="player">
@@ -25,10 +29,12 @@ import { RATES } from '../lib/player';
     <span data-duration>0:00</span>
   </div>
   <p class="wrap" role="status" data-status></p>
+  <script type="application/json" data-tracks is:inline set:html={tracks} />
 </section>
 
 <script>
   import '../lib/player-ui';
+  import '../lib/progress-ui';
 </script>
 
 <style>
