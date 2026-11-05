@@ -6,7 +6,8 @@ import PlayButton from '../../components/PlayButton.astro';
 import Base from '../../layouts/Base.astro';
 import { ogImagePath } from '../../lib/artwork';
 import { formatDate, formatDuration, isoDate, isoDuration } from '../../lib/format';
-import { getLessons, lessonPath, type Lesson } from '../../lib/lessons';
+import { getLessons, lessonPath, lessonTitle, type Lesson } from '../../lib/lessons';
+import { lessonDescription, podcastEpisodeLd } from '../../lib/seo';
 import { SERIES_LABEL } from '../../lib/series';
 
 export const getStaticPaths = (async () => {
@@ -21,9 +22,15 @@ const { lesson } = Astro.props as { lesson: Lesson };
 const { data } = lesson;
 const { Content } = await render(lesson);
 const heading = `${SERIES_LABEL[data.series]} ${data.number}`;
+const description = lessonDescription(lesson.rendered?.html ?? '');
 ---
 
-<Base title={`${heading}: ${data.title}`} ogImage={ogImagePath(data)}>
+<Base
+  title={lessonTitle(data)}
+  description={description}
+  ogImage={ogImagePath(data)}
+  jsonLd={podcastEpisodeLd(data, description, Astro.site!)}
+>
   <article>
     <hgroup>
       <p>{heading} <FinishedMark id={lessonPath(data)} /></p>

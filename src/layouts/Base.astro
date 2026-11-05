@@ -1,20 +1,38 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import Player from '../components/Player.astro';
-import { OG_HEIGHT, OG_WIDTH } from '../lib/artwork';
+import { COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_PATH } from '../lib/artwork';
+import { PODCAST_TITLE } from '../lib/podcast';
+import { jsonLdScript } from '../lib/seo';
 import '../styles/base.css';
 
 interface Props {
   /** Page title, before the site name. Omit on the home page. */
   title?: string;
   description?: string;
-  /** Root-relative path of the page's Open Graph image (1200×630), e.g. from ogImagePath(). */
+  /** Root-relative path of the page's Open Graph image (1200×630), e.g. from ogImagePath(). Defaults to the podcast cover. */
   ogImage?: string;
+  /** schema.org data for the page, from src/lib/seo.ts. */
+  jsonLd?: object;
+  /** Keep the page out of search results and the sitemap's company (the 404 page). */
+  noindex?: boolean;
 }
 
-const { title, description = 'Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers.', ogImage } = Astro.props;
-if (ogImage && !Astro.site) throw new Error('Set `site` in astro.config.ts: og:image needs an absolute URL.');
-const fullTitle = title ? `${title} · Tá Falado` : 'Tá Falado';
+const {
+  title,
+  description = 'Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers.',
+  ogImage,
+  jsonLd,
+  noindex = false,
+} = Astro.props;
+// Canonical, og:url and og:image need absolute URLs, so they come from `site` (astro.config.ts).
+if (!Astro.site) throw new Error('Set `site` in astro.config.ts: canonical URLs and og:image need it.');
+const fullTitle = title ? `${title} · ${PODCAST_TITLE}` : PODCAST_TITLE;
+const canonical = new URL(Astro.url.pathname.replace(/(\/index)?\.html$/, '') || '/', Astro.site).href;
+// Lesson pages have a 1200×630 card; other pages fall back to the square podcast cover.
+const image = ogImage
+  ? { url: new URL(ogImage, Astro.site).href, width: OG_WIDTH, height: OG_HEIGHT, card: 'summary_large_image' }
+  : { url: new URL(PODCAST_COVER_PATH, Astro.site).href, width: COVER_SIZE, height: COVER_SIZE, card: 'summary' };
 ---
 
 <!doctype html>
@@ -24,19 +42,21 @@ const fullTitle = title ? `${title} · Tá Falado` : 'Tá Falado';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <link rel="alternate" type="application/rss+xml" title={PODCAST_TITLE} href="/feed.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={PODCAST_TITLE} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:site_name" content="Tá Falado" />
-    {
-      ogImage && (
-        <>
-          <meta property="og:image" content={new URL(ogImage, Astro.site!).href} />
-          <meta property="og:image:width" content={String(OG_WIDTH)} />
-          <meta property="og:image:height" content={String(OG_HEIGHT)} />
-          <meta name="twitter:card" content="summary_large_image" />
-        </>
-      )
-    }
+    {!noindex && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={image.url} />
+    <meta property="og:image:width" content={String(image.width)} />
+    <meta property="og:image:height" content={String(image.height)} />
+    <meta name="twitter:card" content={image.card} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLdScript(jsonLd)} />}
     <ClientRouter />
   </head>
   <body>

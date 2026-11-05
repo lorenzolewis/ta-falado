@@ -3,12 +3,13 @@ import FinishedMark from '../components/FinishedMark.astro';
 import Base from '../layouts/Base.astro';
 import { formatDuration, isoDuration } from '../lib/format';
 import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
+import { podcastSeriesLd } from '../lib/seo';
 import { SERIES_LABEL } from '../lib/series';
 
 const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await lessonsBySeries(id) })));
 ---
 
-<Base>
+<Base jsonLd={podcastSeriesLd(Astro.site!)}>
   <h1 lang="pt-BR">Tá Falado</h1>
   <p>Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
   <section aria-labelledby="continue" data-continue hidden>

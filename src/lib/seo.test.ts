@@ -1,0 +1,83 @@
+import { describe, expect, it } from 'vitest';
+import { jsonLdScript, lessonDescription, podcastEpisodeLd, podcastSeriesLd } from './seo';
+
+const site = new URL('https://tafalado.example');
+
+describe('lessonDescription', () => {
+  it('turns a short intro into plain text', () => {
+    expect(lessonDescription('<p>Meet the team: <em>Orlando</em> &amp; <em>Valdo</em>.</p>\n')).toBe(
+      'Meet the team: Orlando & Valdo.',
+    );
+  });
+
+  it('cuts a long intro after the last whole sentence that fits in 160 characters', () => {
+    const first = "There's only one Lesson #1. We'll never have a first again.";
+    const second = 'Today we introduce listeners to the team: Orlando, Valdo, Michelle, and José Luis.';
+    const third = 'Pronunciation wise, we will look at when Brazilians say words with the sound /i/.';
+    expect(lessonDescription(`<p>${first} ${second} ${third}</p>`)).toBe(`${first} ${second}`);
+  });
+
+  it('cuts a long first sentence at a word, with an ellipsis', () => {
+    const words = Array.from({ length: 40 }, (_, i) => `word${i}`).join(' ');
+    const description = lessonDescription(`<p>${words}.</p>`);
+    expect(description).toBe(`${Array.from({ length: 24 }, (_, i) => `word${i}`).join(' ')}…`);
+    expect(description.length).toBeLessThanOrEqual(160);
+  });
+});
+
+describe('podcastEpisodeLd', () => {
+  it('describes a lesson as a schema.org PodcastEpisode with absolute URLs', () => {
+    const lesson = {
+      series: 'grammar' as const,
+      number: 1,
+      episode: 27,
+      title: 'Gostar vs. Gustar',
+      date: new Date('2007-05-08'),
+      audio: { url: '/mp3/tafalado_gra_01.mp3', durationSeconds: 649 },
+    };
+    expect(podcastEpisodeLd(lesson, 'We have made a switch.', site)).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'PodcastEpisode',
+      name: 'Grammar 1: Gostar vs. Gustar',
+      description: 'We have made a switch.',
+      url: 'https://tafalado.example/grammar/01',
+      episodeNumber: 27,
+      datePublished: '2007-05-08',
+      timeRequired: 'PT10M49S',
+      image: 'https://tafalado.example/artwork/grammar-01.png',
+      inLanguage: 'en',
+      license: 'https://creativecommons.org/licenses/by/3.0/',
+      associatedMedia: {
+        '@type': 'AudioObject',
+        contentUrl: 'https://tafalado.example/mp3/tafalado_gra_01.mp3',
+        encodingFormat: 'audio/mpeg',
+        duration: 'PT10M49S',
+      },
+      partOfSeries: { '@type': 'PodcastSeries', name: 'Tá Falado', url: 'https://tafalado.example/' },
+    });
+  });
+});
+
+describe('podcastSeriesLd', () => {
+  it('describes the site as a schema.org PodcastSeries with its feed', () => {
+    expect(podcastSeriesLd(site)).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'PodcastSeries',
+      name: 'Tá Falado',
+      url: 'https://tafalado.example/',
+      webFeed: 'https://tafalado.example/feed.xml',
+      image: 'https://tafalado.example/artwork/cover.png',
+      inLanguage: 'en',
+      license: 'https://creativecommons.org/licenses/by/3.0/',
+      author: { '@type': 'Organization', name: 'COERLL, University of Texas at Austin' },
+    });
+  });
+});
+
+describe('jsonLdScript', () => {
+  it('serialises JSON that cannot close the script element it sits in', () => {
+    const json = jsonLdScript({ name: 'a</script><script>alert(1)</script>' });
+    expect(json).not.toMatch(/<\/script/i);
+    expect(JSON.parse(json)).toEqual({ name: 'a</script><script>alert(1)</script>' });
+  });
+});
