@@ -1,28 +1,22 @@
-// PROTOTYPE (#55), never merged. Shared data for the lesson-page variants at /proto/lesson-{a,b,c}/<lesson>.
-// Three variants of the lesson page, each built for the same five sample lessons, switchable from
-// the floating bar (_Switcher.astro). Underscore-prefixed, so Astro doesn't route this file.
+// PROTOTYPE (#55), never merged. Data for the chosen lesson page at /proto/lesson/<lesson>, built
+// for a few sample lessons. Underscore-prefixed, so Astro doesn't route this file.
 import { statSync } from 'node:fs';
 import { getLessons, lessonPath, toTrack, type Lesson } from '../../lib/lessons';
 import { formatDate, formatDuration, isoDate } from '../../lib/format';
 import { SERIES_LABEL } from '../../lib/series';
 
-/** Picked for the awkward cases: PT + ES words, one word in both languages, a long title, no photo, no topic. */
-export const SAMPLES = ['grammar-17', 'grammar-15', 'pronunciation-11', 'pronunciation-01', 'supplementary-01'] as const;
-export const VARIANTS = [
-  { key: 'a', name: 'Liner notes' },
-  { key: 'a2', name: 'Photo header' },
-  { key: 'a3', name: 'Snapshot' },
-  { key: 'a4', name: 'Play on photo' },
-  { key: 'a5', name: 'Print banner' },
-  { key: 'a6', name: 'Photo in title' },
-  { key: 'a7', name: 'Print cover' },
-  { key: 'a8', name: 'Print cover, name' },
-  { key: 'a9', name: 'Riso' },
-  { key: 'a10', name: 'Line screen' },
-  { key: 'a11', name: 'Poster' },
-  { key: 'a12', name: 'Film' },
-  { key: 'b', name: 'Listening card' },
-  { key: 'c', name: 'Number and rail' },
+/**
+ * Picked for the awkward cases: PT + ES words, one word in both languages, a long title, a
+ * near-square and a panoramic photo, each series' paper colour, no photo, no topic.
+ */
+export const SAMPLES = [
+  'grammar-17',
+  'grammar-15',
+  'grammar-14',
+  'pronunciation-11',
+  'pronunciation-16',
+  'pronunciation-01',
+  'supplementary-01',
 ] as const;
 
 /**

@@ -1,26 +1,19 @@
 ---
-// PROTOTYPE (#55): links to every lesson-page variant and sample lesson, for opening on a phone.
+// PROTOTYPE (#55): links to the chosen lesson page for each sample lesson, for opening on a phone.
 import Base from '../../layouts/Base.astro';
-import { SAMPLES, VARIANTS } from './_lesson';
+import { SAMPLES } from './_lesson';
 ---
 
-<Base title="Lesson page prototypes" noindex>
-  <h1>Lesson page prototypes (#55)</h1>
-  <p>Flip variants with the pink bar (‹ ›, or the [ and ] keys) and pick a sample lesson from its menu.</p>
-  {
-    VARIANTS.map((v) => (
-      <section>
-        <h2>
-          {v.key.toUpperCase()}: {v.name}
-        </h2>
-        <ul>
-          {SAMPLES.map((slug) => (
-            <li>
-              <a href={`/proto/lesson-${v.key}/${slug}`}>{slug}</a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))
-  }
+<Base title="Lesson page prototype" noindex>
+  <h1>Lesson page prototype (#55)</h1>
+  <p>The chosen design (A8, print cover) with each series' paper colour. See PROTOTYPE.md.</p>
+  <ul>
+    {
+      SAMPLES.map((slug) => (
+        <li>
+          <a href={`/proto/lesson/${slug}`}>{slug}</a>
+        </li>
+      ))
+    }
+  </ul>
 </Base>

@@ -1,9 +1,0 @@
----
-// PROTOTYPE (#55) variant A11: A8 with the "poster" treatment (see _PrintCover.astro).
-import PrintCover from '../_PrintCover.astro';
-import { sampleStaticPaths } from '../_lesson';
-
-export const getStaticPaths = sampleStaticPaths;
----
-
-<PrintCover lesson={Astro.props.lesson} variant="a11" placeholder="name" treatment="poster" />

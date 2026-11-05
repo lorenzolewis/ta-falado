@@ -1,5 +1,5 @@
-/* PROTOTYPE (#55): the parts of variant A's header that A3–A6 keep, so each file only holds what's
-   new about its photo. Global, prefixed .af-. */
+/* PROTOTYPE (#55): the lesson page's text styles (series, title, facts, Play row, intro, transcript).
+   Global, prefixed .af-. */
 .af p {
   margin: 0;
 }

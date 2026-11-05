@@ -1,9 +1,0 @@
----
-// PROTOTYPE (#55) variant A10: A8 with the "lines" treatment (see _PrintCover.astro).
-import PrintCover from '../_PrintCover.astro';
-import { sampleStaticPaths } from '../_lesson';
-
-export const getStaticPaths = sampleStaticPaths;
----
-
-<PrintCover lesson={Astro.props.lesson} variant="a10" placeholder="name" treatment="lines" />
