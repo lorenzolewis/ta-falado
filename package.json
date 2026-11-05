@@ -19,6 +19,7 @@
     "validate:feed": "node scripts/validate-feed.ts"
   },
   "dependencies": {
+    "@leeoniya/ufuzzy": "1.0.19",
     "astro": "7.4.5"
   },
   "devDependencies": {
