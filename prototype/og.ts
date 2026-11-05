@@ -186,7 +186,7 @@ async function variantB(l: Lesson, withName = false) {
           ? el('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 88, lineHeight: 0.9, letterSpacing: -0.03 * 88 }, 'Tá Falado', { lang: 'pt-BR' })
           : div({ display: 'flex' }),
         div({ display: 'flex', flexDirection: 'column' }, [
-          div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 34, marginBottom: 10 }, label(l)),
+          div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 42, marginBottom: 12 }, label(l)),
           div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: l.photo ? titleSize(l.title, 72, 60) : 76, lineHeight: 1, lineClamp: 4 }, l.title),
         ]),
       ],
@@ -212,7 +212,7 @@ async function variantC(l: Lesson) {
 
 // ---- Run ------------------------------------------------------------------------------------
 const LESSONS = ['pronunciation-16', 'pronunciation-11', 'pronunciation-04', 'grammar-17', 'grammar-14', 'supplementary-01'];
-const VARIANTS = { B3: (l: Lesson) => variantB(l, true) };
+const VARIANTS = { B4: (l: Lesson) => variantB(l, true) };
 const out = 'prototype-renders';
 await mkdir(out, { recursive: true });
 const lessons = await Promise.all(LESSONS.map(loadLesson));
