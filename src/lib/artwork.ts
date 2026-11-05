@@ -11,6 +11,9 @@ export const PODCAST_COVER_SLUG = 'cover';
 /** The podcast cover (3000×3000, RGB, no transparency). */
 export const PODCAST_COVER_PATH = `/artwork/${PODCAST_COVER_SLUG}.png`;
 
+/** Episode covers: 1400×1400, Apple's minimum, which keeps 46 of them quick to build. */
+export const EPISODE_COVER_SIZE = 1400;
+
 /** One cover per episode, for `itunes:image` and Media Session: `/artwork/pronunciation-01.png`. */
 export function episodeCoverPath(lesson: LessonRef): string {
   return `/artwork/${artworkSlug(lesson)}.png`;

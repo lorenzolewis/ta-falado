@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { episodeCoverPath } from './artwork';
 import type { Track } from './player';
 import { SERIES_LABEL, type Series } from './series';
 
@@ -52,6 +53,8 @@ export function toTrack({ data }: Lesson): Track {
   return {
     id: lessonPath(data),
     title: `${SERIES_LABEL[data.series]} ${data.number}: ${data.title}`,
+    series: SERIES_LABEL[data.series],
+    artwork: episodeCoverPath(data),
     src: data.audio.url,
     durationSeconds: data.audio.durationSeconds,
     episode: data.episode,

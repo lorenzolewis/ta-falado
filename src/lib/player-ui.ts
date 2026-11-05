@@ -2,7 +2,9 @@
 // src/components/Player.astro; under <ClientRouter /> it runs once per visit, so everything
 // that touches a page's own elements happens in `astro:page-load`.
 import { formatDuration } from './format';
+import { bindMediaSession } from './media-session';
 import { JUMP_BACK, JUMP_FORWARD, player, type Track } from './player';
+import { allTracks } from './tracks';
 
 const time = (seconds: number) => formatDuration(Math.floor(seconds));
 
@@ -115,6 +117,9 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 document.addEventListener('keydown', onKeydown);
+
+// Lock-screen and notification controls, where the browser has them.
+if ('mediaSession' in navigator) bindMediaSession(navigator.mediaSession, player, allTracks());
 
 let page: AbortController | undefined;
 document.addEventListener('astro:page-load', () => {

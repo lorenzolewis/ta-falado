@@ -4,16 +4,11 @@
 import { formatDuration } from './format';
 import { player, type Track } from './player';
 import { progress, resumeAt } from './progress';
+import { allTracks } from './tracks';
 
 /** How often, at most, the position is saved while playing. */
 const SAVE_EVERY_MS = 5000;
 
-let tracks: Track[] | undefined;
-/** Every lesson in episode order, embedded once in the persisted player. */
-function allTracks(): Track[] {
-  tracks ??= JSON.parse(document.querySelector('[data-tracks]')?.textContent || '[]') as Track[];
-  return tracks;
-}
 const trackById = (id: string) => allTracks().find((t) => t.id === id);
 
 // --- Player hooks (once per visit) -------------------------------------------------------------

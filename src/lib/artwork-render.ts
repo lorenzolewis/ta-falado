@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
-import { artworkSlug, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
+import { artworkSlug, EPISODE_COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
 import { getLessons, shortTitle, type Lesson } from './lessons';
 import { SERIES_LABEL, type Series } from './series';
 
@@ -16,8 +16,6 @@ import { SERIES_LABEL, type Series } from './series';
 
 /** The podcast cover: 3000×3000, Apple's maximum. */
 export const COVER_SIZE = 3000;
-/** Episode covers: 1400×1400, Apple's minimum, which keeps 46 of them quick to build. */
-export const EPISODE_COVER_SIZE = 1400;
 
 /** A canvas in CSS pixels. Sizes in the template scale with it. */
 interface Size {
