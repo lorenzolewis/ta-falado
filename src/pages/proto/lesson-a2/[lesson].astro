@@ -1,0 +1,171 @@
+---
+// PROTOTYPE (#55) variant A2, "Liner notes, photo in header": A's header (series and number, big
+// serif title, one line of facts, ipê Play pill) with the lesson's one photo moved into it,
+// captioned with the culture topic. Desktop: the photo to the right of the text, like a record
+// sleeve. Phone: the photo first, at no more than its own width. No photo (the two Supplementary
+// lessons): A's header as it is. The intro then runs full width with nothing floated in it.
+// PT words italic in the accent; ES words plain italic.
+import Icon from '../../../components/Icon.astro';
+import Base from '../../../layouts/Base.astro';
+import Switcher from '../_Switcher.astro';
+import { sampleStaticPaths, view } from '../_lesson';
+
+export const getStaticPaths = sampleStaticPaths;
+const { lesson } = Astro.props;
+const v = view(lesson);
+---
+
+<Base title={`${v.series} ${v.number}: ${v.title}`} noindex>
+  <article class="a2" data-proto-lesson={v.trackJson}>
+    <header class:list={{ 'has-photo': v.photo }}>
+      {
+        v.photo && (
+          <figure>
+            <img src={v.photo.url} alt={v.photo.alt} />
+            {v.topic && <figcaption>{v.topic}</figcaption>}
+          </figure>
+        )
+      }
+      <div class="text">
+        <p class="series">{v.series} {v.number}</p>
+        <h1>{v.title}</h1>
+        <p class="facts">
+          First published <time datetime={v.isoDate}>{v.date}</time>. {v.minutes} of audio.
+        </p>
+        <p class="listen">
+          <button type="button" class="btn btn-ipe" data-proto-play>
+            <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span data-proto-label>Play</span>
+          </button>
+          <span class="left" data-proto-left></span>
+        </p>
+      </div>
+    </header>
+
+    <div class="intro" set:html={v.intro} />
+
+    <p class="pdf">
+      <a href={v.pdf}>
+        <Icon name="doc" />
+        <span>Read the transcript <span class="size">PDF{v.pdfSize && `, ${v.pdfSize}`}</span></span>
+      </a>
+    </p>
+  </article>
+  <Switcher variant="a2" lesson={lesson.id} />
+</Base>
+
+<script>
+  import '../_play';
+</script>
+
+<style>
+  .a2 {
+    max-inline-size: 44rem;
+  }
+  p {
+    margin: 0;
+  }
+
+  header {
+    display: grid;
+    gap: var(--space-24);
+  }
+  figure {
+    inline-size: min(100%, 240px);
+    margin: 0;
+  }
+  figure img {
+    display: block;
+    inline-size: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-card);
+  }
+  figcaption {
+    margin-block-start: var(--space-6);
+    color: var(--muted);
+    font-size: var(--text-14);
+    font-weight: 500;
+  }
+
+  .series {
+    color: var(--accent);
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  h1 {
+    margin: var(--space-4) 0 var(--space-12);
+    font-size: clamp(var(--text-36), 7vw, var(--text-60));
+    line-height: 1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .facts {
+    color: var(--muted);
+  }
+  .listen {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-16);
+    margin-block-start: var(--space-24);
+  }
+  .left {
+    color: var(--muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  [data-proto-play] :global(.i-pause),
+  [data-state='playing'] :global(.i-play),
+  [data-state='loading'] :global(.i-play) {
+    display: none;
+  }
+  [data-state='playing'] :global(.i-pause),
+  [data-state='loading'] :global(.i-pause) {
+    display: block;
+  }
+
+  .intro {
+    max-inline-size: 38rem;
+    margin-block-start: 40px;
+    padding-block-start: var(--space-24);
+    border-block-start: 1px solid var(--line);
+    font: var(--text-21) / 1.55 var(--font-serif);
+  }
+  .intro :global(p + p) {
+    margin-block-start: var(--space-16);
+  }
+  .intro :global(.w-pt) {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .pdf {
+    margin-block-start: var(--space-32);
+  }
+  .pdf a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-block-size: 44px;
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  .size {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  /* Wide enough for text and photo side by side: the photo on the right, its top on the series line. */
+  @media (min-width: 64rem) {
+    header.has-photo {
+      grid-template-columns: 1fr 220px;
+      align-items: start;
+      column-gap: 40px;
+    }
+    header.has-photo figure {
+      order: 2;
+      inline-size: 100%;
+      margin-block-start: var(--space-6);
+    }
+  }
+</style>

@@ -10,6 +10,7 @@ import { SERIES_LABEL } from '../../lib/series';
 export const SAMPLES = ['grammar-17', 'grammar-15', 'pronunciation-11', 'pronunciation-01', 'supplementary-01'] as const;
 export const VARIANTS = [
   { key: 'a', name: 'Liner notes' },
+  { key: 'a2', name: 'Photo header' },
   { key: 'b', name: 'Listening card' },
   { key: 'c', name: 'Number and rail' },
 ] as const;

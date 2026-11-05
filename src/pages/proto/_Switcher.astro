@@ -75,6 +75,9 @@ const href = (key: string, slug = lesson) => `/proto/lesson-${key}/${slug}`;
     text-decoration: none;
   }
   .label {
+    max-inline-size: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
     padding-inline: 4px;
   }
   select {
