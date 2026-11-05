@@ -3,8 +3,8 @@
 // the photos' average shape (mean 1.28, median 1.29), so most of each photo survives the crop.
 // The series and title sit on the foot of the photo over a gradient that fades from clear to the
 // page colour, so the title keeps its contrast in both themes whatever the photo. The gradient
-// belongs to the title block, so it grows with a long title. Phone: edge to edge. Desktop: a
-// rounded cover, no wider than 40rem. No photo (Supplementary): A's header as it is.
+// belongs to the title block, so it grows with a long title. Edge to edge across the pane on both
+// phone and desktop (desktop caps the height). No photo (Supplementary): A's header as it is.
 import Base from '../../../layouts/Base.astro';
 import Switcher from '../_Switcher.astro';
 import Parts from '../_AParts.astro';
@@ -111,16 +111,20 @@ const v = view(lesson);
     margin-block-start: var(--space-12);
   }
 
+  /* Desktop: edge to edge across the pane, as on the phone. At full pane width 9:7 would be taller
+     than the window, so the height is capped and the photo crops wider there. */
   @media (min-width: 52rem) {
     .a7 {
-      --bleed-x: 0px;
-      --bleed-y: 0px;
+      --bleed-x: 48px;
+      --bleed-y: 40px;
+      max-inline-size: none !important;
     }
-    .cover {
-      max-inline-size: 40rem;
+    :where(.a7 > :not(header), .a7 header > :not(.cover), .name > *) {
+      max-inline-size: 44rem;
     }
     .print {
-      border-radius: var(--radius-card);
+      max-block-size: min(62vh, 560px);
+      inline-size: 100%;
     }
   }
 </style>
