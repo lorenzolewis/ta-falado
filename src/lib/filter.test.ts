@@ -1,20 +1,29 @@
 import { expect, test } from 'vitest';
-import { matches, normalize, queryTerms } from './filter';
+import { createFilter } from './filter';
 
-const row = normalize('Gostar vs. Gustar, Sitting on the Grass. Ação e emoção.');
+const filter = createFilter([
+  { id: 1, text: 'Gostar vs. Gustar Sitting on the Grass' },
+  { id: 2, text: "Plural of Words That End in 'ão' Car Insurance. Ação e emoção." },
+  { id: 3, text: 'Pronunciation of /i/ Getting the Check at a Restaurant' },
+]);
+const ids = (query: string) => [...(filter(query) ?? [])].sort();
 
 test('ignores accents and case', () => {
-  expect(matches(row, queryTerms('acao'))).toBe(true);
-  expect(matches(row, queryTerms('AÇÃO'))).toBe(true);
-  expect(matches(normalize('Ação'), queryTerms('acao'))).toBe(true);
+  expect(ids('acao')).toEqual([2]);
+  expect(ids('AÇÃO')).toEqual([2]);
 });
 
-test('every word must match, in any order', () => {
-  expect(matches(row, queryTerms('grass gostar'))).toBe(true);
-  expect(matches(row, queryTerms('grass ficar'))).toBe(false);
+test('matches prefixes and tolerates typos', () => {
+  expect(ids('pronun')).toEqual([3]);
+  expect(ids('pronunciaton')).toEqual([3]);
+  expect(ids('resturant')).toEqual([3]);
 });
 
-test('a blank query matches everything', () => {
-  expect(queryTerms('   ')).toEqual([]);
-  expect(matches(row, queryTerms(''))).toBe(true);
+test('every word must match', () => {
+  expect(ids('grass gostar')).toEqual([1]);
+  expect(ids('grass insurance')).toEqual([]);
+});
+
+test('a blank query filters nothing', () => {
+  expect(filter('   ')).toBeUndefined();
 });

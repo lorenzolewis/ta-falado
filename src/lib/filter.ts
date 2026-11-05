@@ -1,17 +1,32 @@
-// Matching for the home-page lesson filter (#20). Pure, so the build (which writes each row's
-// searchable text) and the browser (which matches the query against it) normalize the same way.
+// Matching for the home-page lesson filter (#20), with MiniSearch for word-level fuzzy and
+// prefix matching. Pure (no DOM), so it can be unit tested.
+import MiniSearch from 'minisearch';
 
 /** Lower case, accents stripped: "Ação" → "acao". */
 export function normalize(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
-/** The query's words, normalized. Empty when the query is blank. */
-export function queryTerms(query: string): string[] {
-  return normalize(query).split(/\s+/).filter(Boolean);
+export interface FilterDoc {
+  id: number;
+  text: string;
 }
 
-/** True when every term appears somewhere in `haystack` (already normalized). No terms match all. */
-export function matches(haystack: string, terms: string[]): boolean {
-  return terms.every((term) => haystack.includes(term));
+/**
+ * Returns a function from a query to the ids of the matching documents, or `undefined` when the
+ * query is blank (everything shown). Every word must match, as a prefix ("pronun") or with a typo
+ * or two once it is longer than 3 letters ("pronunciaton").
+ */
+export function createFilter(docs: FilterDoc[]): (query: string) => Set<number> | undefined {
+  const index = new MiniSearch<FilterDoc>({
+    fields: ['text'],
+    processTerm: (term) => normalize(term),
+    searchOptions: {
+      combineWith: 'AND',
+      prefix: true,
+      fuzzy: (term) => (term.length > 3 ? 0.2 : false),
+    },
+  });
+  index.addAll(docs);
+  return (query) => (query.trim() ? new Set(index.search(query).map((r) => r.id as number)) : undefined);
 }

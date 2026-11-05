@@ -1,6 +1,5 @@
 ---
 import Base from '../layouts/Base.astro';
-import { normalize } from '../lib/filter';
 import { formatDuration, isoDuration } from '../lib/format';
 import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
 import { SERIES_LABEL } from '../lib/series';
@@ -22,7 +21,7 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
         <h2 id={`series-${id}`}>{SERIES_LABEL[id]}</h2>
         <ol>
           {lessons.map(({ data, body }) => (
-            <li value={data.number} data-search={normalize([data.title, data.topic, body].join(' '))}>
+            <li value={data.number} data-search={[data.title, data.topic, body].join(' ')}>
               <a href={lessonPath(data)}>{data.title}</a>
               {data.topic && <>, {data.topic}</>}
               {' · '}

@@ -1,7 +1,7 @@
 // Wires up the home-page lesson filter (#20). Bundled scripts run once per visit under
 // <ClientRouter /> (ADR 0001), so the listener below is added once, and each page load binds the
 // page's own elements with a signal that is aborted before the next swap. Nothing is bound twice.
-import { matches, queryTerms } from './filter';
+import { createFilter } from './filter';
 
 /** How long typing must pause before the result count is read out. */
 const ANNOUNCE_DELAY = 500;
@@ -11,32 +11,21 @@ function bindFilter(root: HTMLElement, signal: AbortSignal) {
   const status = root.querySelector<HTMLElement>('[data-filter-status]')!;
   const empty = document.querySelector<HTMLElement>('[data-filter-empty]')!;
   const sections = [...document.querySelectorAll<HTMLElement>('[data-filter-section]')];
-  const rows = sections.map((section) => ({
-    section,
-    items: [...section.querySelectorAll<HTMLElement>('[data-search]')].map((li) => ({ li, text: li.dataset.search! })),
-  }));
-  const total = rows.reduce((n, { items }) => n + items.length, 0);
+  const items = [...document.querySelectorAll<HTMLElement>('[data-search]')];
+  const search = createFilter(items.map((li, id) => ({ id, text: li.dataset.search! })));
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   signal.addEventListener('abort', () => clearTimeout(timer));
 
   function apply() {
-    const terms = queryTerms(input.value);
-    let shown = 0;
-    for (const { section, items } of rows) {
-      let inSection = 0;
-      for (const { li, text } of items) {
-        const hit = matches(text, terms);
-        li.hidden = !hit;
-        if (hit) inSection++;
-      }
-      section.hidden = inSection === 0;
-      shown += inSection;
-    }
+    const hits = search(input.value);
+    items.forEach((li, id) => (li.hidden = !!hits && !hits.has(id)));
+    for (const section of sections) section.hidden = !section.querySelector('[data-search]:not([hidden])');
+    const shown = hits ? hits.size : items.length;
     empty.hidden = shown > 0;
 
     clearTimeout(timer);
-    const message = terms.length === 0 ? '' : shown === 0 ? 'No lessons match.' : `${shown} of ${total} lessons match.`;
+    const message = !hits ? '' : shown === 0 ? 'No lessons match.' : `${shown} of ${items.length} lessons match.`;
     timer = setTimeout(() => (status.textContent = message), ANNOUNCE_DELAY);
 
     const url = new URL(location.href);
