@@ -20,7 +20,8 @@ export default defineConfig({
 	trailingSlash: "never",
 	build: { format: "file" },
 	// Lists every page (not the 404) at /sitemap-index.xml, with URLs from `site`.
-	integrations: [sitemap()],
+	// PROTOTYPE (#59): keep the throwaway /proto/ routes out of the sitemap.
+	integrations: [sitemap({ filter: (page) => !page.includes("/proto/") })],
 	fonts: [
 		{
 			name: "Alegreya",

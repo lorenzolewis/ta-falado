@@ -1,0 +1,810 @@
+---
+// PROTOTYPE (#59), never merged: three mini-player variants in place of src/components/Player.astro,
+// switchable from the floating bar at the top or by visiting /proto/player-a, -b and -c. The
+// chosen variant is remembered on the device, so it follows you across real pages.
+//   A · Bar and sheet: a slim bar that opens a full sheet on the phone; one full row on desktop.
+//   B · Full deck: every control always showing, no expanded state; also shown when idle.
+//   C · Floating card: a detached card with a progress ring round play; expands in place.
+// All three keep the same data hooks, so src/lib/player-ui.ts binds them unchanged in spirit.
+import Icon from '../Icon.astro';
+import { getLessons, toTrack } from '../../lib/lessons';
+import { RATES } from '../../lib/player';
+
+const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<', '\\u003c');
+---
+
+<div class="pp" data-player-wrap data-variant="a" data-state="idle" transition:persist="player">
+  {/* ───────────── A · Bar and sheet ───────────── */}
+  <section class="v va" aria-label="Audio player" data-player hidden>
+    <div class="a-line" aria-hidden="true"></div>
+    <div class="a-row">
+      <button type="button" class="a-open" data-proto="open-sheet" aria-haspopup="dialog">
+        <img class="a-art" data-proto-art alt="" width="44" height="44" />
+        <span class="a-text">
+          <span class="a-title" data-proto-title></span>
+          <span class="meta" data-proto-left></span>
+          <span class="status" data-status role="status"></span>
+        </span>
+        <span class="visually-hidden">, open the player</span>
+      </button>
+      <div class="a-id">
+        <img class="a-art" data-proto-art alt="" width="56" height="56" />
+        <span class="a-text">
+          <a class="a-title" data-title href="/"></a>
+          <span class="meta" data-proto-series></span>
+        </span>
+      </div>
+      <div class="a-transport">
+        <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft"><Icon name="back10" /></button>
+        <button type="button" class="play" data-action="toggle" aria-label="Play" aria-keyshortcuts="Space">
+          <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="i-spin"></span>
+        </button>
+        <button type="button" class="ctl a-desk" data-action="forward" aria-label="Forward 30 seconds" aria-keyshortcuts="ArrowRight"><Icon name="forward30" /></button>
+      </div>
+      <div class="seek a-desk">
+        <span data-current>0:00</span>
+        <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+        <span data-duration>0:00</span>
+      </div>
+      <div class="extra a-desk">
+        <span class="speed">
+          <select data-rate aria-label="Speed" aria-keyshortcuts="< >">
+            {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+          </select>
+          <Icon name="chevron" />
+        </span>
+        <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false" aria-keyshortcuts="M">
+          <Icon name="volume" class="i-vol" /><Icon name="mute" class="i-mute" />
+        </button>
+      </div>
+    </div>
+
+    <dialog class="a-sheet" data-proto-sheet aria-label="Player">
+      <button type="button" class="ctl a-close" data-proto="close-sheet" aria-label="Close the player"><Icon name="chevron" /></button>
+      <img class="a-big" data-proto-art alt="" width="320" height="320" />
+      <p class="a-sheet-title"><a data-title href="/"></a></p>
+      <p class="meta" data-proto-series></p>
+      <div class="a-sheet-seek">
+        <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+        <span data-current>0:00</span>
+        <span data-duration>0:00</span>
+      </div>
+      <div class="a-sheet-transport">
+        <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds"><Icon name="back10" /></button>
+        <button type="button" class="play big" data-action="toggle" aria-label="Play">
+          <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="i-spin"></span>
+        </button>
+        <button type="button" class="ctl" data-action="forward" aria-label="Forward 30 seconds"><Icon name="forward30" /></button>
+      </div>
+      <div class="a-sheet-extra">
+        <span class="speed">
+          <select data-rate aria-label="Speed">
+            {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+          </select>
+          <Icon name="chevron" />
+        </span>
+        <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false">
+          <Icon name="volume" class="i-vol" /><Icon name="mute" class="i-mute" />
+        </button>
+      </div>
+    </dialog>
+  </section>
+
+  {/* ───────────── B · Full deck ───────────── */}
+  <section class="v vb" aria-label="Audio player" data-player data-idle="show" hidden>
+    <div class="b-id">
+      <a class="b-title" data-title href="/"></a>
+      <span class="b-idle">Choose a lesson to start listening.</span>
+      <span class="meta" data-proto-series></span>
+      <span class="status" data-status role="status"></span>
+    </div>
+    <div class="b-transport">
+      <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft"><Icon name="back10" /></button>
+      <button type="button" class="play" data-action="toggle" aria-label="Play" aria-keyshortcuts="Space">
+        <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="i-spin"></span>
+      </button>
+      <button type="button" class="ctl" data-action="forward" aria-label="Forward 30 seconds" aria-keyshortcuts="ArrowRight"><Icon name="forward30" /></button>
+    </div>
+    <div class="seek b-seek">
+      <span data-current>0:00</span>
+      <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+      <span data-duration>0:00</span>
+    </div>
+    <div class="extra b-extra">
+      <span class="speed">
+        <select data-rate aria-label="Speed" aria-keyshortcuts="< >">
+          {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+        </select>
+        <Icon name="chevron" />
+      </span>
+      <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false" aria-keyshortcuts="M">
+        <Icon name="volume" class="i-vol" /><Icon name="mute" class="i-mute" />
+      </button>
+    </div>
+  </section>
+
+  {/* ───────────── C · Floating card ───────────── */}
+  <section class="v vc" aria-label="Audio player" data-player hidden>
+    <div class="c-card" data-proto-card data-expanded="false">
+      <div class="c-more" id="c-more">
+        <div class="c-more-inner">
+          <div class="seek">
+            <span data-current>0:00</span>
+            <input type="range" aria-label="Seek" min="0" max="0" step="1" value="0" data-seek />
+            <span data-duration>0:00</span>
+          </div>
+          <div class="c-jumps">
+            <button type="button" class="ctl" data-action="back" aria-label="Back 10 seconds" aria-keyshortcuts="ArrowLeft"><Icon name="back10" /></button>
+            <button type="button" class="ctl" data-action="forward" aria-label="Forward 30 seconds" aria-keyshortcuts="ArrowRight"><Icon name="forward30" /></button>
+            <button type="button" class="ctl" data-action="mute" aria-label="Mute" aria-pressed="false" aria-keyshortcuts="M">
+              <Icon name="volume" class="i-vol" /><Icon name="mute" class="i-mute" />
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="c-main">
+        <button type="button" class="play ring" data-action="toggle" aria-label="Play" aria-keyshortcuts="Space">
+          <Icon name="play" class="i-play" /><Icon name="pause" class="i-pause" /><span class="i-spin"></span>
+        </button>
+        <span class="c-text">
+          <a class="c-title" data-title href="/"></a>
+          <span class="meta" data-proto-left></span>
+          <span class="status" data-status role="status"></span>
+        </span>
+        <span class="speed small">
+          <select data-rate aria-label="Speed" aria-keyshortcuts="< >">
+            {RATES.map((rate) => <option value={rate} selected={rate === 1}>{rate}×</option>)}
+          </select>
+          <Icon name="chevron" />
+        </span>
+        <button type="button" class="ctl c-expand" data-proto="expand" aria-expanded="false" aria-controls="c-more" aria-label="More controls">
+          <Icon name="chevron" />
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {/* ───────────── Prototype switcher (not part of the design) ───────────── */}
+  <div class="proto-bar" data-proto-bar>
+    <button type="button" data-proto="prev" aria-label="Previous variant" title="Previous variant ( [ )">‹</button>
+    <span data-proto-label>A</span>
+    <button type="button" data-proto="next" aria-label="Next variant" title="Next variant ( ] )">›</button>
+    <select data-proto-sim aria-label="Force a player state">
+      <option value="live">Live state</option>
+      <option value="idle">Idle</option>
+      <option value="loading">Loading</option>
+      <option value="playing">Playing</option>
+      <option value="paused">Paused</option>
+      <option value="error">Error</option>
+    </select>
+    <button type="button" aria-label="Hide the prototype bar" onclick="this.parentElement.hidden = true">×</button>
+  </div>
+
+  <script type="application/json" data-tracks is:inline set:html={tracks} />
+</div>
+
+<script>
+  import '../../lib/player-ui';
+  import '../../lib/progress-ui';
+  import '../../lib/proto/player-proto';
+</script>
+
+<style>
+  /* ───── Shared ───── */
+  .pp {
+    --on-strong-muted: color-mix(in srgb, var(--on-strong) 78%, var(--strong));
+    position: sticky;
+    /* Just above the phone's tab bar, which already includes the home-indicator inset. */
+    inset-block-end: var(--tabs-block-size, 0px);
+    z-index: 4;
+  }
+  .v[hidden],
+  .pp:not([data-variant='a']) .va,
+  .pp:not([data-variant='b']) .vb,
+  .pp:not([data-variant='c']) .vc {
+    display: none;
+  }
+  .v {
+    color: var(--on-strong);
+  }
+  .v :focus-visible {
+    outline-color: var(--ipe);
+  }
+  .v p {
+    margin: 0;
+  }
+  .v a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .v a:hover {
+    text-decoration: underline;
+  }
+  .meta {
+    color: var(--on-strong-muted);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+  }
+  .status {
+    color: var(--ipe);
+    font-size: var(--text-14);
+    font-weight: 500;
+  }
+  .status:empty,
+  .pp[data-state='error'] .v .meta {
+    display: none;
+  }
+  .ctl,
+  .play {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 48px;
+    block-size: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: inherit;
+  }
+  .ctl:hover {
+    background: var(--track-on-strong);
+  }
+  .play {
+    inline-size: 60px;
+    block-size: 60px;
+    background: var(--ipe);
+    color: var(--on-ipe);
+  }
+  .play:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+  .play :global(.icon) {
+    inline-size: 26px;
+    block-size: 26px;
+  }
+  /* Play, pause or the loading ring, from the player's state. */
+  :global(.i-pause),
+  .i-spin,
+  .pp[data-state='playing'] :global(.i-play),
+  .pp[data-state='loading'] :global(.i-play) {
+    display: none;
+  }
+  .pp[data-state='playing'] :global(.i-pause) {
+    display: block;
+  }
+  .pp[data-state='loading'] .i-spin {
+    display: block;
+    inline-size: 24px;
+    block-size: 24px;
+    border: 3px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      rotate: 1turn;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pp[data-state='loading'] .i-spin {
+      animation: none;
+      border-style: dotted;
+    }
+  }
+  :global(.i-mute),
+  [aria-pressed='true'] :global(.i-vol) {
+    display: none;
+  }
+  [aria-pressed='true'] :global(.i-mute) {
+    display: block;
+  }
+
+  /* Seek: an 8px pill track filled in ipê, a 20px thumb, a 48px tall target. */
+  .seek {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-12);
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+    color: var(--on-strong-muted);
+  }
+  input[type='range'] {
+    --fill: linear-gradient(to right, var(--ipe) var(--seek, 0%), var(--track-on-strong) var(--seek, 0%));
+    appearance: none;
+    inline-size: 100%;
+    min-inline-size: 0;
+    block-size: 48px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--fill);
+  }
+  input[type='range']::-moz-range-track {
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--fill);
+  }
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    inline-size: 20px;
+    block-size: 20px;
+    margin-block-start: -6px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ipe);
+  }
+  input[type='range']::-moz-range-thumb {
+    inline-size: 20px;
+    block-size: 20px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ipe);
+  }
+  input[type='range']:focus-visible {
+    outline-offset: -8px;
+  }
+
+  /* Speed: a pill select with a 2px currentColor border. */
+  .speed {
+    position: relative;
+    display: inline-grid;
+    align-items: center;
+  }
+  .speed select {
+    appearance: none;
+    min-block-size: 48px;
+    padding: 0 34px 0 16px;
+    border: 2px solid currentColor;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: inherit;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .speed option {
+    color: var(--ink);
+    background: var(--surface);
+  }
+  .speed :global(.icon) {
+    position: absolute;
+    inset-inline-end: 10px;
+    inline-size: 18px;
+    block-size: 18px;
+    pointer-events: none;
+  }
+  .extra {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+  }
+
+  /* ───── A · Bar and sheet ───── */
+  .va {
+    position: relative;
+    margin-inline: var(--panel-gap);
+    border-radius: var(--radius-player) var(--radius-player) 0 0;
+    background: var(--strong);
+    overflow: hidden;
+  }
+  .a-line {
+    position: absolute;
+    inset: 0 auto auto 0;
+    inline-size: calc(var(--p, 0) * 100%);
+    block-size: 3px;
+    background: var(--ipe);
+  }
+  .a-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-8) var(--space-8) calc(var(--space-8) + var(--player-safe-b));
+  }
+  .a-open {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-12);
+    min-inline-size: 0;
+    min-block-size: 56px;
+    padding: 0 var(--space-8) 0 0;
+    border: 0;
+    border-radius: var(--radius-row);
+    background: none;
+    color: inherit;
+    text-align: start;
+  }
+  .a-art {
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    border-radius: var(--radius-row);
+    background: var(--track-on-strong);
+    object-fit: cover;
+  }
+  .a-text {
+    display: grid;
+    min-inline-size: 0;
+  }
+  .a-title {
+    overflow: hidden;
+    font-family: var(--font-serif);
+    font-size: var(--text-18);
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .a-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  .a-transport .play {
+    inline-size: 48px;
+    block-size: 48px;
+  }
+  .a-id,
+  .a-desk {
+    display: none;
+  }
+
+  .a-sheet {
+    inset-block: auto 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: calc(100dvh - max(2rem, env(safe-area-inset-top)));
+    margin: 0;
+    padding: var(--space-8) max(var(--space-24), env(safe-area-inset-left)) calc(var(--space-32) + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: var(--radius-player) var(--radius-player) 0 0;
+    background: var(--strong);
+    color: var(--on-strong);
+    text-align: center;
+  }
+  .a-sheet[open] {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-12);
+    animation: sheet-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .a-sheet::backdrop {
+    background: color-mix(in srgb, var(--strong) 55%, transparent);
+  }
+  @keyframes sheet-up {
+    from {
+      translate: 0 40%;
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .a-sheet[open] {
+      animation: none;
+    }
+  }
+  .a-close {
+    justify-self: start;
+  }
+  .a-big {
+    inline-size: min(68vw, 18rem, 34dvh);
+    block-size: auto;
+    aspect-ratio: 1;
+    border-radius: var(--radius-card);
+    background: var(--track-on-strong);
+  }
+  .a-sheet-title {
+    margin-block-start: var(--space-8) !important;
+    font-family: var(--font-serif);
+    font-size: var(--text-24);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .a-sheet-seek {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    inline-size: 100%;
+    font-size: var(--text-14);
+    font-variant-numeric: tabular-nums;
+    color: var(--on-strong-muted);
+  }
+  .a-sheet-seek input {
+    grid-column: 1 / -1;
+  }
+  .a-sheet-seek [data-current] {
+    justify-self: start;
+    margin-block-start: -10px;
+  }
+  .a-sheet-seek [data-duration] {
+    justify-self: end;
+    margin-block-start: -10px;
+  }
+  .a-sheet-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-32);
+  }
+  .play.big {
+    inline-size: 72px;
+    block-size: 72px;
+  }
+  .play.big :global(.icon) {
+    inline-size: 30px;
+    block-size: 30px;
+  }
+  .a-sheet-extra {
+    display: flex;
+    justify-content: space-between;
+    inline-size: 100%;
+    margin-block-start: var(--space-8);
+  }
+
+  @media (min-width: 52rem) {
+    .a-row {
+      display: grid;
+      grid-template-columns: minmax(16rem, 1.3fr) auto minmax(14rem, 1.5fr) auto;
+      gap: var(--space-24);
+      padding: var(--space-12) var(--space-24) calc(var(--space-12) + var(--player-safe-b));
+    }
+    .a-open {
+      display: none;
+    }
+    .a-id {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      min-inline-size: 0;
+    }
+    .a-id .a-art {
+      inline-size: 56px;
+      block-size: 56px;
+    }
+    .a-desk {
+      display: revert;
+    }
+    .seek.a-desk {
+      display: grid;
+    }
+    .extra.a-desk {
+      display: flex;
+    }
+    .a-transport .play {
+      inline-size: 60px;
+      block-size: 60px;
+    }
+    .a-id .status {
+      grid-column: 1;
+    }
+  }
+
+  /* ───── B · Full deck ───── */
+  .vb {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'id extra'
+      'seek seek'
+      'transport transport';
+    align-items: center;
+    column-gap: var(--space-12);
+    margin-inline: var(--panel-gap);
+    padding: var(--space-16) var(--space-16) calc(var(--space-8) + var(--player-safe-b));
+    border-radius: var(--radius-player) var(--radius-player) 0 0;
+    background: var(--strong);
+  }
+  .b-id {
+    grid-area: id;
+    display: grid;
+    min-inline-size: 0;
+  }
+  .b-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-family: var(--font-serif);
+    font-size: var(--text-18);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .b-idle {
+    display: none;
+    font-family: var(--font-serif);
+    font-size: var(--text-18);
+    font-weight: 700;
+  }
+  .pp[data-state='idle'] .b-idle {
+    display: block;
+  }
+  .pp[data-state='idle'] .vb :is(.b-title, .meta) {
+    display: none;
+  }
+  .pp[data-state='idle'] .vb :is(.b-seek, .b-transport .ctl, .b-extra) {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .b-seek {
+    grid-area: seek;
+  }
+  .b-transport {
+    grid-area: transport;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-24);
+  }
+  .b-extra {
+    grid-area: extra;
+    justify-self: end;
+  }
+  @media (max-width: 51.99rem) {
+    /* Mute is in the keyboard shortcuts and the system volume; keep the phone row to speed. */
+    .b-extra .ctl {
+      display: none;
+    }
+  }
+  @media (min-width: 52rem) {
+    .vb {
+      grid-template-columns: minmax(12rem, 1fr) minmax(20rem, 40rem) minmax(12rem, 1fr);
+      grid-template-areas:
+        'id transport extra'
+        'id seek extra';
+      column-gap: var(--space-32);
+      padding: var(--space-8) var(--space-24) calc(var(--space-4) + var(--player-safe-b));
+    }
+    .b-seek {
+      margin-block-start: -6px;
+    }
+  }
+
+  /* ───── C · Floating card ───── */
+  .vc {
+    padding: 0 max(var(--panel-gap), env(safe-area-inset-right)) calc(var(--panel-gap) + var(--player-safe-b))
+      max(var(--panel-gap), env(safe-area-inset-left));
+  }
+  .c-card {
+    display: grid;
+    border-radius: var(--radius-card);
+    background: var(--strong);
+    box-shadow: 0 6px 24px color-mix(in srgb, var(--strong) 35%, transparent);
+  }
+  .c-main {
+    display: grid;
+    grid-template-columns: 60px 1fr auto auto;
+    align-items: center;
+    gap: var(--space-8) var(--space-12);
+    padding: var(--space-8) var(--space-8) var(--space-8) var(--space-8);
+  }
+  /* Play inside a ring that fills with the lesson's progress. */
+  .play.ring {
+    background:
+      radial-gradient(closest-side, var(--ipe) 78%, var(--strong) 79% 85%, transparent 86%),
+      conic-gradient(var(--ipe) calc(var(--p, 0) * 360deg), var(--track-on-strong) 0);
+  }
+  .pp[data-state='loading'] .play.ring {
+    background:
+      radial-gradient(closest-side, var(--ipe) 78%, var(--strong) 79% 85%, transparent 86%),
+      var(--track-on-strong);
+  }
+  .c-text {
+    display: grid;
+    min-inline-size: 0;
+  }
+  .c-title {
+    overflow: hidden;
+    font-family: var(--font-serif);
+    font-size: var(--text-18);
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* A compact pill with no chevron, so the title keeps its room. */
+  .speed.small select {
+    min-inline-size: 52px;
+    min-block-size: 44px;
+    padding: 0 10px;
+    text-align: center;
+  }
+  .speed.small :global(.icon) {
+    display: none;
+  }
+  .c-expand :global(.icon) {
+    rotate: 180deg;
+    transition: rotate 0.2s;
+  }
+  [data-expanded='true'] .c-expand :global(.icon) {
+    rotate: 0deg;
+  }
+  .c-more {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+      visibility 0.25s;
+  }
+  [data-expanded='true'] .c-more {
+    grid-template-rows: 1fr;
+    visibility: visible;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .c-more,
+    .c-expand :global(.icon) {
+      transition: none;
+    }
+  }
+  .c-more-inner {
+    min-block-size: 0;
+    overflow: hidden;
+  }
+  .c-more .seek {
+    padding: var(--space-8) var(--space-16) 0;
+  }
+  .c-jumps {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-24);
+    padding-block-end: var(--space-4);
+    border-block-end: 1px solid var(--track-on-strong);
+    margin-inline: var(--space-16);
+  }
+  @media (min-width: 52rem) {
+    .vc {
+      inline-size: min(30rem, 100%);
+      margin-inline-start: auto;
+    }
+  }
+
+  /* ───── Prototype switcher: deliberately off-brand ───── */
+  .proto-bar {
+    position: fixed;
+    inset-block-start: max(8px, env(safe-area-inset-top));
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: #000;
+    color: #fff;
+    font: 600 13px/1 system-ui, sans-serif;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+    white-space: nowrap;
+  }
+  .proto-bar[hidden] {
+    display: none;
+  }
+  .proto-bar button {
+    inline-size: 32px;
+    block-size: 32px;
+    border: 0;
+    border-radius: 999px;
+    background: #222;
+    color: #fff;
+    font: inherit;
+    font-size: 17px;
+  }
+  .proto-bar span {
+    padding-inline: 8px;
+  }
+  .proto-bar select {
+    block-size: 32px;
+    border: 0;
+    border-radius: 999px;
+    padding-inline: 8px;
+    background: #222;
+    color: #fff;
+    font: inherit;
+  }
+</style>

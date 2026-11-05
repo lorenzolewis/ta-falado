@@ -3,7 +3,8 @@ import { Font } from 'astro:assets';
 import { ClientRouter } from 'astro:transitions';
 import Credit from '../components/Credit.astro';
 import Icon from '../components/Icon.astro';
-import Player from '../components/Player.astro';
+// PROTOTYPE (#59): the three mini-player variants stand in for the real player on this branch.
+import Player from '../components/proto/PlayerProto.astro';
 import Sidebar from '../components/Sidebar.astro';
 import { COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_PATH } from '../lib/artwork';
 import { LESSONS_ID, pagePath, viewOf } from '../lib/nav';
@@ -48,7 +49,7 @@ const current = (on: boolean) => (on ? 'page' : undefined);
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
@@ -110,6 +111,9 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     display: grid;
     gap: var(--panel-gap);
     padding: var(--panel-gap);
+    /* PROTOTYPE (#59): viewport-fit=cover lets the page run under the notch in landscape. */
+    padding-inline: max(var(--panel-gap), env(safe-area-inset-left)) max(var(--panel-gap), env(safe-area-inset-right));
+    padding-block-start: max(var(--panel-gap), env(safe-area-inset-top));
   }
   .pane {
     min-inline-size: 0;
@@ -184,6 +188,8 @@ const current = (on: boolean) => (on ? 'page' : undefined);
       display: grid;
       grid-template-columns: 1fr 1fr;
       block-size: var(--tabs-block-size);
+      /* PROTOTYPE (#59): the tab bar sits over the home indicator. */
+      padding-block-end: env(safe-area-inset-bottom, 0px);
       border-block-start: 1px solid var(--line);
       background: var(--bg);
     }

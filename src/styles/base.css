@@ -51,6 +51,8 @@
   --panel-gap: 8px;
   /* The phone's tab bar; 0 on desktop, where there is none. */
   --tabs-block-size: 0px;
+  /* PROTOTYPE (#59): the player pads its foot by the home-indicator inset where no tab bar does it. */
+  --player-safe-b: env(safe-area-inset-bottom, 0px);
 
   font-family: var(--font-sans);
   font-size: 100%;
@@ -83,7 +85,9 @@
 /* The phone layout, below 52rem: one view at a time over a tab bar. */
 @media (max-width: 51.99rem) {
   :root {
-    --tabs-block-size: 64px;
+    /* PROTOTYPE (#59): plus the home-indicator inset, now that viewport-fit=cover is on. */
+    --tabs-block-size: calc(64px + env(safe-area-inset-bottom, 0px));
+    --player-safe-b: 0px;
   }
 }
 

@@ -18,15 +18,17 @@ function bindMiniPlayer(root: HTMLElement) {
   if (bound.has(root)) return;
   bound.add(root);
 
-  const $ = <T extends Element>(selector: string) => root.querySelector<T>(selector)!;
-  const title = $<HTMLAnchorElement>('[data-title]');
-  const toggle = $<HTMLButtonElement>('[data-action="toggle"]');
-  const mute = $<HTMLButtonElement>('[data-action="mute"]');
-  const rate = $<HTMLSelectElement>('[data-rate]');
-  const seek = $<HTMLInputElement>('[data-seek]');
-  const current = $<HTMLElement>('[data-current]');
-  const duration = $<HTMLElement>('[data-duration]');
-  const status = $<HTMLElement>('[data-status]');
+  // PROTOTYPE (#59): a variant can repeat a control (variant A's bar and its sheet), so every
+  // copy is bound and updated.
+  const $$ = <T extends Element>(selector: string) => [...root.querySelectorAll<T>(selector)];
+  const titles = $$<HTMLAnchorElement>('[data-title]');
+  const toggles = $$<HTMLButtonElement>('[data-action="toggle"]');
+  const mutes = $$<HTMLButtonElement>('[data-action="mute"]');
+  const rates = $$<HTMLSelectElement>('[data-rate]');
+  const seeks = $$<HTMLInputElement>('[data-seek]');
+  const currents = $$<HTMLElement>('[data-current]');
+  const durations = $$<HTMLElement>('[data-duration]');
+  const statuses = $$<HTMLElement>('[data-status]');
 
   root.addEventListener('click', (event) => {
     const action = (event.target as Element).closest<HTMLElement>('[data-action]')?.dataset.action;
@@ -36,27 +38,33 @@ function bindMiniPlayer(root: HTMLElement) {
     else if (action === 'mute') player.toggleMute();
   });
   // The player is sticky at the bottom, so keep focused and scrolled-to content clear of it.
+  // PROTOTYPE: the variants share one persisted wrapper, which is what takes up the space.
+  const box = root.closest<HTMLElement>('[data-player-wrap]') ?? root;
   new ResizeObserver(() => {
-    document.documentElement.style.setProperty('--player-block-size', `${root.offsetHeight}px`);
-  }).observe(root);
-  rate.addEventListener('change', () => player.setRate(Number(rate.value)));
-  seek.addEventListener('input', () => player.seek(Number(seek.value)));
+    document.documentElement.style.setProperty('--player-block-size', `${box.offsetHeight}px`);
+  }).observe(box);
+  for (const rate of rates) rate.addEventListener('change', () => player.setRate(Number(rate.value)));
+  for (const seek of seeks) seek.addEventListener('input', () => player.seek(Number(seek.value)));
 
   player.subscribe((state) => {
     if (!state.track) return;
     root.hidden = false;
-    title.textContent = state.track.title;
-    title.href = state.track.id;
-    toggle.textContent = state.paused ? 'Play' : 'Pause';
-    mute.setAttribute('aria-pressed', String(state.muted));
-    rate.value = String(state.rate);
-    seek.max = String(Math.floor(state.duration));
-    seek.value = String(Math.floor(state.currentTime));
-    seek.setAttribute('aria-valuetext', `${time(state.currentTime)} of ${time(state.duration)}`);
-    current.textContent = time(state.currentTime);
-    duration.textContent = time(state.duration);
+    for (const title of titles) {
+      title.textContent = state.track.title;
+      title.href = state.track.id;
+    }
+    for (const toggle of toggles) toggle.setAttribute('aria-label', state.paused ? 'Play' : 'Pause');
+    for (const mute of mutes) mute.setAttribute('aria-pressed', String(state.muted));
+    for (const rate of rates) rate.value = String(state.rate);
+    for (const seek of seeks) {
+      seek.max = String(Math.floor(state.duration));
+      seek.value = String(Math.floor(state.currentTime));
+      seek.setAttribute('aria-valuetext', `${time(state.currentTime)} of ${time(state.duration)}`);
+    }
+    for (const el of currents) el.textContent = time(state.currentTime);
+    for (const el of durations) el.textContent = time(state.duration);
     const message = state.error ? 'The audio could not be loaded.' : '';
-    if (status.textContent !== message) status.textContent = message;
+    for (const status of statuses) if (status.textContent !== message) status.textContent = message;
   });
 }
 
@@ -123,8 +131,7 @@ if ('mediaSession' in navigator) bindMediaSession(navigator.mediaSession, player
 
 let page: AbortController | undefined;
 document.addEventListener('astro:page-load', () => {
-  const root = document.querySelector<HTMLElement>('[data-player]');
-  if (root) bindMiniPlayer(root);
+  for (const root of document.querySelectorAll<HTMLElement>('[data-player]')) bindMiniPlayer(root);
   page = new AbortController();
   bindPlayButtons(page.signal);
 });
