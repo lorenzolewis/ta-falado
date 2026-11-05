@@ -45,3 +45,7 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # Well-formed XML, RSS 2.0 and Apple's required tags, ADR 0003, enclosure lengths vs. files.
+      - name: Validate feed
+        run: pnpm validate:feed
