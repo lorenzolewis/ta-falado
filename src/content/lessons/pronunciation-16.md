@@ -11,6 +11,7 @@ audio:
   bytes: 3771408
 pdf:
   url: /pdf/tafalado_16.pdf
+  bytes: 147940
 photo:
   url: /images/lesson_pic_16.jpg
   alt: "Adding Tax to Purchased Items"

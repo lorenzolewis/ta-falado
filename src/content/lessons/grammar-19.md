@@ -11,6 +11,7 @@ audio:
   bytes: 11629175
 pdf:
   url: /pdf/tafalado_gra_19.pdf
+  bytes: 32156
 photo:
   url: /images/lesson_pic_gra_19.jpg
   alt: "Tá Falado team"

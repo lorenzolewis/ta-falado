@@ -16,6 +16,7 @@ audio:
   bytes: 7590390
 pdf:
   url: /pdf/tafalado_01.pdf
+  bytes: 154732
 photo: # optional
   url: /images/lesson_pic_01.jpg
   alt: Two people at a restaurant table
@@ -36,10 +37,32 @@ There's only one Lesson #1. …
 | `audio.durationSeconds` | Integer seconds (`10:32` → 632). |
 | `audio.bytes` | The MP3's exact size in bytes (the feed's enclosure `length`). |
 | `pdf.url` | Same rules as `audio.url`. |
+| `pdf.bytes` | The PDF's exact size in bytes, shown beside the transcript link ("PDF, 151 KB"). |
 | `photo` | Optional. `url` (same rules) and `alt`, which must be non-empty. |
 | body | The intro, in Markdown. Must not be empty. |
 
 Unknown fields are rejected. Uniqueness of `episode` and of `series` + `number`, and the non-empty body, are checked across entries by `getLessons()` in `src/lib/lessons.ts`, which fails the build with the two clashing file names.
+
+## Portuguese and Spanish words in the intro
+
+The intros italicise Portuguese words, Spanish words, names and plain emphasis alike, so the language
+of an italic can't be inferred. Mark it with inline HTML, which Markdown passes through as is:
+
+| Write | For | Shown as |
+| --- | --- | --- |
+| `<i lang="pt-BR">também não</i>` | A Portuguese word or phrase | Italic, in the accent colour, weight 500 |
+| `<i lang="es">tampoco</i>` | A Spanish word or phrase | Plain italic |
+| `*will*` | English emphasis, a name, anything else | Plain italic (`<em>`) |
+
+```md
+Spanish speakers who are used to saying <i lang="es">tampoco</i> will now have to learn how to say <i lang="pt-BR">também não</i> in Portuguese.
+```
+
+Markdown still works inside the tags (`<i lang="es">María quiere **me** ayudar</i>`). The `lang`
+lets screen readers switch voice and browsers hyphenate and pick quotes for the right language, and the
+feed's episode descriptions carry it too. Use exactly `pt-BR` or `es`: `getLessons()` fails the build on
+any other `lang` in an intro. A word that is the same in both languages takes the language of the
+sentence it is quoted from (`<i lang="es">esquisito</i>` in Spanish means exquisite).
 
 ## Helpers
 

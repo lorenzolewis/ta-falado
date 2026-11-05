@@ -11,6 +11,7 @@ audio:
   bytes: 10017310
 pdf:
   url: /pdf/tafalado_gra_04.pdf
+  bytes: 154632
 photo:
   url: /images/lesson_pic_gra_04.jpg
   alt: "Soda refills at restaurants"

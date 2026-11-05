@@ -10,6 +10,7 @@ audio:
   bytes: 10864593
 pdf:
   url: /pdf/tafalado_24.pdf
+  bytes: 623642
 photo:
   url: /images/lesson_pic_24.jpg
   alt: "Tá Falado team"

@@ -11,6 +11,7 @@ audio:
   bytes: 7449971
 pdf:
   url: /pdf/tafalado_04.pdf
+  bytes: 156607
 photo:
   url: /images/lesson_pic_04.jpg
   alt: "Riding a Bus"

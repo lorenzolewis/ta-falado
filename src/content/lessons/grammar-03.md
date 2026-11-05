@@ -11,9 +11,10 @@ audio:
   bytes: 9538328
 pdf:
   url: /pdf/tafalado_gra_03.pdf
+  bytes: 148989
 photo:
   url: /images/lesson_pic_gra_03.jpg
   alt: "Gas stations"
 ---
 
-The plural of Brazil, if there were two of them, would be *Brasis*. Now that would be a strange word! Spanish speakers aren't sure how to make those words that end in 'l' plural. Orlando, Valdo, Michelle, and José Luís try to tell us that it is as easy as 'drop the *l* and add *is*,' but we're sure there is more to it than that. While they are talking about plurals, Valdo and Michelle also tell us about their experience in getting used to self serve gas stations in the U.S. too!
+The plural of Brazil, if there were two of them, would be <i lang="pt-BR">Brasis</i>. Now that would be a strange word! Spanish speakers aren't sure how to make those words that end in 'l' plural. Orlando, Valdo, Michelle, and José Luís try to tell us that it is as easy as 'drop the <i lang="pt-BR">l</i> and add <i lang="pt-BR">is</i>,' but we're sure there is more to it than that. While they are talking about plurals, Valdo and Michelle also tell us about their experience in getting used to self serve gas stations in the U.S. too!

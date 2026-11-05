@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlayerState, Track } from './player';
-import { playerStatus, progress, timeLeft } from './player-view';
+import { playControl, playerStatus, progress, timeLeft } from './player-view';
 
 const track: Track = {
   id: '/pronunciation/01',
@@ -63,5 +63,47 @@ describe('progress', () => {
   });
   it('stays within 0 and 1', () => {
     expect(progress(state({ currentTime: 700, duration: 650 }))).toBe(1);
+  });
+});
+
+describe('playControl', () => {
+  const other: Track = { ...track, id: '/grammar/01' };
+  const saved = (position: number, finished = false) => ({ position, finished, playedAt: 1 });
+
+  it('offers Play for a lesson never played on this device', () => {
+    expect(playControl(state({ track: null }), track, undefined)).toEqual({ status: 'fresh', label: 'Play', left: '' });
+    expect(playControl(state({ track: other, paused: false }), track, undefined).label).toBe('Play');
+  });
+  it('offers Resume, with the time left, where the lesson was left', () => {
+    expect(playControl(state({ track: null }), track, saved(290))).toEqual({
+      status: 'started',
+      label: 'Resume',
+      left: '6 min left',
+    });
+  });
+  it('offers Pause while this lesson plays or loads', () => {
+    expect(playControl(state({ paused: false, currentTime: 50 }), track, undefined)).toEqual({
+      status: 'playing',
+      label: 'Pause',
+      left: '10 min left',
+    });
+    expect(playControl(state({ paused: false, ready: false }), track, undefined).status).toBe('loading');
+  });
+  it('offers Resume once this lesson is paused part way', () => {
+    expect(playControl(state({ currentTime: 600 }), track, undefined)).toMatchObject({ label: 'Resume', left: '1 min left' });
+  });
+  it('offers Play again for a finished lesson, which starts over', () => {
+    expect(playControl(state({ track: null }), track, saved(0, true))).toEqual({
+      status: 'finished',
+      label: 'Play again',
+      left: 'Finished',
+    });
+    expect(playControl(state({ track: null }), track, saved(640, true)).label).toBe('Play again');
+  });
+  it('offers Resume for a finished lesson that is being listened to again', () => {
+    expect(playControl(state({ track: null }), track, saved(120, true)).label).toBe('Resume');
+  });
+  it('falls back to the saved progress when this lesson failed to load', () => {
+    expect(playControl(state({ paused: false, error: true }), track, undefined).label).toBe('Play');
   });
 });

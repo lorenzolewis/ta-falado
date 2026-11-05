@@ -11,6 +11,7 @@ audio:
   bytes: 6615202
 pdf:
   url: /pdf/tafalado_23.pdf
+  bytes: 157021
 photo:
   url: /images/lesson_pic_23.jpg
   alt: "Nicknames"

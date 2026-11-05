@@ -15,6 +15,7 @@ export function getLessons(): Promise<Lesson[]> {
     assertUnique(lessons, (l) => `${l.data.series} ${l.data.number}`);
     for (const lesson of lessons) {
       if (!lesson.body?.trim()) throw new Error(`Lesson "${lesson.id}" has no intro (the Markdown body is empty).`);
+      assertIntroLangs(lesson);
     }
     return lessons.toSorted((a, b) => a.data.episode - b.data.episode);
   });
@@ -54,6 +55,16 @@ export function toTrack({ data }: Lesson): Track {
     durationSeconds: data.audio.durationSeconds,
     episode: data.episode,
   };
+}
+
+/** The languages an intro may mark (docs/lesson-schema.md): `<i lang="pt-BR">` and `<i lang="es">`. */
+const INTRO_LANGS = new Set(['pt-BR', 'es']);
+
+function assertIntroLangs(lesson: Lesson): void {
+  for (const [, lang] of lesson.body!.matchAll(/\blang=["']?([^"'\s>]*)/g)) {
+    if (!INTRO_LANGS.has(lang))
+      throw new Error(`Lesson "${lesson.id}" marks a word as lang="${lang}". Use lang="pt-BR" or lang="es".`);
+  }
 }
 
 function assertUnique(lessons: Lesson[], key: (lesson: Lesson) => string): void {

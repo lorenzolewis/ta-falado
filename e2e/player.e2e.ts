@@ -28,7 +28,7 @@ test('the player plays, seeks, keeps playing across pages and resumes after a re
   await expect(player.region).toBeHidden();
 
   // Play
-  await page.getByRole('main').getByRole('button', { name: 'Play lesson' }).click();
+  await page.getByRole('main').getByRole('button', { name: 'Play', exact: true }).click();
   await expect(player.region).toBeVisible();
   await expect(player.pause).toBeVisible();
   await expectPlaying(player.seek);

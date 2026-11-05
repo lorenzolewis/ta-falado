@@ -11,6 +11,7 @@ audio:
   bytes: 9606327
 pdf:
   url: /pdf/tafalado_21.pdf
+  bytes: 148515
 photo:
   url: /images/lesson_pic_21.jpg
   alt: "Making prints of digital photos"

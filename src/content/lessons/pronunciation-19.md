@@ -11,6 +11,7 @@ audio:
   bytes: 4113090
 pdf:
   url: /pdf/tafalado_19.pdf
+  bytes: 148226
 photo:
   url: /images/lesson_pic_19.jpg
   alt: "Laundromats, really?"

@@ -11,6 +11,7 @@ audio:
   bytes: 8520783
 pdf:
   url: /pdf/tafalado_22.pdf
+  bytes: 150720
 photo:
   url: /images/lesson_pic_22.jpg
   alt: "Fast food"

@@ -11,6 +11,7 @@ audio:
   bytes: 9441628
 pdf:
   url: /pdf/tafalado_gra_12.pdf
+  bytes: 150703
 photo:
   url: /images/lesson_pic_gra_12.jpg
   alt: "Paying for your education"
