@@ -9,6 +9,10 @@ pnpm install
 pnpm dev
 ```
 
+## Build cache
+
+`pnpm build` draws the podcast and episode artwork, which takes most of the build time. Astro's incremental build reuses unchanged images from `node_modules/.astro`, and the Workers Builds build cache (project Settings → Build → Build cache, enabled) keeps that folder between deploys. Without the cache the build still works; it just draws every image. Run `pnpm build --force` to redraw everything.
+
 ## License
 
 - **Code:** MIT. See [`LICENSE`](LICENSE).

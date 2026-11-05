@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { episodeCoverPath, PODCAST_COVER_PATH } from '../lib/artwork';
-import { getLessons, lessonPath, type Lesson } from '../lib/lessons';
+import { getLessons, lessonPath, shortTitle, type Lesson } from '../lib/lessons';
 import { SERIES_LABEL } from '../lib/series';
 
 // The podcast feed (ADR 0003): one serial feed, the series named in each title, no seasons.
@@ -82,8 +82,7 @@ function item(lesson: Lesson, url: (path: string) => string): string {
  * Pronunciation titles drop their "Pronunciation of" because the series label already says it.
  */
 function episodeTitle({ data }: Lesson): string {
-  const title = data.series === 'pronunciation' ? data.title.replace(/^Pronunciation of /, '') : data.title;
-  return `${SERIES_LABEL[data.series]} ${data.number} · ${title}${data.topic ? `, ${data.topic}` : ''}`;
+  return `${SERIES_LABEL[data.series]} ${data.number} · ${shortTitle(data)}${data.topic ? `, ${data.topic}` : ''}`;
 }
 
 function escape(text: string): string {

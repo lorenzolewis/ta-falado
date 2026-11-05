@@ -39,6 +39,14 @@ export function lessonPath({ series, number }: { series: Series; number: number 
   return `/${series}/${String(number).padStart(2, '0')}`;
 }
 
+/**
+ * The title without a leading "Pronunciation of", for places that already show the series:
+ * "/i/" rather than "Pronunciation of /i/". Used by the feed and the artwork.
+ */
+export function shortTitle({ series, title }: { series: Series; title: string }): string {
+  return series === 'pronunciation' ? title.replace(/^Pronunciation of /, '') : title;
+}
+
 /** What the player needs to know about a lesson (also keys its saved progress by path). */
 export function toTrack({ data }: Lesson): Track {
   return {
