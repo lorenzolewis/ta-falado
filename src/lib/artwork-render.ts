@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
@@ -56,9 +57,21 @@ export function renderOgImage(lesson: Lesson): Promise<Buffer> {
   return render(lessonContent(lesson), OG, OG.width);
 }
 
-/** getStaticPaths for the per-lesson images: one per lesson, at `[slug]` = `pronunciation-01`. */
+/**
+ * getStaticPaths for the per-lesson images: one per lesson, at `[slug]` = `pronunciation-01`.
+ *
+ * The `cacheKey` lets Astro's incremental build (astro.config.ts) reuse an image from the last
+ * build instead of drawing it again. Astro already redraws when this module's code changes; the
+ * key adds what it can't see: the lesson's data (its digest) and the font files, which are read
+ * from disk rather than imported.
+ */
 export async function lessonArtworkPaths() {
-  return (await getLessons()).map((lesson) => ({ params: { slug: artworkSlug(lesson.data) }, props: { lesson } }));
+  const fontKey = await fontHash();
+  return (await getLessons()).map((lesson) => {
+    // The glob loader always sets a digest. Without one, an edited lesson would keep its old image.
+    if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
+    return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${fontKey}` };
+  });
 }
 
 /** The response a build endpoint returns for a rendered image. */
@@ -142,6 +155,13 @@ function fonts() {
     })),
   );
   return fontCache;
+}
+
+/** A short hash of the font files, so swapping a font invalidates the cached artwork. */
+async function fontHash(): Promise<string> {
+  const hash = createHash('sha256');
+  for (const font of await fonts()) hash.update(font.data);
+  return hash.digest('hex').slice(0, 16);
 }
 
 /**

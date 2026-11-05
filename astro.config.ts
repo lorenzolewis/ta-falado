@@ -8,4 +8,9 @@ export default defineConfig({
   site: 'https://ta-falado.lorenzo-lewis.workers.dev',
   trailingSlash: 'never',
   build: { format: 'file' },
+  // Reuses unchanged routes that set a `cacheKey` from the previous build's cache in
+  // node_modules/.astro. Only the generated artwork uses it (src/lib/artwork-render.ts); the
+  // images are most of the build time. Workers Builds keeps that folder between builds, since the
+  // project's build cache is on (see README). `astro build --force` redraws everything.
+  experimental: { incrementalBuild: true },
 });
