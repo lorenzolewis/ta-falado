@@ -5,14 +5,16 @@ import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
 import { artworkSlug, COVER_SIZE, EPISODE_COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
 import { getLessons, shortTitle, type Lesson } from './lessons';
+import { INK, PAPER } from './print';
 import { SERIES_LABEL, type Series } from './series';
 
 // The artwork template (#17): one layout drawn at three sizes, rendered at build time by the
 // endpoints in src/pages/artwork/. Satori lays out the elements as SVG; resvg rasterises it.
 // Server-only: browser code that needs an artwork URL imports ./artwork instead.
 //
-// The look is a placeholder; the design pass (#29) restyles it. Keep the size and format rules:
-// Apple wants RGB with no transparency, so every image is written as an opaque RGB PNG.
+// The covers' look is a placeholder; #61 restyles them. The OG image is #71's "one sheet" in the
+// print style (#55), drawn by the print layer below. Keep the size and format rules: Apple wants
+// RGB with no transparency, so every image is written as an opaque RGB PNG.
 
 /** A canvas in CSS pixels. Sizes in the template scale with it. */
 interface Size {
@@ -48,8 +50,48 @@ function renderEpisodeCover(lesson: Lesson): Promise<Buffer> {
   return render(lessonContent(lesson), SQUARE, EPISODE_COVER_SIZE);
 }
 
-export function renderOgImage(lesson: Lesson): Promise<Buffer> {
-  return render(lessonContent(lesson), OG, OG.width);
+/** The OG text column, left. With a photo, the print fills the rest of the width. */
+const OG_COLUMN = 520;
+
+/**
+ * A lesson page's Open Graph image (#71, "one sheet"): one sheet of the series' paper under the
+ * dot screen. "Tá Falado" is in the upper left; the series and number, then the title, are at the
+ * foot of a text column in ink; the photo is printed on the right of the same sheet with no frame
+ * between them. Without a photo the sheet is blank paper and the column spans it.
+ */
+export async function renderOgImage({ data }: Lesson): Promise<Buffer> {
+  const paper = PAPER[data.series];
+  const sheet: Box = { x: 0, y: 0, width: OG.width, height: OG.height };
+  const photo = data.photo && (await photoDataUri(data.photo.url));
+  const print = photo
+    ? printLayer({ paper, box: sheet, id: 'sheet' }) +
+      printLayer({ paper, photo, box: { x: OG_COLUMN, y: 0, width: OG.width - OG_COLUMN, height: OG.height }, id: 'photo' })
+    : printLayer({ paper, box: sheet, id: 'sheet' });
+  const titleSize = !photo ? 76 : data.title.length > 34 ? 60 : 72;
+  const overlay = div(
+    { width: OG.width, height: OG.height, display: 'flex' },
+    div(
+      {
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        boxSizing: 'border-box',
+        width: photo ? OG_COLUMN : OG.width,
+        height: OG.height,
+        padding: '56px 48px 56px 60px',
+        color: INK,
+      },
+      [
+        element('div', { fontFamily: 'Alegreya', fontWeight: 700, fontSize: 88, lineHeight: 0.9, letterSpacing: -0.03 * 88 }, 'Tá Falado', { lang: 'pt-BR' }),
+        div({ display: 'flex', flexDirection: 'column' }, [
+          div({ fontFamily: 'Alegreya Sans', fontWeight: 700, fontSize: 42, marginBottom: 12 }, `${SERIES_LABEL[data.series]} ${data.number}`),
+          div({ fontFamily: 'Alegreya', fontWeight: 700, fontSize: titleSize, lineHeight: 1, lineClamp: 4 }, data.title),
+        ]),
+      ],
+    ),
+  );
+  const text = await layout(overlay, OG, await ogFonts(), data.title);
+  return rasterise(print, text, OG, OG.width, paper);
 }
 
 /**
@@ -57,16 +99,19 @@ export function renderOgImage(lesson: Lesson): Promise<Buffer> {
  *
  * The `cacheKey` lets Astro's incremental build (astro.config.ts) reuse an image from the last
  * build instead of drawing it again. Astro already redraws when this module's code changes; the
- * key adds what it can't see: the lesson's data (its digest) and the font files, which are read
- * from disk rather than imported.
+ * key adds what it can't see: the lesson's data (its digest), the font files and the lesson's
+ * photo, which are read from disk rather than imported.
  */
 export async function lessonArtworkPaths() {
   const fontKey = await fontHash();
-  return (await getLessons()).map((lesson) => {
-    // The glob loader always sets a digest. Without one, an edited lesson would keep its old image.
-    if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
-    return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${fontKey}` };
-  });
+  return Promise.all(
+    (await getLessons()).map(async (lesson) => {
+      // The glob loader always sets a digest. Without one, an edited lesson would keep its old image.
+      if (!lesson.digest) throw new Error(`Lesson "${lesson.id}" has no digest to key its cached artwork.`);
+      const photoKey = lesson.data.photo ? hash([await readPhoto(lesson.data.photo.url)]) : 'none';
+      return { params: { slug: artworkSlug(lesson.data) }, props: { lesson }, cacheKey: `${lesson.digest}:${fontKey}:${photoKey}` };
+    }),
+  );
 }
 
 /**
@@ -100,27 +145,111 @@ function lessonContent({ data }: Lesson): ArtworkContent {
  */
 async function render(content: ArtworkContent, canvas: Size, outputWidth: number): Promise<Buffer> {
   const colors = COLORS[content.series ?? 'site'];
-  // Satori's types want a React element; ours has the same shape without depending on React.
-  const svg = await satori(template(content, colors, canvas) as never, {
-    ...canvas,
-    fonts: await fonts(),
-    // Satori asks for more fonts when a glyph isn't in ours. Fail the build instead of drawing
-    // a blank box, so a title with a character the font lacks can't ship broken.
-    loadAdditionalAsset: async (_language, segment) => {
-      const text = [content.headline, content.title, content.topic].filter(Boolean).join(' / ');
-      throw new Error(`The artwork font has no glyph for "${segment}" (in "${text}").`);
-    },
-  });
+  const text = [content.headline, content.title, content.topic].filter(Boolean).join(' / ');
+  const svg = await layout(template(content, colors, canvas), canvas, await fonts(), text);
   const image = new Resvg(svg, { fitTo: { mode: 'width', value: outputWidth }, background: colors.background }).render();
   return encodeRgbPng(image.pixels, image.width, image.height);
 }
 
+/** Satori lays out `root` on `canvas` as SVG, with the text drawn as paths. `text` names the
+ *  content in the error when a glyph is missing. */
+function layout(root: SatoriElement, canvas: Size, fonts: SatoriFont[], text: string): Promise<string> {
+  // Satori's types want a React element; ours has the same shape without depending on React.
+  return satori(root as never, {
+    ...canvas,
+    fonts,
+    // Satori asks for more fonts when a glyph isn't in ours. Fail the build instead of drawing
+    // a blank box, so a title with a character the font lacks can't ship broken.
+    loadAdditionalAsset: async (_language, segment) => {
+      throw new Error(`The artwork font has no glyph for "${segment}" (in "${text}").`);
+    },
+  });
+}
+
 // Satori takes React-shaped elements; plain objects avoid a React dependency.
-type SatoriElement = { type: string; props: { style?: Record<string, unknown>; children?: SatoriElement | SatoriElement[] | string } };
-const div = (style: Record<string, unknown>, children?: SatoriElement['props']['children']): SatoriElement => ({
-  type: 'div',
-  props: { style, children },
-});
+type SatoriElement = {
+  type: string;
+  props: { style?: Record<string, unknown>; children?: SatoriElement | SatoriElement[] | string; [attribute: string]: unknown };
+};
+const element = (
+  type: string,
+  style: Record<string, unknown>,
+  children?: SatoriElement['props']['children'],
+  attributes: Record<string, unknown> = {},
+): SatoriElement => ({ type, props: { style, children, ...attributes } });
+const div = (style: Record<string, unknown>, children?: SatoriElement['props']['children']) => element('div', style, children);
+
+// ---- The print (#55) ---------------------------------------------------------------------------
+// A photo printed in black ink on a coloured paper under a dot screen, as on the lesson page
+// (src/components/Print.astro). Satori has no CSS `filter` or `mix-blend-mode`, so the print is
+// plain SVG for resvg, and Satori's text goes on top (rasterise). The OG image uses it now; #61's
+// covers are meant to use the same two functions with their own layout.
+
+/** A rectangle of the canvas, in CSS pixels. */
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The print as SVG elements filling `box`: the paper, the photo in ink if there is one (cover
+ * crop), then paper-coloured dots 4px apart at 55%. `id` prefixes the defs, so one SVG can hold
+ * several prints.
+ *
+ * The ink reproduces Print.astro's `grayscale(1) contrast(1.35) brightness(1.05)` and
+ * `mix-blend-mode: multiply`: grayscale (Rec. 709 weights), contrast, brightness, each clamped,
+ * then a per-channel slope of the paper's RGB, which for an opaque photo is multiply over it.
+ */
+function printLayer({ paper, photo, box, id }: { paper: string; photo?: string; box: Box; id: string }): string {
+  const { x, y, width, height } = box;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(paper.slice(i, i + 2), 16) / 255);
+  const linear = (slope: number, intercept = 0) =>
+    `<feComponentTransfer>${['R', 'G', 'B'].map((c) => `<feFunc${c} type="linear" slope="${slope}" intercept="${intercept}"/>`).join('')}</feComponentTransfer>`;
+  const ink = photo
+    ? `<filter id="${id}-ink" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+        <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/>
+        ${linear(1.35, -0.175)}
+        ${linear(1.05)}
+        <feComponentTransfer><feFuncR type="linear" slope="${r}"/><feFuncG type="linear" slope="${g}"/><feFuncB type="linear" slope="${b}"/></feComponentTransfer>
+      </filter>
+      <image href="${photo}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" filter="url(#${id}-ink)"/>`
+    : '';
+  return `
+    <clipPath id="${id}-clip"><rect x="${x}" y="${y}" width="${width}" height="${height}"/></clipPath>
+    <radialGradient id="${id}-dot" cx="2" cy="2" r="1.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0.6" stop-color="${paper}"/>
+      <stop offset="1" stop-color="${paper}" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="${id}-dots" width="4" height="4" patternUnits="userSpaceOnUse" x="${x}" y="${y}">
+      <rect width="4" height="4" fill="url(#${id}-dot)"/>
+    </pattern>
+    <g clip-path="url(#${id}-clip)">
+      <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${paper}"/>
+      ${ink}
+      <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="url(#${id}-dots)" opacity="0.55"/>
+    </g>`;
+}
+
+/** Rasterises the print (SVG elements from printLayer) under Satori's `text` SVG, `outputWidth`
+ *  pixels wide, as an opaque RGB PNG. */
+function rasterise(print: string, text: string, { width, height }: Size, outputWidth: number, background: string): Buffer {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${print}${text}</svg>`;
+  const image = new Resvg(svg, { fitTo: { mode: 'width', value: outputWidth }, background }).render();
+  return encodeRgbPng(image.pixels, image.width, image.height);
+}
+
+/** A lesson photo's bytes, from `public/` (its `photo.url` is site-relative: `/images/…`). */
+function readPhoto(url: string): Promise<Buffer> {
+  // From the project root, as with the fonts.
+  return readFile(`public${url}`);
+}
+
+async function photoDataUri(url: string): Promise<string> {
+  const type = url.endsWith('.png') ? 'image/png' : 'image/jpeg';
+  return `data:${type};base64,${(await readPhoto(url)).toString('base64')}`;
+}
 
 function template(content: ArtworkContent, colors: { background: string; text: string }, { width, height }: Size): SatoriElement {
   const unit = Math.min(width, height) / 100; // 1% of the short side
@@ -152,8 +281,11 @@ function template(content: ArtworkContent, colors: { background: string; text: s
   );
 }
 
-let fontCache: Promise<{ name: string; data: Buffer; weight: 400 | 700; style: 'normal' }[]> | undefined;
+type SatoriFont = { name: string; data: Buffer; weight: 400 | 700; style: 'normal' };
 
+let fontCache: Promise<SatoriFont[]> | undefined;
+
+/** The covers' font (until #61 restyles them). */
 function fonts() {
   fontCache ??= Promise.all(
     ([['Regular', 400], ['Bold', 700]] as const).map(async ([file, weight]) => ({
@@ -168,11 +300,34 @@ function fonts() {
   return fontCache;
 }
 
+let ogFontCache: Promise<SatoriFont[]> | undefined;
+
+/** The OG image's fonts, as on the lesson page: Alegreya and Alegreya Sans, both 700. Satori reads
+ *  WOFF but not WOFF2. */
+function ogFonts() {
+  ogFontCache ??= Promise.all(
+    (['Alegreya', 'Alegreya Sans'] as const).map(async (name) => {
+      const pkg = name.toLowerCase().replace(' ', '-');
+      return {
+        name,
+        data: await readFile(`node_modules/@fontsource/${pkg}/files/${pkg}-latin-700-normal.woff`),
+        weight: 700 as const,
+        style: 'normal' as const,
+      };
+    }),
+  );
+  return ogFontCache;
+}
+
 /** A short hash of the font files, so swapping a font invalidates the cached artwork. */
 async function fontHash(): Promise<string> {
-  const hash = createHash('sha256');
-  for (const font of await fonts()) hash.update(font.data);
-  return hash.digest('hex').slice(0, 16);
+  return hash([...(await fonts()), ...(await ogFonts())].map((font) => font.data));
+}
+
+function hash(buffers: Buffer[]): string {
+  const sha = createHash('sha256');
+  for (const buffer of buffers) sha.update(buffer);
+  return sha.digest('hex').slice(0, 16);
 }
 
 /**
