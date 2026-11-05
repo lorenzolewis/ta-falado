@@ -11,6 +11,11 @@ import { homeData } from '../../components/proto/home-data';
 import ProtoHead from '../../components/proto/ProtoHead.astro';
 import ProtoSwitcher from '../../components/proto/ProtoSwitcher.astro';
 import Base from '../../layouts/Base.astro';
+import * as credits from '../../../CREDITS.md';
+
+const creditsHtml = (await credits.compiledContent())
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<(\/?)h([1-5])\b/g, (_, slash: string, level: string) => `<${slash}h${Number(level) + 1}`);
 
 const groups = await homeData();
 const rows = groups.flatMap((g) => g.rows.map((r) => ({ ...r, label: g.label })));
@@ -26,15 +31,17 @@ const intro = (md: string) =>
 <Base title="Home D (prototype)" noindex bare>
   <ProtoHead slot="head" />
   <div class="vd" data-variant="d" data-view="home">
-    <nav class="side" aria-label="Lessons">
-      <div class="panel top">
+    <nav class="side panel" aria-label="Site and lessons">
+      <div class="nav-top">
         <a class="wordmark" href="/proto/home-d" lang="pt-BR" data-home>Tá Falado</a>
-        <a class="home-btn" href="/proto/home-d" data-home>
+        <a class="nav-row nav-home" href="/proto/home-d" data-home>
           <span class="i-off" set:html={ICON.home} /><span class="i-on" set:html={ICON.homeFilled} />Home
         </a>
+        <a class="nav-row" href="/about" data-about>
+          <Fragment set:html={ICON.info} />About this site
+        </a>
       </div>
-
-      <div class="panel lib" data-lib>
+      <div class="lib" data-lib>
         <div class="lib-head">
           <h2>Lessons</h2>
           <button type="button" class="icon-btn" data-search-toggle aria-expanded="false" aria-controls="d-search">
@@ -89,6 +96,13 @@ const intro = (md: string) =>
           <button type="button" class="link-btn" data-clear>Clear the filter</button>
         </div>
       </div>
+      <footer class="side-foot">
+        <p>
+          <b>An independent, unofficial archive.</b> Lessons by COERLL, University of Texas at Austin, licensed <a
+            href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a
+          >.
+        </p>
+      </footer>
     </nav>
 
     <main id="main" class="panel pane" data-pane tabindex="-1">
@@ -137,14 +151,6 @@ const intro = (md: string) =>
           }
         </ul>
 
-        <footer class="foot">
-          <p>
-            <b>An independent, unofficial archive.</b> The lessons are by COERLL at the University of Texas at Austin, licensed <a
-              href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a
-            >.
-          </p>
-          <p class="foot-links"><a href="/about">About this site</a><a href="/feed.xml">Podcast feed</a></p>
-        </footer>
       </section>
 
       {
@@ -176,6 +182,29 @@ const intro = (md: string) =>
           </article>
         ))
       }
+
+      <section class="about" data-view-about hidden aria-labelledby="d-about">
+        <h1 id="d-about">About this site</h1>
+        <p>
+          This is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian
+          Portuguese lessons recorded at the University of Texas at Austin in 2006 and 2007. It keeps all 46 lessons
+          and their transcripts available in a site that works on a phone.
+        </p>
+        <p>
+          The lessons are for English speakers who also speak Spanish and are learning Brazilian Portuguese: each one
+          builds on what you already know from Spanish, pointing out where Portuguese pronunciation and grammar differ.
+        </p>
+        <Fragment set:html={creditsHtml} />
+        <p class="placeholder">The About page's own design is the About page prototype (#57). This is its current text.</p>
+      </section>
+
+      <footer class="pane-foot">
+        <p>
+          <b>An independent, unofficial archive.</b> Lessons by COERLL, University of Texas at Austin, licensed <a
+            href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a
+          >. <a href="/about" data-about>About this site</a>
+        </p>
+      </footer>
     </main>
 
     <nav class="tabs" aria-label="Sections">
@@ -209,7 +238,7 @@ const intro = (md: string) =>
     background: var(--surface);
   }
 
-  /* Desktop: two panels side by side, each scrolling on its own, above the player. */
+  /* Desktop: one sidebar panel beside the main pane, each scrolling on its own, above the player. */
   @media (min-width: 52rem) {
     .vd {
       grid-template-columns: minmax(18rem, 22rem) 1fr;
@@ -218,8 +247,8 @@ const intro = (md: string) =>
     .vd .side {
       display: flex;
       flex-direction: column;
-      gap: var(--gap);
       min-block-size: 0;
+      overflow: hidden;
     }
     .vd .lib {
       flex: 1;
@@ -236,7 +265,8 @@ const intro = (md: string) =>
       min-block-size: 0;
     }
     .vd .tabs,
-    .vd .detail .back {
+    .vd .detail .back,
+    .vd .pane .pane-foot {
       display: none;
     }
   }
@@ -246,13 +276,16 @@ const intro = (md: string) =>
     .vd {
       padding-block-end: calc(var(--tabs-h) + var(--gap));
     }
-    .vd .side .top {
+    /* The tabs stand in for the wordmark and Home row; About stays. */
+    .vd .side .wordmark,
+    .vd .side .nav-home {
       display: none;
     }
     :root:has(.vd) [data-proto-bar] {
       inset-block-end: calc(var(--player-block-size, 0px) + 72px) !important;
     }
     .vd[data-view='home'] .side,
+    .vd[data-view='about'] .side,
     .vd[data-view='lessons'] .pane,
     .vd[data-view='lesson'] .side {
       display: none;
@@ -299,11 +332,12 @@ const intro = (md: string) =>
     display: none;
   }
 
-  /* Top panel */
-  .vd .top {
+  /* Sidebar: site rows, then the lessons, then the footer */
+  .vd .nav-top {
     padding: 12px 12px 8px;
     display: grid;
-    gap: 4px;
+    gap: 2px;
+    border-block-end: 1px solid var(--line);
   }
   .vd .wordmark {
     font: italic 700 1.3125rem/1 var(--serif);
@@ -311,7 +345,7 @@ const intro = (md: string) =>
     text-decoration: none;
     padding: 8px 8px 4px;
   }
-  .vd .home-btn {
+  .vd .nav-row {
     display: flex;
     align-items: center;
     gap: 14px;
@@ -323,11 +357,32 @@ const intro = (md: string) =>
     font-weight: 700;
     font-size: 1.125rem;
   }
-  .vd .home-btn[aria-current='page'] {
+  .vd .nav-row[aria-current='page'] {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  }
+  .vd .nav-row:hover {
     color: var(--ink);
   }
-  .vd .home-btn:hover {
+  .vd .side-foot,
+  .vd .pane-foot {
+    color: var(--muted);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+  .vd .side-foot {
+    padding: 12px 20px 16px;
+    border-block-start: 1px solid var(--line);
+  }
+  .vd .pane-foot {
+    margin-block-start: 40px;
+    padding-block-start: 16px;
+    border-block-start: 1px solid var(--line);
+  }
+  .vd .side-foot b,
+  .vd .pane-foot b {
     color: var(--ink);
+    font-weight: 500;
   }
 
   /* Library */
@@ -567,10 +622,12 @@ const intro = (md: string) =>
     outline: none;
   }
   .vd .home[hidden],
+  .vd .about[hidden],
   .vd .detail[hidden] {
     display: none;
   }
   .vd .home,
+  .vd .about,
   .vd .detail {
     max-inline-size: 48rem;
   }
@@ -707,25 +764,22 @@ const intro = (md: string) =>
   .vd .series-next a {
     font-weight: 500;
   }
-  .vd .foot {
-    margin-block-start: 40px;
-    color: var(--muted);
-    font-size: 0.875rem;
-    line-height: 1.45;
-    display: grid;
-    gap: 8px;
+  .vd .about h1 {
+    font: 700 2.25rem/1.05 var(--serif);
+    margin: 0 0 16px;
   }
-  .vd .foot b {
-    color: var(--ink);
-    font-weight: 500;
+  .vd .about {
+    font: 1.1875rem/1.6 var(--serif);
   }
-  .vd .foot-links {
-    display: flex;
-    gap: 20px;
+  .vd .about p,
+  .vd .about ul {
+    margin-block: 0 16px;
+    max-inline-size: 38rem;
   }
-  .vd .foot-links a {
-    font-weight: 500;
-    padding-block: 8px;
+  .vd .about h2,
+  .vd .about h3 {
+    font: 700 1.5rem/1.1 var(--serif);
+    margin: 32px 0 12px;
   }
 
   /* Lesson detail (placeholder for #55) */
@@ -808,6 +862,7 @@ const intro = (md: string) =>
 
     const pane = root.querySelector<HTMLElement>('[data-pane]')!;
     const home = root.querySelector<HTMLElement>('[data-view-home]')!;
+    const about = root.querySelector<HTMLElement>('[data-view-about]')!;
     const details = [...root.querySelectorAll<HTMLElement>('[data-detail]')];
     const links = [...root.querySelectorAll<HTMLAnchorElement>('.list [data-select]')];
     const pills = [...root.querySelectorAll<HTMLButtonElement>('[data-pill]')];
@@ -823,14 +878,18 @@ const intro = (md: string) =>
       const params = new URLSearchParams(location.search);
       const lesson = params.get('lesson');
       const path = lesson ? `/${lesson}` : null;
-      const view = path ? 'lesson' : params.get('view') === 'lessons' ? 'lessons' : 'home';
+      const v = params.get('view');
+      const view = path ? 'lesson' : v === 'lessons' || v === 'about' ? v : 'home';
       root!.dataset.view = view;
-      home.hidden = !!path;
+      // On desktop the Lessons view leaves the home page in the pane.
+      home.hidden = view !== 'home' && view !== 'lessons';
+      about.hidden = view !== 'about';
       for (const d of details) d.hidden = d.dataset.detail !== path;
       for (const a of links) a.setAttribute('aria-current', String(a.dataset.select === path));
       const mark = (el: Element, on: boolean) => (on ? el.setAttribute('aria-current', 'page') : el.removeAttribute('aria-current'));
-      for (const a of root!.querySelectorAll('[data-home]:not(.wordmark)')) mark(a, view === 'home');
-      mark(root!.querySelector('[data-lessons-tab]')!, view !== 'home');
+      for (const a of root!.querySelectorAll('.nav-home, .tabs [data-home]')) mark(a, view === 'home');
+      mark(root!.querySelector('.nav-row[data-about]')!, view === 'about');
+      mark(root!.querySelector('[data-lessons-tab]')!, view === 'lessons' || view === 'lesson');
     }
     function go(url: string) {
       history.pushState(null, '', url);
@@ -851,6 +910,10 @@ const intro = (md: string) =>
         if (a.matches('[data-home]')) {
           e.preventDefault();
           go('/proto/home-d');
+        } else if (a.matches('[data-about]')) {
+          e.preventDefault();
+          go('/proto/home-d?view=about');
+          pane.focus({ preventScroll: true });
         } else if (a.matches('[data-lessons-tab]')) {
           e.preventDefault();
           go('/proto/home-d?view=lessons');

@@ -11,5 +11,6 @@ export const ICON = {
   homeFilled: svg('<path class="f" d="M2 10.2 12 2l10 8.2V22h-8.2v-6.5h-3.6V22H2z"/>'),
   library: svg('<path d="M4.5 3.5v17M10 3.5v17M15 4.5l5 15.5"/>'),
   back: svg('<path d="M15 4.5 7.5 12l7.5 7.5"/>'),
+  info: svg('<circle cx="12" cy="12" r="8.75"/><path d="M12 11v6"/><path class="f" d="M10.6 6.6h2.8v2.8h-2.8z"/>'),
   close: svg('<path d="m6 6 12 12M18 6 6 18"/>'),
 };
