@@ -446,7 +446,8 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
   @media (min-width: 52rem) {
     .row {
       display: grid;
-      grid-template-columns: minmax(16rem, 1.3fr) auto minmax(14rem, 1.5fr) auto;
+      /* 12rem minimums (not #59's 16rem and 14rem), so the row fits at 52rem (decided on #60). */
+      grid-template-columns: minmax(12rem, 1.3fr) auto minmax(12rem, 1.5fr) auto;
       align-items: center;
       gap: var(--space-24);
       padding: var(--space-12) var(--space-24) calc(var(--space-12) + var(--player-safe-b));
