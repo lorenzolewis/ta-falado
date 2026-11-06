@@ -1,0 +1,164 @@
+/* Page-to-page motion (#62, #63): "sheets". Each page is a sheet on the board. Forward lays a new
+   sheet over the old one from the right; Back pulls the top sheet off to the right, and the one
+   underneath was there all along. On a phone the Lessons view and each page are full-screen sheets
+   in a stack, so the sheet underneath also slides a little, as in the platform's own navigation.
+
+   Only the sheet moves: the board, the sidebar (desktop), the mini-player (ADR 0001) and the
+   phone's "‹ Lessons" button stay put. Which way a move goes is set by the ClientRouter's
+   html[data-astro-transition], adjusted by src/lib/motion.ts. */
+
+:root {
+  --sheet-ease: cubic-bezier(0.2, 0.7, 0, 1);
+  --sheet-forward: 400ms;
+  --sheet-back: 360ms;
+}
+
+/* What stays put: its own layer, above the sheet, never animated. */
+.player {
+  view-transition-name: player;
+}
+.back {
+  view-transition-name: back;
+}
+::view-transition-group(player),
+::view-transition-group(back),
+::view-transition-group(sidebar) {
+  animation: none;
+}
+::view-transition-group(player),
+::view-transition-group(back) {
+  z-index: 3;
+}
+::view-transition-old(player),
+::view-transition-old(back),
+::view-transition-old(sidebar) {
+  display: none;
+}
+::view-transition-new(player),
+::view-transition-new(back),
+::view-transition-new(sidebar) {
+  animation: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* The sheet: the page, beside the sidebar on desktop; on a phone, whichever of the page and the
+   Lessons view is shown. */
+@media (min-width: 52rem) {
+  .app > .side {
+    view-transition-name: sidebar;
+  }
+  .app > .pane {
+    view-transition-name: sheet;
+  }
+  /* A sheet coming in from the right never crosses the sidebar. */
+  ::view-transition-group(sheet) {
+    overflow: clip;
+  }
+}
+@media (max-width: 51.99rem) {
+  .app[data-view='lessons'] > .side,
+  .app:not([data-view='lessons']) > .pane {
+    view-transition-name: sheet;
+  }
+}
+::view-transition-group(sheet) {
+  animation: none;
+}
+::view-transition-old(sheet),
+::view-transition-new(sheet) {
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-off {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-dim {
+  to {
+    filter: brightness(0.9);
+  }
+}
+@keyframes sheet-undim {
+  from {
+    filter: brightness(0.9);
+  }
+}
+@keyframes sheet-under {
+  to {
+    transform: translateX(-28%);
+    filter: brightness(0.86);
+  }
+}
+@keyframes sheet-from-under {
+  from {
+    transform: translateX(-28%);
+    filter: brightness(0.86);
+  }
+}
+@keyframes sheet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sheet-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Forward: the new sheet comes in on top, its leading edge a 1px rule; the old one dims under it. */
+::view-transition-new(sheet) {
+  z-index: 2;
+  filter: drop-shadow(-1px 0 0 var(--line));
+  animation: sheet-in var(--sheet-forward) var(--sheet-ease) both;
+}
+::view-transition-old(sheet) {
+  animation: sheet-dim var(--sheet-forward) var(--sheet-ease) both;
+}
+
+/* Back: the top sheet is pulled off; the one underneath comes back up to full brightness. */
+html[data-astro-transition='back']::view-transition-old(sheet) {
+  z-index: 2;
+  filter: drop-shadow(-1px 0 0 var(--line));
+  animation: sheet-off var(--sheet-back) var(--sheet-ease) both;
+}
+html[data-astro-transition='back']::view-transition-new(sheet) {
+  z-index: 1;
+  filter: none;
+  animation: sheet-undim var(--sheet-back) var(--sheet-ease) both;
+}
+
+/* Phone: the sheet underneath slides a little too. */
+@media (max-width: 51.99rem) {
+  ::view-transition-old(sheet) {
+    animation-name: sheet-under;
+  }
+  html[data-astro-transition='back']::view-transition-new(sheet) {
+    animation-name: sheet-from-under;
+  }
+}
+
+/* Reduced motion: nothing slides or dims. The sheet crossfades, so the change still reads.
+   !important over the ClientRouter's own reduced-motion rule, which stops every view-transition
+   animation with `animation: none !important` (astro/components/viewtransitions.css). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(sheet),
+  html[data-astro-transition='back']::view-transition-old(sheet) {
+    animation: sheet-fade-out 150ms linear both !important;
+  }
+  ::view-transition-new(sheet),
+  html[data-astro-transition='back']::view-transition-new(sheet) {
+    animation: sheet-fade-in 150ms linear both !important;
+  }
+}
