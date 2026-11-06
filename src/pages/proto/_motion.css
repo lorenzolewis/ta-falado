@@ -12,23 +12,23 @@
 }
 
 /* ── Shared by A, B and C: the mini-player and the phone's "‹ Lessons" button never move. ── */
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c']) .player {
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d']) .player {
   view-transition-name: player;
 }
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c']) .back {
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d']) .back {
   view-transition-name: back;
 }
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-group(player),
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-group(back) {
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-group(player),
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-group(back) {
   animation: none;
   z-index: 10;
 }
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-old(player),
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-old(back) {
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-old(player),
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-old(back) {
   display: none;
 }
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-new(player),
-html:is([data-motion='a'], [data-motion='b'], [data-motion='c'])::view-transition-new(back) {
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-new(player),
+html:is([data-motion='a'], [data-motion='b'], [data-motion='c'], [data-motion='d'])::view-transition-new(back) {
   animation: none;
 }
 
@@ -96,30 +96,30 @@ html[data-motion='a']::view-transition-new(root) {
    and the page are each a full-screen sheet, the old sheet also slides a little the other way, as
    in an iOS navigation stack. The sidebar (desktop) and the board never move. ════ */
 @media (min-width: 52rem) {
-  html[data-motion='b'] .app > .side { view-transition-name: sidebar; }
-  html[data-motion='b'] .app > .pane { view-transition-name: sheet; }
-  html[data-motion='b']::view-transition-group(sidebar) {
+  html:is([data-motion='b'], [data-motion='d']) .app > .side { view-transition-name: sidebar; }
+  html:is([data-motion='b'], [data-motion='d']) .app > .pane { view-transition-name: sheet; }
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-group(sidebar) {
     animation: none;
     z-index: 4;
   }
-  html[data-motion='b']::view-transition-old(sidebar) { display: none; }
-  html[data-motion='b']::view-transition-new(sidebar) { animation: none; }
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-old(sidebar) { display: none; }
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-new(sidebar) { animation: none; }
   /* The sheet's box can change height (the player appears); keep the group at the new size. */
-  html[data-motion='b']::view-transition-group(sheet) { animation: none; overflow: clip; }
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-group(sheet) { animation: none; overflow: clip; }
 }
 @media (max-width: 51.99rem) {
-  html[data-motion='b'] .app[data-view='lessons'] > .side,
-  html[data-motion='b'] .app:not([data-view='lessons']) > .pane {
+  html:is([data-motion='b'], [data-motion='d']) .app[data-view='lessons'] > .side,
+  html:is([data-motion='b'], [data-motion='d']) .app:not([data-view='lessons']) > .pane {
     view-transition-name: sheet;
   }
-  html[data-motion='b']::view-transition-group(sheet) { animation: none; }
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-group(sheet) { animation: none; }
 }
-html[data-motion='b']::view-transition-old(root),
-html[data-motion='b']::view-transition-new(root) {
+html:is([data-motion='b'], [data-motion='d'])::view-transition-old(root),
+html:is([data-motion='b'], [data-motion='d'])::view-transition-new(root) {
   animation: none;
 }
-html[data-motion='b']::view-transition-old(sheet),
-html[data-motion='b']::view-transition-new(sheet) {
+html:is([data-motion='b'], [data-motion='d'])::view-transition-old(sheet),
+html:is([data-motion='b'], [data-motion='d'])::view-transition-new(sheet) {
   block-size: 100%;
   object-fit: cover;
   object-position: top;
@@ -133,30 +133,30 @@ html[data-motion='b']::view-transition-new(sheet) {
 @keyframes p-sheet-dim-in { from { filter: brightness(0.9); } }
 
 /* Forward: the new sheet comes in on top. */
-html[data-motion='b']::view-transition-new(sheet) {
+html:is([data-motion='b'], [data-motion='d'])::view-transition-new(sheet) {
   animation: p-sheet-in calc(400ms * var(--slow)) var(--ease-print) both;
   z-index: 2;
   filter: drop-shadow(-1px 0 0 var(--line));
 }
-html[data-motion='b']::view-transition-old(sheet) {
+html:is([data-motion='b'], [data-motion='d'])::view-transition-old(sheet) {
   animation: p-sheet-dim-out calc(400ms * var(--slow)) var(--ease-print) both;
 }
 /* Back: the old sheet goes off the top; the new one is revealed under it. */
-html[data-motion='b'][data-astro-transition='back']::view-transition-old(sheet) {
+html:is([data-motion='b'], [data-motion='d'])[data-astro-transition='back']::view-transition-old(sheet) {
   animation: p-sheet-out calc(360ms * var(--slow)) var(--ease-print) both;
   z-index: 2;
   filter: drop-shadow(-1px 0 0 var(--line));
 }
-html[data-motion='b'][data-astro-transition='back']::view-transition-new(sheet) {
+html:is([data-motion='b'], [data-motion='d'])[data-astro-transition='back']::view-transition-new(sheet) {
   animation: p-sheet-dim-in calc(360ms * var(--slow)) var(--ease-print) both;
   z-index: 1;
   filter: none;
 }
 @media (max-width: 51.99rem) {
-  html[data-motion='b']::view-transition-old(sheet) {
+  html:is([data-motion='b'], [data-motion='d'])::view-transition-old(sheet) {
     animation-name: p-sheet-under-out;
   }
-  html[data-motion='b'][data-astro-transition='back']::view-transition-new(sheet) {
+  html:is([data-motion='b'], [data-motion='d'])[data-astro-transition='back']::view-transition-new(sheet) {
     animation-name: p-sheet-under-in;
   }
 }
@@ -196,6 +196,33 @@ html[data-motion='c'][data-press] .home > :not(h1) {
 html[data-motion='c'][data-press] .lesson .intro,
 html[data-motion='c'][data-press] .lesson .transcript {
   animation: p-rise-in calc(360ms * var(--slow)) var(--ease-out) calc(320ms * var(--slow)) both;
+}
+
+
+/* ════ D: "Sheets, printed" (B + a quiet C). Forward lays the new sheet over from the right
+   (B); as it lands, its photo's ink comes up and the heading settles, faintly. Going home is
+   always Back: the lesson sheet is pulled off to the right and the home sheet was underneath all
+   along, so it's revealed as it was, with no ink-up. ════ */
+@keyframes p-ink-up-quiet {
+  from { opacity: 0.55; filter: grayscale(1) contrast(1.8) brightness(1.15); }
+}
+@keyframes p-ink-settle-quiet {
+  from { opacity: 0.6; filter: blur(1px); }
+}
+@keyframes p-rise-in-quiet {
+  from { opacity: 0; transform: translateY(4px); }
+}
+html[data-motion='d'][data-press] .pane .print img {
+  animation: p-ink-up-quiet calc(420ms * var(--slow)) var(--ease-out) calc(160ms * var(--slow)) both;
+}
+html[data-motion='d'][data-press] .pane h1 {
+  animation: p-ink-settle-quiet calc(320ms * var(--slow)) var(--ease-out) calc(200ms * var(--slow)) both;
+}
+html[data-motion='d'][data-press] .lesson .facts,
+html[data-motion='d'][data-press] .lesson header > :last-child,
+html[data-motion='d'][data-press] .lesson .intro,
+html[data-motion='d'][data-press] .lesson .transcript {
+  animation: p-rise-in-quiet calc(280ms * var(--slow)) var(--ease-out) calc(240ms * var(--slow)) both;
 }
 
 /* ════ Reduced motion, every variant: nothing moves or morphs. A 150ms crossfade of the whole

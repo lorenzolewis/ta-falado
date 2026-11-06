@@ -1,6 +1,6 @@
 ---
 // PROTOTYPE (#62), throwaway, never merged. Three motion variants for every page-to-page navigation,
-// switchable site-wide with ?motion=0|a|b|c (kept for the visit in sessionStorage, since the
+// switchable site-wide with ?motion=0|a|b|c|d (kept for the visit in sessionStorage, since the
 // ClientRouter drops the query on navigation) and this floating bar. "[" and "]" cycle variants
 // (the arrow keys belong to the player). "Slow ×5" stretches every duration; "Reduced" simulates
 // prefers-reduced-motion. The bar shows the last navigation: its direction and which elements had
@@ -23,6 +23,7 @@ import './_motion.css';
     a: 'The tab carries',
     b: 'Sheets',
     c: 'Press',
+    d: 'Sheets, printed (B + quiet C)',
   };
   const KEYS = Object.keys(VARIANTS);
   const store = {
@@ -37,7 +38,7 @@ import './_motion.css';
   const params = new URLSearchParams(location.search);
   const fromUrl = params.get('motion');
   if (fromUrl && fromUrl in VARIANTS) store.set('motion', fromUrl);
-  let motion = store.get('motion') ?? 'a';
+  let motion = store.get('motion') ?? 'd';
   let slow = store.get('slow') === '1';
   let rm = store.get('rm') === '1';
 
@@ -108,6 +109,9 @@ import './_motion.css';
   // when the page we're leaving has no tab of its own (lesson to lesson, the tab morphs tab to tab).
   let direction = 'forward';
   document.addEventListener('astro:before-preparation', (e) => {
+    // B and D: home is the bottom sheet, so going home is always Back (the sheet on top is pulled
+    // off), even from a link, which history counts as forward.
+    if ((motion === 'b' || motion === 'd') && e.to.pathname === '/' && e.from.pathname !== '/') e.direction = 'back';
     direction = e.direction;
     if (motion !== 'a') return;
     const row = (e.sourceElement as Element | undefined)?.closest?.('[data-sidebar] .list a');
@@ -125,7 +129,7 @@ import './_motion.css';
     }
     render();
     report(direction);
-    if (motion === 'c') {
+    if (motion === 'c' || (motion === 'd' && direction !== 'back')) {
       document.documentElement.setAttribute('data-press', '');
       setTimeout(() => document.documentElement.removeAttribute('data-press'), 1100 * (slow ? 5 : 1));
     }
@@ -153,7 +157,7 @@ import './_motion.css';
     const vt = document.startViewTransition(() => {
       update();
       report(`${dir} (Lessons view)`);
-      if (motion === 'c') {
+      if (motion === 'c' || (motion === 'd' && dir !== 'back')) {
         root.setAttribute('data-press', '');
         setTimeout(() => root.removeAttribute('data-press'), 1100 * (slow ? 5 : 1));
       }

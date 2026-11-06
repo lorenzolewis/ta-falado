@@ -9,9 +9,9 @@ const OUT = process.argv[3] ?? 'prototype-screenshots';
 const SCHEME = process.argv[4] ?? 'light';
 mkdirSync(OUT, { recursive: true });
 
-const TIMES = { 0: [60, 125, 190], a: [80, 180, 300], b: [80, 170, 270], c: [100, 260, 480] };
-const VARIANTS = ['0', 'a', 'b', 'c'];
-const NAMES = { 0: 'Today', a: 'A, The tab carries', b: 'B, Sheets', c: 'C, Press' };
+const TIMES = { 0: [60, 125, 190], a: [80, 180, 300], b: [80, 170, 270], c: [100, 260, 480], d: [80, 220, 360] };
+const VARIANTS = (process.env.VARIANTS ?? '0,a,b,c,d').split(',');
+const NAMES = { 0: 'Today', a: 'A, The tab carries', b: 'B, Sheets', c: 'C, Press', d: 'D, Sheets, printed' };
 
 const VIEWPORTS = {
   phone: { ...devices['iPhone 15'], defaultBrowserType: undefined },
