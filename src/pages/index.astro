@@ -1,6 +1,6 @@
 ---
 // The home page (#53, with the old About page's "liner notes" from #58): the name and lede, the
-// Continue card and its "All lessons" row, then the credits, read like the back of a record sleeve.
+// Continue card and, on a phone, its "All 46 lessons" row, then the credits, read like the back of a record sleeve.
 // A roster of roles and names, each name opening its bio in place; the license written out as prose;
 // then this site's own code. The roster comes from CREDITS.md (docs/adr/0005). The lesson list and
 // its filter are in the sidebar (Base.astro).
@@ -219,7 +219,8 @@ const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
     font-size: var(--text-14);
   }
 
-  /* "All lessons": a row under the card, ruled off like a list row, that opens the list. */
+  /* "All 46 lessons": a row under the card, ruled off like a list row, that opens the phone's Lessons
+     view. Desktop has no need of it, since the sidebar is always in view there. */
   .all-lessons {
     display: flex;
     align-items: center;
@@ -240,6 +241,11 @@ const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
   }
   .all-lessons :global(.next) {
     transform: scaleX(-1);
+  }
+  @media (min-width: 52rem) {
+    .all-lessons {
+      display: none;
+    }
   }
 
   /* The roster: the role on the left, the names on the right, a rule under each role. */

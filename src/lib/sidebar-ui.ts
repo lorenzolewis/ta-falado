@@ -104,8 +104,6 @@ function syncPage() {
 }
 
 const LESSONS_HASH = `#${LESSONS_ID}`;
-/** The phone layout's breakpoint, as in src/styles/base.css. */
-const PHONE = '(max-width: 51.99rem)';
 
 /**
  * Opens the phone's Lessons view: #lessons on the current page. Through the ClientRouter, so the
@@ -119,16 +117,13 @@ async function openLessons() {
 }
 
 /**
- * "All 46 lessons" on the home page: the whole list, with no series or query, from its top. On a
- * phone that is the Lessons view; on desktop the sidebar is already in view, so focus moves to its
- * first lesson and Tab carries on down the list. Exported for the home page's script.
+ * "All 46 lessons" on the home page (shown only on a phone): the Lessons view with the whole list,
+ * no series or query, from its top. Exported for the home page's script.
  */
 export function showAllLessons() {
   showOnly?.(null);
-  const list = document.querySelector<HTMLElement>('[data-sidebar] .list');
-  list?.scrollTo(0, 0);
-  if (matchMedia(PHONE).matches) void openLessons();
-  else list?.querySelector<HTMLAnchorElement>('a')?.focus();
+  document.querySelector('[data-sidebar] .list')?.scrollTo(0, 0);
+  void openLessons();
 }
 
 // Links to #lessons (the phone's "‹ Lessons" button). Captured before the ClientRouter's
