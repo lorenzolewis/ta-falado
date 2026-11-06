@@ -1,0 +1,280 @@
+---
+// PROTOTYPE (#57), variant B, "Attribution card": legal first. The notice is the headline; the CC BY
+// attribution (title, author, source, license, changes) is printed on an ipê-amarelo card in the
+// print's ink and dot screen; this site's code and links sit beside it as a second, quieter card.
+// The team is a compact list, and the bios fold into one disclosure. Throwaway: never merged.
+import Base from '../../layouts/Base.astro';
+import { DEFAULT_PAPER, INK } from '../../lib/print';
+import Switcher from './_Switcher.astro';
+import { LINKS, TEAM } from './_about';
+---
+
+<Base title="About" noindex>
+  <article class="lb">
+    <h1>An independent, unofficial archive of <span lang="pt-BR">Tá Falado</span></h1>
+    <p class="lede">
+      Brazilian Portuguese lessons for speakers of Spanish, recorded at the University of Texas at Austin in 2006 and
+      2007. This site keeps all 46 lessons and their transcripts, in a site that works on a phone. It isn't affiliated
+      with or endorsed by the University of Texas at Austin or COERLL.
+    </p>
+
+    <div class="cards">
+      <section class="card attribution" style={`--paper: ${DEFAULT_PAPER}; --print-ink: ${INK}`} aria-labelledby="lb-attr">
+        <div class="card-head">
+          <h2 id="lb-attr">The original work</h2>
+          <a class="cc" href={LINKS.ccby}>CC BY 3.0</a>
+        </div>
+        <dl>
+          <dt>Title</dt>
+          <dd><cite><span lang="pt-BR">Tá Falado</span>: Brazilian Portuguese Pronunciation for Speakers of Spanish</cite></dd>
+          <dt>Authors</dt>
+          <dd>The podcasting team from the University of Texas at Austin, hosted by Orlando R. Kelm, produced at the College of Liberal Arts</dd>
+          <dt>Publisher</dt>
+          <dd>COERLL (Center for Open Educational Resources and Language Learning), University of Texas at Austin</dd>
+          <dt>Original</dt>
+          <dd><a href={LINKS.original}>coerll.utexas.edu/brazilpod/tafalado</a>, archived March 2, 2026</dd>
+          <dt>Copyright</dt>
+          <dd>© 2025, University of Texas at Austin</dd>
+          <dt>License</dt>
+          <dd><a href={LINKS.ccby}>Creative Commons Attribution 3.0 Unported</a></dd>
+          <dt>Changes</dt>
+          <dd>
+            <b>Modified: re-hosted and re-presented.</b> The MP3s, PDF transcripts and photos are served unchanged, and the
+            lesson titles and intros keep their original wording; this site gives them new pages, a new player and a new
+            podcast feed.
+          </dd>
+        </dl>
+      </section>
+
+      <section class="card site" aria-labelledby="lb-site">
+        <h2 id="lb-site">This site</h2>
+        <p>
+          Its code is separate from the content and MIT-licensed. The artwork is set in <a href={LINKS.alegreya}>Alegreya</a>{" "}
+          and <a href={LINKS.alegreyaSans}>Alegreya Sans</a> (Huerta Tipográfica, SIL Open Font License).
+        </p>
+        <ul class="links">
+          <li><a class="out" href={LINKS.repo}>Source code</a></li>
+          <li><a class="out" href={LINKS.license}>MIT license</a></li>
+          <li><a class="out" href={LINKS.credits}>Full credits</a></li>
+        </ul>
+      </section>
+    </div>
+
+    <section aria-labelledby="lb-photos">
+      <h2 id="lb-photos">Photos</h2>
+      <p>
+        The lesson photos come from the original lesson pages, which don't credit them separately, so they're shared under
+        the same license. If you took one and would rather it not appear here, <a href={LINKS.issues}>open an issue</a>{" "}
+        and it will be removed.
+      </p>
+    </section>
+
+    <section aria-labelledby="lb-team">
+      <h2 id="lb-team">The team</h2>
+      <dl class="team">
+        {
+          TEAM.map(({ group, people }) => (
+            <>
+              <dt>{group}</dt>
+              <dd>
+                <ul>
+                  {people.map((p) => (
+                    <li>
+                      <span class="who" set:html={p.nameHtml ?? p.name} />
+                      {group === 'Production' ? `, ${p.role.toLowerCase()}` : p.from && `, from ${p.from}`}
+                      {p.note && ` (${p.note})`}
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </>
+          ))
+        }
+        <dt>Support</dt>
+        <dd>
+          <a href={LINKS.tltc}>Texas Language Technology Center</a> and{' '}
+          <a href={LINKS.laits}>Liberal Arts Instructional Technology Services</a>, College of Liberal Arts
+        </dd>
+      </dl>
+      <details class="bios">
+        <summary>Read the team's bios</summary>
+        <p class="src">From the <a href={LINKS.originalAbout}>original About page</a>, as published in 2006–2007.</p>
+        {
+          TEAM.flatMap(({ people }) => people).map((p) => (
+            <section>
+              <h3 set:html={p.nameHtml ?? p.name} />
+              <Fragment set:html={p.bio} />
+            </section>
+          ))
+        }
+      </details>
+    </section>
+  </article>
+  <Switcher variant="b" />
+</Base>
+
+<style>
+  .lb {
+    max-inline-size: 46rem;
+  }
+  h1 {
+    max-inline-size: 14em;
+    font-size: clamp(var(--text-36), 6vw, 3.25rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .lede {
+    max-inline-size: 36rem;
+    font: var(--text-21) / 1.5 var(--font-serif);
+  }
+  h2 {
+    margin: 0 0 var(--space-12);
+    font-size: var(--text-24);
+  }
+  section:not(.card) {
+    margin-block-start: 48px;
+  }
+
+  .cards {
+    display: grid;
+    gap: var(--space-12);
+    margin-block-start: var(--space-32);
+  }
+  .card {
+    border-radius: var(--radius-card);
+    padding: var(--space-24) 20px;
+  }
+
+  /* The attribution, printed: ink on ipê paper under the dot screen. Fixed colours in both themes. */
+  .attribution {
+    position: relative;
+    isolation: isolate;
+    background: var(--paper);
+    color: var(--print-ink);
+  }
+  .attribution::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(circle, #fff 0.9px, transparent 1.5px) 0 0 / 4px 4px;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  .attribution a {
+    color: inherit;
+  }
+  .card-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--space-12);
+  }
+  .cc {
+    flex: none;
+    padding: 6px 12px;
+    border: 2px solid currentColor;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .attribution dl {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: var(--space-8) var(--space-16);
+    margin: var(--space-16) 0 0;
+  }
+  .attribution dt {
+    font-weight: 700;
+  }
+  .attribution dd {
+    margin: 0;
+    font: var(--text-18) / 1.4 var(--font-serif);
+  }
+  .attribution dd b {
+    font-family: var(--font-sans);
+  }
+
+  .site {
+    border: 1px solid var(--line);
+  }
+  .site p {
+    margin-block-start: 0;
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .out {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    padding: 0 var(--space-16);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .team {
+    margin: 0;
+  }
+  .team dt {
+    margin-block-start: var(--space-12);
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .team dd {
+    margin: 0;
+  }
+  .team ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .who {
+    font-weight: 700;
+  }
+  .bios {
+    margin-block-start: var(--space-24);
+    border-block: 1px solid var(--line);
+  }
+  .bios summary {
+    padding-block: var(--space-12);
+    color: var(--accent);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .bios section {
+    margin-block: var(--space-24);
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .bios h3 {
+    margin: 0 0 var(--space-8);
+    font-size: var(--text-21);
+  }
+  .src {
+    color: var(--muted);
+  }
+
+  @media (min-width: 64rem) {
+    .cards {
+      grid-template-columns: 1.6fr 1fr;
+      align-items: start;
+    }
+  }
+  @media (max-width: 30rem) {
+    .attribution dl {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .attribution dd {
+      margin-block-end: var(--space-12);
+    }
+  }
+</style>

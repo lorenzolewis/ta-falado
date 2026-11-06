@@ -1,0 +1,195 @@
+---
+// PROTOTYPE (#57), variant A, "Liner notes": the credits as the back of a record sleeve. A roster of
+// roles and names in two columns, each name opening its bio in place; the licence written out as one
+// paragraph of sleeve fine print; this site's own code and links last. Throwaway: never merged.
+import Base from '../../layouts/Base.astro';
+import Switcher from './_Switcher.astro';
+import { LINKS, TEAM } from './_about';
+---
+
+<Base title="About" noindex>
+  <article class="la">
+    <h1>About this site</h1>
+    <p class="lede">
+      An independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian Portuguese lessons
+      for speakers of Spanish, recorded at the University of Texas at Austin in 2006 and 2007. All 46 lessons and their
+      transcripts from the <a href={LINKS.original}>archived original site</a>, in a site that works on a phone.
+    </p>
+    <p class="notice">This site isn't affiliated with or endorsed by the University of Texas at Austin or COERLL.</p>
+
+    <section aria-labelledby="la-credits">
+      <h2 id="la-credits">Credits</h2>
+      <dl class="roster">
+        {
+          TEAM.map(({ group, people }) => (
+            <div class="row">
+              <dt>{group}</dt>
+              <dd>
+                {people.map((p) => (
+                  <details class="person">
+                    <summary>
+                      <span class="name" set:html={p.nameHtml ?? p.name} />
+                      <span class="meta">
+                        {group === 'Production' ? p.role : [p.from, p.note].filter(Boolean).join(', ')}
+                      </span>
+                    </summary>
+                    <div class="bio" set:html={p.bio} />
+                  </details>
+                ))}
+              </dd>
+            </div>
+          ))
+        }
+        <div class="row">
+          <dt>Support</dt>
+          <dd class="support">
+            <a href={LINKS.tltc}>Texas Language Technology Center</a> and{' '}
+            <a href={LINKS.laits}>Liberal Arts Instructional Technology Services</a>, College of Liberal Arts, University
+            of Texas at Austin
+          </dd>
+        </div>
+      </dl>
+      <p class="aside">
+        Tap a name for their bio, from the <a href={LINKS.originalAbout}>original About page</a> (2006–2007). The roles
+        come from the lesson intros.
+      </p>
+    </section>
+
+    <section aria-labelledby="la-license">
+      <h2 id="la-license">License</h2>
+      <p class="fine">
+        <cite><span lang="pt-BR">Tá Falado</span>: Brazilian Portuguese Pronunciation for Speakers of Spanish</cite>, by
+        the podcasting team from the University of Texas at Austin, hosted by Orlando R. Kelm and produced at the College
+        of Liberal Arts. Published by COERLL (Center for Open Educational Resources and Language Learning), University of
+        Texas at Austin, at <a href={LINKS.original}>coerll.utexas.edu/brazilpod/tafalado</a>, archived on March 2,
+        2026. © 2025, University of Texas at Austin. Licensed under{' '}
+        <a href={LINKS.ccby}>Creative Commons Attribution 3.0 Unported (CC BY 3.0)</a>.
+      </p>
+      <p class="fine">
+        <strong>Modified: re-hosted and re-presented.</strong> The MP3s, PDF transcripts and photos are served
+        unchanged, and the lesson titles and intros keep their original wording; this site gives them new pages, a new
+        player and a new podcast feed.
+      </p>
+      <p class="fine">
+        The lesson photos come from the original lesson pages, which don't credit them separately, so they're shared
+        under the same license. If you took one and would rather it not appear here,{' '}
+        <a href={LINKS.issues}>open an issue</a> and it will be removed.
+      </p>
+    </section>
+
+    <section aria-labelledby="la-code">
+      <h2 id="la-code">This site's code</h2>
+      <p>
+        The code is separate from the content and MIT-licensed. The artwork is set in{' '}
+        <a href={LINKS.alegreya}>Alegreya</a> and <a href={LINKS.alegreyaSans}>Alegreya Sans</a> by Juan Pablo del Peral
+        (Huerta Tipográfica), under the SIL Open Font License.
+      </p>
+      <ul class="links">
+        <li><a href={LINKS.repo}>Source code on GitHub</a></li>
+        <li><a href={LINKS.license}>MIT license</a></li>
+        <li><a href={LINKS.credits}>CREDITS.md</a></li>
+      </ul>
+    </section>
+  </article>
+  <Switcher variant="a" />
+</Base>
+
+<style>
+  .la {
+    max-inline-size: 40rem;
+  }
+  h2 {
+    margin: 48px 0 var(--space-16);
+    font-size: var(--text-28);
+  }
+  .lede {
+    font: var(--text-21) / 1.5 var(--font-serif);
+  }
+  .notice {
+    color: var(--muted);
+  }
+
+  /* The roster: role on the left, names on the right, a rule between groups. */
+  .roster {
+    margin: 0;
+    border-block-start: 2px solid var(--ink);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: var(--space-16);
+    padding-block: var(--space-12);
+    border-block-end: 1px solid var(--line);
+  }
+  dt {
+    padding-block-start: 6px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  dd {
+    margin: 0;
+  }
+  .person summary {
+    display: grid;
+    padding-block: 4px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .person summary::-webkit-details-marker {
+    display: none;
+  }
+  .name {
+    font: 700 var(--text-21) / 1.25 var(--font-serif);
+  }
+  .person summary:hover .name {
+    color: var(--accent);
+  }
+  .name::after {
+    content: '+';
+    margin-inline-start: 0.4em;
+    color: var(--accent);
+    font-family: var(--font-sans);
+  }
+  .person[open] .name::after {
+    content: '–';
+  }
+  .meta {
+    color: var(--muted);
+  }
+  .bio {
+    padding: var(--space-8) 0 var(--space-12);
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .bio :global(p) {
+    margin-block: 0 var(--space-12);
+  }
+  .support {
+    padding-block-start: 6px;
+  }
+  .aside {
+    color: var(--muted);
+    font-size: var(--text-14);
+  }
+
+  .fine {
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .fine strong {
+    font-family: var(--font-sans);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) var(--space-24);
+    padding: 0;
+    list-style: none;
+    font-weight: 700;
+  }
+
+  @media (max-width: 30rem) {
+    .row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>
