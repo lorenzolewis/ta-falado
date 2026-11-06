@@ -34,3 +34,32 @@ export function ogImagePath(lesson: LessonRef): string {
 export function artworkSlug({ series, number }: LessonRef): string {
   return `${series}-${String(number).padStart(2, '0')}`;
 }
+
+// The app icons (favicon, home screen, the web app manifest): "Tá" in ink on the amarelo paper.
+// src/pages/ builds them; src/layouts/Base.astro and src/pages/manifest.webmanifest.ts link them.
+
+/** The browser tab icon: an ICO holding 16, 32 and 48px PNGs. Browsers also ask for it unlinked. */
+export const FAVICON_PATH = '/favicon.ico';
+export const FAVICON_SIZES = [16, 32, 48] as const;
+
+/** The iPhone and iPad home screen icon: 180×180, opaque; iOS rounds the corners itself. */
+export const APPLE_TOUCH_ICON_PATH = '/apple-touch-icon.png';
+export const APPLE_TOUCH_ICON_SIZE = 180;
+
+/** One of the web app manifest's icons. A maskable one keeps "Tá" inside the central safe zone. */
+export interface ManifestIcon {
+  slug: string;
+  size: number;
+  maskable: boolean;
+}
+
+/** The manifest's icons, at /icons/<slug>.png: Android's home screen, install prompts, splash screens. */
+export const MANIFEST_ICONS: readonly ManifestIcon[] = [
+  { slug: 'icon-192', size: 192, maskable: false },
+  { slug: 'icon-512', size: 512, maskable: false },
+  { slug: 'icon-maskable-512', size: 512, maskable: true },
+];
+
+export function manifestIconPath({ slug }: ManifestIcon): string {
+  return `/icons/${slug}.png`;
+}
