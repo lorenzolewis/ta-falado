@@ -87,6 +87,13 @@ describe('podcastSeriesLd', () => {
       author: { '@type': 'Organization', name: 'COERLL, University of Texas at Austin' },
     });
   });
+
+  it('links the show in the podcast apps that list it, and leaves sameAs out until one does', () => {
+    expect(podcastSeriesLd(site, { apple: 'https://podcasts.apple.com/us/podcast/x/id1', spotify: undefined }).sameAs).toEqual([
+      'https://podcasts.apple.com/us/podcast/x/id1',
+    ]);
+    expect(podcastSeriesLd(site, {})).not.toHaveProperty('sameAs');
+  });
 });
 
 describe('jsonLdScript', () => {

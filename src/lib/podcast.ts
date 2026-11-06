@@ -19,7 +19,7 @@ export const PODCAST_AUTHOR = 'COERLL, University of Texas at Austin';
 // app is shown greyed out, with no link, so no dead link ships. The steps are in issue #50.
 
 /** podcasts.apple.com/…/id<number>, from Apple Podcasts Connect. Overcast's and Castro's links come from its ID. */
-export const APPLE_PODCASTS_URL: string | undefined = undefined;
+export const APPLE_PODCASTS_URL: string | undefined = 'https://podcasts.apple.com/us/podcast/t%C3%A1-falado/id6831601239';
 /** open.spotify.com/show/…, from Spotify for Creators ("Find an existing show"). */
 export const SPOTIFY_URL: string | undefined = undefined;
 /** music.youtube.com/playlist?list=…, from YouTube Studio (podcast by RSS feed). */
@@ -35,7 +35,7 @@ export interface PodcastApp {
 
 type ShowUrl = 'apple' | 'spotify' | 'youtubeMusic';
 
-const SHOW_URLS: Partial<Record<ShowUrl, string>> = {
+export const SHOW_URLS: Partial<Record<ShowUrl, string>> = {
   apple: APPLE_PODCASTS_URL,
   spotify: SPOTIFY_URL,
   youtubeMusic: YOUTUBE_MUSIC_URL,
