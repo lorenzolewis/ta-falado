@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { podcastApps } from './podcast';
+import { APPLE_PODCASTS_URL, podcastApps } from './podcast';
 
 const FEED = 'https://tafalado.lorenzo.soy/feed.xml';
 const linked = (apps: ReturnType<typeof podcastApps>) => apps.filter((app) => app.href).map((app) => app.name);
@@ -40,5 +40,12 @@ describe('podcastApps', () => {
       youtubeMusic: 'https://music.youtube.com/playlist?list=x',
     });
     expect(linked(apps)).toHaveLength(7);
+  });
+
+  it('links Apple Podcasts, Overcast and Castro from the published Apple listing', () => {
+    expect(APPLE_PODCASTS_URL).toMatch(/^https:\/\/podcasts\.apple\.com\/us\/podcast\/[^?]+\/id6831601239$/);
+    const apps = podcastApps(FEED);
+    expect(apps.find((app) => app.name === 'Overcast')?.href).toBe('https://overcast.fm/itunes6831601239');
+    expect(apps.find((app) => app.name === 'Castro')?.href).toBe('https://castro.fm/itunes/6831601239');
   });
 });
