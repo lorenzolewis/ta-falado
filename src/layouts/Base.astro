@@ -5,6 +5,7 @@ import Credit from '../components/Credit.astro';
 import Icon from '../components/Icon.astro';
 import Player from '../components/Player.astro';
 import Sidebar from '../components/Sidebar.astro';
+import MotionSwitcher from '../pages/proto/_MotionSwitcher.astro';
 import { COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_PATH } from '../lib/artwork';
 import { LESSONS_ID, pagePath, seriesOf, viewOf } from '../lib/nav';
 import { INK, PAPER } from '../lib/print';
@@ -58,7 +59,9 @@ const printColours = [
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <!-- PROTOTYPE (#62): every page carries the variants, so none is indexed. -->
+    <meta name="robots" content="noindex" />
+    {noindex ? null : <link rel="canonical" href={canonical} />}
     <link rel="alternate" type="application/rss+xml" title={PODCAST_TITLE} href="/feed.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:type" content="website" />
@@ -97,6 +100,8 @@ const printColours = [
     </div>
     <!-- Outside <main>, and on every page, so it is kept across navigations (ADR 0001). -->
     <Player />
+    <!-- PROTOTYPE (#62): the motion variants' switcher. -->
+    <MotionSwitcher />
   </body>
 </html>
 
