@@ -9,6 +9,7 @@ import Icon from '../components/Icon.astro';
 import Base from '../layouts/Base.astro';
 import { parseCredits } from '../lib/credits';
 import { getLessons, lessonPath, lessonTitle } from '../lib/lessons';
+import { podcastApps } from '../lib/podcast';
 import { podcastSeriesLd } from '../lib/seo';
 
 const roles = parseCredits(await credits.compiledContent());
@@ -16,6 +17,10 @@ const roles = parseCredits(await credits.compiledContent());
 const lessons = await getLessons();
 const first = lessons[0]!.data;
 const firstMinutes = `${Math.ceil(first.audio.durationSeconds / 60)} min`;
+
+// The feed's absolute URL, as src/pages/feed.xml.ts builds it, and the apps that can follow it.
+const feed = new URL('/feed.xml', Astro.site).href;
+const apps = podcastApps(feed);
 
 const REPO = 'https://github.com/lorenzolewis/tafalado';
 const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
@@ -49,6 +54,46 @@ const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
       <span>All {lessons.length} lessons</span>
       <Icon name="back" class="next" />
     </button>
+
+    <section aria-labelledby="follow">
+      <h2 id="follow">Follow the podcast</h2>
+      <p class="prose">
+        All {lessons.length} lessons are also a podcast, in order, so your podcast app can download them and keep your
+        place.
+      </p>
+      <ul class="apps">
+        {
+          apps.map(({ name, icon, href }) =>
+            href ? (
+              <li>
+                <a href={href}>
+                  <img src={icon} alt="" width="32" height="32" />
+                  <span>{name}</span>
+                  <Icon name="back" class="next" />
+                </a>
+              </li>
+            ) : (
+              <li class="soon">
+                <img src={icon} alt="" width="32" height="32" />
+                <span>
+                  {name}
+                  <span class="visually-hidden">, </span>
+                </span>
+                <span class="note">Coming soon</span>
+              </li>
+            ),
+          )
+        }
+      </ul>
+      <p class="feed-label" id="feed-label">Or paste the feed into any other podcast app:</p>
+      <div class="feed">
+        <input type="text" readonly value={feed} aria-labelledby="feed-label" data-feed-url />
+        <button type="button" class="btn btn-accent" data-copy-feed>
+          <Icon name="check" class="copied" />
+          <span data-copy-label>Copy</span>
+        </button>
+      </div>
+    </section>
 
     <section aria-labelledby="credits">
       <h2 id="credits">Credits</h2>
@@ -126,12 +171,40 @@ const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
 <script>
   import { showAllLessons } from '../lib/sidebar-ui';
 
+  /** Copies the feed URL, and says so on the button for a moment. */
+  async function copyFeed(event: Event) {
+    const button = event.currentTarget as HTMLButtonElement;
+    const input = document.querySelector<HTMLInputElement>('[data-feed-url]');
+    const label = button.querySelector('[data-copy-label]');
+    if (!input || !label) return;
+    try {
+      await navigator.clipboard.writeText(input.value);
+    } catch {
+      // No clipboard (an insecure context, or permission refused): select it to copy by hand.
+      input.select();
+      return;
+    }
+    button.dataset.copied = '';
+    label.textContent = 'Copied';
+    setTimeout(() => {
+      delete button.dataset.copied;
+      label.textContent = 'Copy';
+    }, 2000);
+  }
+
   // Runs on every visit to the home page, since the ClientRouter only runs this script once.
   let page: AbortController | undefined;
   document.addEventListener('astro:page-load', () => {
     page?.abort();
     page = new AbortController();
     document.querySelector('[data-all-lessons]')?.addEventListener('click', showAllLessons, { signal: page.signal });
+    document.querySelector('[data-copy-feed]')?.addEventListener('click', copyFeed, { signal: page.signal });
+    // A tap on the field selects the whole URL, to copy by hand.
+    document
+      .querySelector<HTMLInputElement>('[data-feed-url]')
+      ?.addEventListener('focus', (event) => (event.currentTarget as HTMLInputElement).select(), {
+        signal: page.signal,
+      });
   });
   document.addEventListener('astro:before-swap', () => page?.abort());
 </script>
@@ -246,6 +319,86 @@ const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
     .all-lessons {
       display: none;
     }
+  }
+
+  /* Follow the podcast: the apps as ruled rows, like "All 46 lessons", two to a line on a wide
+     screen; then the feed URL in a field with its Copy button. */
+  .apps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    column-gap: var(--space-24);
+    margin: var(--space-16) 0 0;
+    padding: 0;
+    border-block-start: 2px solid var(--ink);
+    list-style: none;
+  }
+  .apps a,
+  .soon {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    min-block-size: 56px;
+    padding-inline-end: var(--space-4);
+    border-block-end: 1px solid var(--line);
+    color: var(--ink);
+    font: 700 var(--text-18) / 1.2 var(--font-sans);
+    text-decoration: none;
+  }
+  /* The apps' own icons, masked to the squircle-ish corner phones give them. */
+  .apps img {
+    flex: none;
+    border-radius: 22%;
+  }
+  .apps a:hover span {
+    text-decoration: underline;
+  }
+  .apps :global(.next) {
+    inline-size: 20px;
+    block-size: 20px;
+    margin-inline-start: auto;
+    transform: scaleX(-1);
+  }
+  /* Not listed in the app yet (src/lib/podcast.ts): greyed out, with no link. */
+  .soon {
+    color: var(--muted);
+  }
+  .soon img {
+    filter: grayscale(1);
+    opacity: 0.45;
+  }
+  .note {
+    margin-inline-start: auto;
+    font: 400 var(--text-14) / 1.2 var(--font-sans);
+  }
+  .feed-label {
+    margin-block: var(--space-24) var(--space-8);
+    color: var(--muted);
+  }
+  /* The Copy button drops under the field when the whole URL wouldn't fit beside it. */
+  .feed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+  }
+  .feed input {
+    flex: 999 1 19rem;
+    min-inline-size: 0;
+    min-block-size: 48px;
+    padding: 0 var(--space-12);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    font-size: var(--text-16);
+  }
+  .feed .btn {
+    flex: 1 0 7.5rem;
+    justify-content: center;
+  }
+  .feed :global(.copied) {
+    display: none;
+  }
+  .feed [data-copied] :global(.copied) {
+    display: block;
   }
 
   /* The roster: the role on the left, the names on the right, a rule under each role. */
