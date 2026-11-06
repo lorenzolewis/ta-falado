@@ -1,4 +1,4 @@
-// The icon set (#52, plus home, info, library, back and close from #53): a 24px grid with sharp
+// The icon set (#52, plus home, info, back and close from #53): a 24px grid with sharp
 // geometry, 2.5px strokes with square caps and mitred joins, and solid shapes (class "f").
 // Drawn by src/components/Icon.astro; the stroke styles are in src/styles/base.css.
 export const ICONS = {
@@ -13,9 +13,7 @@ export const ICONS = {
   doc: '<path class="f" fill-rule="evenodd" d="M5 2h9l5 5v15H5zm3.5 10v2H15v-2zm0 4v2h4.5v-2zM13 3.5V8h4.5z"/>',
   chevron: '<path class="f" d="M6 9h12l-6 7z"/>',
   home: '<path d="M3.5 10.5 12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/>',
-  homeFilled: '<path class="f" d="M2 10.2 12 2l10 8.2V22h-8.2v-6.5h-3.6V22H2z"/>',
   info: '<circle cx="12" cy="12" r="8.75"/><path d="M12 11v6"/><path class="f" d="M10.6 6.6h2.8v2.8h-2.8z"/>',
-  library: '<path d="M4.5 3.5v17M10 3.5v17M15 4.5l5 15.5"/>',
   back: '<path d="M15 4.5 7.5 12l7.5 7.5"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
 } as const;

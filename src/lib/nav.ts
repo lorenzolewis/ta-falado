@@ -1,7 +1,7 @@
 // Which part of the site a path is, and which view the phone shows (#53), for the sidebar's current
-// row and the tabs. Shared by src/layouts/Base.astro (the first render) and src/lib/sidebar-ui.ts
+// row. Shared by src/layouts/Base.astro (the first render) and src/lib/sidebar-ui.ts
 // (every navigation), so both apply the same rules.
-import { SERIES } from './series';
+import { SERIES, type Series } from './series';
 
 export type Section = 'home' | 'lesson' | 'about' | 'other';
 /** The phone shows one at a time: the home page, any other page, or the Lessons view. */
@@ -24,9 +24,15 @@ export function sectionOf(pathname: string): Section {
   return LESSON_PATH.test(path) ? 'lesson' : 'other';
 }
 
-/** The phone's view, the current tab, for a path and its fragment. Lessons stays current on a lesson. */
+/** The series of a lesson page's path (`/grammar/03` → `grammar`), or undefined for any other page. */
+export function seriesOf(pathname: string): Series | undefined {
+  const match = LESSON_PATH.exec(pagePath(pathname));
+  return match ? (match[1] as Series) : undefined;
+}
+
+/** The phone's view for a path and its fragment. */
 export function viewOf(pathname: string, hash = '') {
   const section = sectionOf(pathname);
   const view: View = hash === `#${LESSONS_ID}` ? 'lessons' : section === 'home' ? 'home' : 'page';
-  return { section, view, homeTab: view === 'home', lessonsTab: view === 'lessons' || section === 'lesson' };
+  return { section, view };
 }

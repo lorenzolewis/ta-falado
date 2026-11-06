@@ -1,27 +1,39 @@
-/* Design tokens and base styles: the #52 identity (Caderno colours on Tropicália shapes). */
+/* Design tokens and base styles: the print identity of the artwork and OG images (#55, #61, #71).
+   One black ink on white stock, with the ipê papers of src/lib/print.ts as the only colour: on the
+   tabs, chips, pills and Play. Dark mode is the print inverted: ink becomes the page, the type
+   turns light, and the papers stay paper.
+
+   The papers and the ink (--paper-pronunciation, --paper-grammar, --paper-supplementary,
+   --print-ink) are set on <html> from src/lib/print.ts by src/layouts/Base.astro, so the site and
+   the generated artwork share one set of values. */
 :root {
   color-scheme: light dark;
 
-  /* Colour, light. Contrast is checked in the #52 decision (WCAG 2.2 AA in both themes). */
-  --bg: #f6f7f2;
-  --surface: #ffffff;
-  --ink: #1b2a20;
-  --muted: #4e5d53;
-  --accent: #1c6a43;
-  --on-accent: #ffffff;
-  --strong: #1d3b2a;
-  --on-strong: #ffffff;
-  --ipe: #f5c842;
-  --on-ipe: #1b2a20;
-  --line: #d8ddd3;
-  --control: #7b887e;
-  /* The unfilled track of a bar on --strong. */
-  --track-on-strong: color-mix(in srgb, var(--on-strong) 25%, var(--strong));
-  /* Secondary text on --strong (the mini-player's times and series), and the player sheet's backdrop. */
-  --on-strong-muted: color-mix(in srgb, var(--on-strong) 78%, var(--strong));
-  --scrim: color-mix(in srgb, var(--strong) 55%, transparent);
-  /* The current row in the sidebar (#53). */
-  --selected: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  /* The paper in scope: the series of the page, row, pill or player (by data-series below), and the
+     podcast cover's amarelo where there is none. */
+  --paper: var(--paper-pronunciation);
+  --stock: #ffffff;
+
+  /* Colour, light: ink on white stock, the sheets laid on a grey board. */
+  --bg: #e2e2de;
+  --surface: var(--stock);
+  --ink: var(--print-ink);
+  --muted: color-mix(in srgb, var(--ink) 74%, var(--surface));
+  --line: color-mix(in srgb, var(--ink) 18%, var(--surface));
+  --control: var(--ink);
+  /* Links, focus rings and pressed controls are ink. */
+  --accent: var(--ink);
+  --on-accent: var(--surface);
+  /* The plate: the solid block behind the mini-player and the Continue card. Ink in light mode,
+     with its controls in --plate-accent (the paper). */
+  --plate: var(--print-ink);
+  --on-plate: var(--stock);
+  --plate-accent: var(--paper);
+  --on-plate-accent: var(--print-ink);
+  /* Secondary text on the plate (the mini-player's times and series), and an unfilled bar on it. */
+  --on-plate-muted: color-mix(in srgb, var(--on-plate) 72%, var(--plate));
+  --plate-track: color-mix(in srgb, var(--on-plate) 22%, var(--plate));
+  --scrim: color-mix(in srgb, var(--print-ink) 60%, transparent);
 
   /* Type. --font-serif (Alegreya) and --font-sans (Alegreya Sans) come from the Fonts API (astro.config.ts). */
   --text-14: 0.875rem;
@@ -42,19 +54,15 @@
   --space-24: 1.5rem;
   --space-32: 2rem;
 
-  /* Shape: pills, rows and number squares (#53), cards and photos, the mini-player's top corners. */
-  --radius-pill: 999px;
-  --radius-row: 12px;
-  --radius-card: 20px;
-  --radius-player: 24px;
+  /* Shape: what you can press (buttons, pills, rows, fields) has a slight radius; what is printed
+     (the tabs, the number chips, the photo, the sheets, the plate) is square. */
+  --radius-control: 4px;
 
   /* Layout (#53) */
   --sidebar-min: 18rem;
   --sidebar-max: 22rem;
-  --panel-gap: 8px;
-  /* The phone's tab bar; 0 on desktop, where there is none. */
-  --tabs-block-size: 0px;
-  /* The player pads its foot by the home-indicator inset where no tab bar does it (desktop, iPad). */
+  --panel-gap: 10px;
+  /* The player pads its foot by the home-indicator inset, as the bottom-most thing on the screen. */
   --player-safe-b: env(safe-area-inset-bottom, 0px);
 
   font-family: var(--font-sans);
@@ -63,34 +71,37 @@
   overflow-wrap: break-word;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
-  /* --player-block-size is set by the sticky mini-player (src/lib/player-ui.ts), so it never covers
-     focused content; the phone's tab bar is added below it. */
-  scroll-padding-block-end: calc(var(--player-block-size, 0px) + var(--tabs-block-size));
+  /* --player-block-size is set by the mini-player (src/lib/player-ui.ts), so it never covers
+     focused content. */
+  scroll-padding-block-end: var(--player-block-size, 0px);
 }
 
+/* Each series' paper, for the page (<html>), a lesson row, a series pill or the player. */
+[data-series='pronunciation'],
+[data-pill='pronunciation'] {
+  --paper: var(--paper-pronunciation);
+}
+[data-series='grammar'],
+[data-pill='grammar'] {
+  --paper: var(--paper-grammar);
+}
+[data-series='supplementary'],
+[data-pill='supplementary'] {
+  --paper: var(--paper-supplementary);
+}
+
+/* Dark: the inverted print. Stock and ink swap; the papers stay. The plate turns to stock, so its
+   controls are printed in ink. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111813;
-    --surface: #18221b;
-    --ink: #e8ede5;
-    --muted: #a7b3a9;
-    --accent: #86d4a8;
-    --on-accent: #0f2017;
-    --strong: #21402e;
-    --on-strong: #f1f5ee;
-    --ipe: #e9bc2e;
-    --on-ipe: #1b1806;
-    --line: #2a362d;
-    --control: #6d7c71;
-  }
-}
-
-/* The phone layout, below 52rem: one view at a time over a tab bar. */
-@media (max-width: 51.99rem) {
-  :root {
-    /* Plus the home-indicator inset (viewport-fit=cover, src/layouts/Base.astro). */
-    --tabs-block-size: calc(64px + env(safe-area-inset-bottom, 0px));
-    --player-safe-b: 0px;
+    --bg: #000000;
+    --surface: var(--print-ink);
+    --ink: #f4f4f1;
+    --plate: var(--stock);
+    --on-plate: var(--print-ink);
+    --plate-accent: var(--print-ink);
+    --on-plate-accent: var(--paper);
+    --scrim: color-mix(in srgb, #000000 70%, transparent);
   }
 }
 
@@ -104,8 +115,6 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  /* Room for the fixed tab bar, so the sticky player stops just above it. */
-  padding-block-end: var(--tabs-block-size);
 }
 
 button,
@@ -172,7 +181,7 @@ a {
   text-anchor: middle;
 }
 
-/* Pill buttons: at least 48px tall, Alegreya Sans Bold 18. */
+/* Buttons: at least 48px tall, Alegreya Sans Bold 18. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -180,7 +189,7 @@ a {
   min-block-size: 48px;
   padding: 0 22px 0 var(--space-16);
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   font-size: var(--text-18);
   font-weight: 700;
   text-decoration: none;
@@ -193,9 +202,10 @@ a {
   background: var(--accent);
   color: var(--on-accent);
 }
-.btn-ipe {
-  background: var(--ipe);
-  color: var(--on-ipe);
+/* On the paper in scope, in ink in both themes. */
+.btn-paper {
+  background: var(--paper);
+  color: var(--print-ink);
 }
 
 /* A button that reads as a link. */
@@ -227,7 +237,7 @@ a {
   inset-inline-start: var(--space-12);
   z-index: 10;
   padding: var(--space-12) var(--space-16);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-control);
   background: var(--accent);
   color: var(--on-accent);
   font-weight: 700;

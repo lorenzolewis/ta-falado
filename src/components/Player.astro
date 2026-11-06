@@ -108,21 +108,24 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
 
 <style>
   .player {
+    /* Phone: stuck to the foot of the screen. Desktop (below): fixed over the foot of the window. */
     position: sticky;
-    /* Just above the phone's tab bar, which already includes the home-indicator inset. */
-    inset-block-end: var(--tabs-block-size);
+    inset-block-end: 0;
     z-index: 4;
-    margin-inline: var(--panel-gap);
-    border-radius: var(--radius-player) var(--radius-player) 0 0;
     overflow: hidden;
-    background: var(--strong);
-    color: var(--on-strong);
+    /* The plate (src/styles/base.css) in the paper of the lesson that's loaded: player-ui.ts sets
+       data-series, and base.css its --paper. Declared here, not inherited, so they use this --paper. */
+    --plate-accent: var(--paper);
+    --on-plate-muted: color-mix(in srgb, var(--on-plate) 72%, var(--plate));
+    --plate-track: color-mix(in srgb, var(--on-plate) 22%, var(--plate));
+    background: var(--plate);
+    color: var(--on-plate);
   }
   .player[hidden] {
     display: none;
   }
   .player :focus-visible {
-    outline-color: var(--ipe);
+    outline-color: var(--plate-accent);
   }
   p {
     margin: 0;
@@ -140,16 +143,15 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     position: absolute;
     inset: 0 auto auto 0;
     inline-size: calc(var(--progress, 0) * 100%);
-    block-size: 3px;
-    background: var(--ipe);
+    block-size: 4px;
+    background: var(--plate-accent);
   }
 
   .art {
     flex: none;
     inline-size: 44px;
     block-size: 44px;
-    border-radius: var(--radius-row);
-    background: var(--track-on-strong);
+    background: var(--plate-track);
     object-fit: cover;
   }
   /* No broken-image icon before the first lesson is loaded. */
@@ -170,13 +172,13 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     white-space: nowrap;
   }
   .meta {
-    color: var(--on-strong-muted);
+    color: var(--on-plate-muted);
     font-size: var(--text-14);
     font-variant-numeric: tabular-nums;
   }
   /* The error line takes the place of the time left. */
   .status {
-    color: var(--ipe);
+    color: var(--plate-accent);
     font-size: var(--text-14);
     font-weight: 500;
   }
@@ -195,16 +197,16 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     block-size: 48px;
     padding: 0;
     border: 0;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-control);
     background: none;
     color: inherit;
   }
   .ctl:hover {
-    background: var(--track-on-strong);
+    background: var(--plate-track);
   }
   .play {
-    background: var(--ipe);
-    color: var(--on-ipe);
+    background: var(--plate-accent);
+    color: var(--on-plate-accent);
   }
   .play :global(.icon) {
     inline-size: 26px;
@@ -248,9 +250,10 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     display: block;
   }
 
-  /* Seek: an 8px pill track filled in ipê up to the position (--seek), a 20px thumb, a 48px tall target. */
+  /* Seek: a 4px rule filled in the plate's accent up to the position (--seek), an 8×22 bar for the
+     thumb, a 48px tall target. */
   input[type='range'] {
-    --fill: linear-gradient(to right, var(--ipe) var(--seek, 0%), var(--track-on-strong) var(--seek, 0%));
+    --fill: linear-gradient(to right, var(--plate-accent) var(--seek, 0%), var(--plate-track) var(--seek, 0%));
     appearance: none;
     inline-size: 100%;
     min-inline-size: 0;
@@ -260,36 +263,34 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     cursor: pointer;
   }
   input[type='range']::-webkit-slider-runnable-track {
-    block-size: 8px;
-    border-radius: var(--radius-pill);
+    block-size: 4px;
     background: var(--fill);
   }
   input[type='range']::-moz-range-track {
-    block-size: 8px;
-    border-radius: var(--radius-pill);
+    block-size: 4px;
     background: var(--fill);
   }
   input[type='range']::-webkit-slider-thumb {
     appearance: none;
-    inline-size: 20px;
-    block-size: 20px;
-    margin-block-start: -6px;
+    inline-size: 8px;
+    block-size: 22px;
+    margin-block-start: -9px;
     border: 0;
-    border-radius: 50%;
-    background: var(--ipe);
+    border-radius: 0;
+    background: var(--plate-accent);
   }
   input[type='range']::-moz-range-thumb {
-    inline-size: 20px;
-    block-size: 20px;
+    inline-size: 8px;
+    block-size: 22px;
     border: 0;
-    border-radius: 50%;
-    background: var(--ipe);
+    border-radius: 0;
+    background: var(--plate-accent);
   }
   input[type='range']:focus-visible {
     outline-offset: -8px;
   }
 
-  /* Speed: a pill select with a 2px currentColor border. */
+  /* Speed: a select with a 2px currentColor border. */
   .speed {
     position: relative;
     display: inline-grid;
@@ -300,7 +301,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     min-block-size: 48px;
     padding: 0 34px 0 var(--space-16);
     border: 2px solid currentColor;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-control);
     background: none;
     color: inherit;
     font-weight: 700;
@@ -335,7 +336,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     min-block-size: 56px;
     padding: 0 var(--space-8) 0 0;
     border: 0;
-    border-radius: var(--radius-row);
+    border-radius: var(--radius-control);
     background: none;
     color: inherit;
     text-align: start;
@@ -359,9 +360,9 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     margin: 0;
     padding: var(--space-8) max(var(--space-24), env(safe-area-inset-left)) calc(var(--space-32) + env(safe-area-inset-bottom));
     border: 0;
-    border-radius: var(--radius-player) var(--radius-player) 0 0;
-    background: var(--strong);
-    color: var(--on-strong);
+    border-radius: 0;
+    background: var(--plate);
+    color: var(--on-plate);
     text-align: center;
   }
   .sheet[open] {
@@ -391,7 +392,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     inline-size: min(68vw, 18rem, 34dvh);
     block-size: auto;
     aspect-ratio: 1;
-    border-radius: var(--radius-card);
+    border-radius: 0;
   }
   .sheet-title {
     margin-block-start: var(--space-8);
@@ -405,7 +406,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     display: grid;
     grid-template-columns: 1fr 1fr;
     inline-size: 100%;
-    color: var(--on-strong-muted);
+    color: var(--on-plate-muted);
     font-size: var(--text-14);
     font-variant-numeric: tabular-nums;
   }
@@ -442,8 +443,23 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
     margin-block-start: var(--space-8);
   }
 
+  /* The inverted print: a stock plate would glare at the foot of a dark page, so the plate is the
+     lesson's paper, with its controls printed in ink. */
+  @media (prefers-color-scheme: dark) {
+    .player {
+      --plate: var(--paper);
+      --plate-accent: var(--print-ink);
+      --on-plate-accent: var(--paper);
+    }
+  }
+
   /* ── Desktop row, from 52rem: everything in one row, no sheet ── */
   @media (min-width: 52rem) {
+    /* Laid over the foot of the window; the page runs on behind it (src/layouts/Base.astro). */
+    .player {
+      position: fixed;
+      inset-inline: 0;
+    }
     .row {
       display: grid;
       /* 12rem minimums (not #59's 16rem and 14rem), so the row fits at 52rem (decided on #60). */
@@ -474,7 +490,7 @@ const tracks = JSON.stringify((await getLessons()).map(toTrack)).replaceAll('<',
       grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: var(--space-12);
-      color: var(--on-strong-muted);
+      color: var(--on-plate-muted);
       font-size: var(--text-14);
       font-variant-numeric: tabular-nums;
     }

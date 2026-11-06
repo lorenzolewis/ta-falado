@@ -20,7 +20,7 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
       <p class="continue-title"><a data-continue-link href="/"></a></p>
       <div class="meter"><span data-continue-bar></span></div>
       <p class="continue-row">
-        <button type="button" class="btn btn-ipe" data-continue-play><Icon name="play" />Resume</button>
+        <button type="button" class="btn" data-continue-play><Icon name="play" />Resume</button>
         <span data-continue-left></span>
       </p>
       <p class="visually-hidden" data-continue-time></p>
@@ -30,7 +30,7 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     <ul class="series-list">
       {
         series.map(({ id, lessons }) => (
-          <li class="series" data-series-progress={id}>
+          <li class="series" data-series={id} data-series-progress={id}>
             <div class="series-top">
               <h3>{SERIES_LABEL[id]}</h3>
               <button type="button" class="link-btn" data-open-series={id}>
@@ -89,15 +89,19 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     font: var(--text-21) / 1.45 var(--font-serif);
   }
 
-  /* The Continue card (#52): filled --strong, with an ipê bar and Resume button. */
+  /* The Continue card (#52): on the plate (src/styles/base.css), like the mini-player, with its bar
+     and Resume button in the plate's accent. */
   .continue {
     display: grid;
     gap: var(--space-8);
     margin-block-start: var(--space-24);
     padding: 20px;
-    border-radius: var(--radius-card);
-    background: var(--strong);
-    color: var(--on-strong);
+    background: var(--plate);
+    color: var(--on-plate);
+  }
+  .continue .btn {
+    background: var(--plate-accent);
+    color: var(--on-plate-accent);
   }
   .continue[hidden] {
     display: none;
@@ -114,23 +118,21 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     text-decoration: none;
   }
   .continue :focus-visible {
-    outline-color: var(--ipe);
+    outline-color: var(--plate-accent);
   }
   .meter {
-    block-size: 8px;
+    block-size: 4px;
     margin-block: var(--space-4);
-    border-radius: var(--radius-pill);
-    background: var(--track-on-strong);
+    background: var(--plate-track);
   }
   .meter > span,
   .series-meter > span {
     display: block;
     block-size: 100%;
     inline-size: 0;
-    border-radius: inherit;
   }
   .meter > span {
-    background: var(--ipe);
+    background: var(--plate-accent);
   }
   .continue-row {
     display: flex;
@@ -175,14 +177,14 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     font-size: var(--text-14);
     font-variant-numeric: tabular-nums;
   }
+  /* Each series' bar fills with its paper (base.css sets --paper by data-series). */
   .series-meter {
     display: block;
     block-size: 6px;
-    border-radius: var(--radius-pill);
     background: var(--line);
   }
   .series-meter > span {
-    background: var(--accent);
+    background: var(--paper);
   }
   .series p:last-child {
     margin-block-start: var(--space-4);

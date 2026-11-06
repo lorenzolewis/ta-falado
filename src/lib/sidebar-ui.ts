@@ -6,6 +6,8 @@ import { createLessonFilter, filterView } from './lesson-filter';
 import { LESSONS_ID, pagePath, viewOf } from './nav';
 
 const bound = new WeakSet<Element>();
+/** How long the lesson filter waits after a keystroke before showing results. */
+const SEARCH_DELAY_MS = 120;
 /** Shows one series' lessons with no query (or every series, for null). Set once the sidebar is bound. */
 let showOnly: ((id: string | null) => void) | undefined;
 
@@ -19,7 +21,7 @@ function bindSidebar(root: HTMLElement) {
   const toggle = $<HTMLButtonElement>('[data-search-toggle]');
   const status = $<HTMLElement>('#lesson-filter-status');
   const empty = $<HTMLElement>('[data-empty]');
-  const pillClear = $<HTMLButtonElement>('[data-pill-clear]');
+  const pillAll = $<HTMLButtonElement>('[data-pill-all]');
   const pills = [...root.querySelectorAll<HTMLButtonElement>('[data-pill]')];
   const rows = [...root.querySelectorAll<HTMLElement>('[data-filter-text]')];
   const rowSeries = rows.map((row) => row.dataset.series!);
@@ -35,7 +37,10 @@ function bindSidebar(root: HTMLElement) {
       pill.setAttribute('aria-pressed', String(id === series));
       pill.querySelector('[data-pill-count]')!.textContent = String(view.counts[id] ?? 0);
     }
-    pillClear.hidden = series === null;
+    // "All episodes": pressed when no series is, counting the query's matches across every series.
+    pillAll.setAttribute('aria-pressed', String(series === null));
+    const all = Object.values(view.counts).reduce((sum, n) => sum + n, 0);
+    pillAll.querySelector('[data-pill-count]')!.textContent = String(all);
     empty.hidden = !view.empty;
     if (status.textContent !== view.status) status.textContent = view.status;
   }
@@ -49,11 +54,17 @@ function bindSidebar(root: HTMLElement) {
     openSearch(false);
     setSeries(id);
   };
-  input.addEventListener('input', update);
+  // The results follow typing after a short pause, so the list reads as the filter at work rather
+  // than flickering on every keystroke. Pills and Clear stay immediate.
+  let pending: number | undefined;
+  input.addEventListener('input', () => {
+    clearTimeout(pending);
+    pending = window.setTimeout(update, SEARCH_DELAY_MS);
+  });
   for (const pill of pills) {
     pill.addEventListener('click', () => setSeries(series === pill.dataset.pill ? null : pill.dataset.pill!));
   }
-  pillClear.addEventListener('click', () => setSeries(null));
+  pillAll.addEventListener('click', () => setSeries(null));
   $('[data-clear]').addEventListener('click', () => {
     input.value = '';
     setSeries(null);
@@ -77,12 +88,12 @@ function bindSidebar(root: HTMLElement) {
   update();
 }
 
-/** Marks the current page in the sidebar and the tabs, and picks the phone's view from the URL. */
+/** Marks the current page in the sidebar, and picks the phone's view from the URL. */
 function syncPage() {
   const sidebar = document.querySelector<HTMLElement>('[data-sidebar]');
   const app = document.querySelector<HTMLElement>('[data-app]');
   if (!sidebar || !app) return;
-  const { section, view, homeTab, lessonsTab } = viewOf(location.pathname, location.hash);
+  const { section, view } = viewOf(location.pathname, location.hash);
   const here = pagePath(location.pathname);
   const mark = (el: Element | null, on: boolean) =>
     on ? el?.setAttribute('aria-current', 'page') : el?.removeAttribute('aria-current');
@@ -91,8 +102,6 @@ function syncPage() {
   mark(sidebar.querySelector('[data-nav="about"]'), section === 'about');
   for (const link of sidebar.querySelectorAll('.list a')) mark(link, link.getAttribute('href') === here);
   app.dataset.view = view;
-  mark(app.querySelector('[data-tab="home"]'), homeTab);
-  mark(app.querySelector('[data-tab="lessons"]'), lessonsTab);
 }
 
 const LESSONS_HASH = `#${LESSONS_ID}`;
@@ -121,7 +130,7 @@ export function showSeries(id: string) {
   if (matchMedia(PHONE).matches) void openLessons();
 }
 
-// Links to #lessons (the Lessons tab, the "‹ Lessons" back link). Captured before the ClientRouter's
+// Links to #lessons (the phone's "‹ Lessons" button). Captured before the ClientRouter's
 // own click handler, which then leaves the click alone.
 document.addEventListener(
   'click',
