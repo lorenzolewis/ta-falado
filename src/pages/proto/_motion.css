@@ -44,12 +44,6 @@
 }
 ::view-transition-old(root),
 ::view-transition-new(root) { animation: none; }
-::view-transition-old(sheet),
-::view-transition-new(sheet) {
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top;
-}
 
 @keyframes p-sheet-in { from { transform: translateX(100%); } }
 @keyframes p-sheet-out { to { transform: translateX(100%); } }

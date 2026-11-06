@@ -1,6 +1,6 @@
 # Prototype: view-transition motion (#62)
 
-Throwaway branch `prototype/62-motion`, never merged. The chosen motion runs on every page (`src/pages/proto/_motion.css`, wired by `src/pages/proto/_MotionSwitcher.astro` and a hook in `src/lib/sidebar-ui.ts`). `/proto/motion` explains it; the pink bar slows it ×5 and simulates reduced motion. `node src/pages/proto/_frames.mjs` captures frame strips mid-transition.
+Throwaway branch `prototype/62-motion`, never merged. The chosen motion runs on every page (`src/pages/proto/_motion.css`, wired by `src/pages/proto/_MotionSwitcher.astro` and a hook in `src/lib/sidebar-ui.ts`). Screenshots (mid-transition, phone and desktop, light and dark) are in `prototype-screenshots/`. `/proto/motion` explains it; the pink bar slows it ×5 and simulates reduced motion. `node src/pages/proto/_frames.mjs` captures frame strips mid-transition.
 
 ## Chosen: "Sheets"
 
@@ -22,7 +22,7 @@ Tried and dropped (in this branch's history):
 ### What moves
 - `view-transition-name`s: `sheet` on the page (`.app > .pane`); on a phone, also on the Lessons view (`.app[data-view='lessons'] > .side`), since only one of the two is shown at a time. `sidebar` on the sidebar (desktop only), `player` on the mini-player, `back` on the phone's "‹ Lessons" button: these three don't animate (`animation: none` on the group and new image; the old image is hidden) and sit above the sheet (`z-index`).
 - The `root` group doesn't animate either: the board stays put.
-- The sheet's old and new images fill the group (`block-size: 100%; object-fit: cover; object-position: top`). On desktop the group clips (`overflow: clip`), so a sheet sliding in never covers the sidebar.
+- The sheet's old and new images keep the browser's own sizing (full width, natural height, from the top): on a phone a page's image is as tall as the page, and stretching it to the group magnifies it. On desktop the group clips (`overflow: clip`), so a sheet sliding in never covers the sidebar.
 
 ### Forward (`html[data-astro-transition='forward']`, the default)
 - New sheet: from `translateX(100%)` to its place, 400ms, `cubic-bezier(0.2, 0.7, 0, 1)`, on top (`z-index: 2`), with a 1px `--line` edge (`filter: drop-shadow(-1px 0 0 var(--line))`).
@@ -43,6 +43,9 @@ Tried and dropped (in this branch's history):
 ### Focus
 - A click on a row in the sidebar keeps focus on that row (the router restores focus inside persisted elements), so the list keeps its place on desktop.
 - Otherwise focus would fall to `<body>`: it moves to `<main id="main">` (`tabindex="-1"`, no outline) with `preventScroll`, so Tab continues from the top of the new page.
+
+### Images
+- An image that isn't loaded when it's shown fades in over 240ms `ease-out` once it loads (the lesson photo up from its paper, the player's artwork per track). Cached images show at once; without JavaScript nothing changes. Added in the build (#84), after the prototype.
 
 ### Without view transitions
 - Navigation works as before: the ClientRouter's fallback swaps the page, and the phone's view switch happens with no motion.
