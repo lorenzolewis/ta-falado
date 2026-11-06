@@ -1,79 +1,145 @@
 ---
-// The home page (#53): the name and lede, the Continue card, and one block per series with its
-// progress and the next lesson. The lesson list and its filter are in the sidebar (Base.astro).
+// The home page (#53, with the old About page's "liner notes" from #58): the name and lede, the
+// Continue card and its "All lessons" row, then the credits, read like the back of a record sleeve.
+// A roster of roles and names, each name opening its bio in place; the license written out as prose;
+// then this site's own code. The roster comes from CREDITS.md (docs/adr/0005). The lesson list and
+// its filter are in the sidebar (Base.astro).
+import * as credits from '../../CREDITS.md';
 import Icon from '../components/Icon.astro';
 import Base from '../layouts/Base.astro';
-import { SERIES, lessonPath, lessonTitle, lessonsBySeries } from '../lib/lessons';
+import { parseCredits } from '../lib/credits';
+import { getLessons, lessonPath, lessonTitle } from '../lib/lessons';
 import { podcastSeriesLd } from '../lib/seo';
-import { SERIES_LABEL } from '../lib/series';
 
-const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await lessonsBySeries(id) })));
+const roles = parseCredits(await credits.compiledContent());
+// The first visit's Continue card offers episode 1 (Pronunciation 1).
+const lessons = await getLessons();
+const first = lessons[0]!.data;
+const firstMinutes = `${Math.ceil(first.audio.durationSeconds / 60)} min`;
+
+const REPO = 'https://github.com/lorenzolewis/tafalado';
+const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
 ---
 
 <Base jsonLd={podcastSeriesLd(Astro.site!)}>
   <div class="home">
     <h1 lang="pt-BR">Tá Falado</h1>
-    <p class="lede">Brazilian Portuguese pronunciation and grammar lessons for Spanish speakers.</p>
+    <p class="lede">
+      An independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian Portuguese lessons
+      for speakers of Spanish, recorded at the University of Texas at Austin in 2006 and 2007. All 46 lessons and their
+      transcripts from the <a href={ORIGINAL}>archived original site</a>, in a site that works on a phone.
+    </p>
+    <p class="muted">This site isn't affiliated with or endorsed by the University of Texas at Austin or COERLL.</p>
 
-    <section class="continue" aria-labelledby="continue" data-continue hidden>
-      <h2 id="continue">Continue where you left off</h2>
-      <p class="continue-title"><a data-continue-link href="/"></a></p>
-      <div class="meter"><span data-continue-bar></span></div>
+    <!-- Server-rendered as the first visit's card (episode 1), so it never pops in; src/lib/progress-ui.ts
+         switches it to the lesson in progress, if there is one. -->
+    <section class="continue" aria-labelledby="continue" data-continue data-first={lessonPath(first)}>
+      <h2 id="continue" data-continue-heading>Start with the first lesson</h2>
+      <p class="continue-title"><a data-continue-link href={lessonPath(first)}>{lessonTitle(first)}</a></p>
+      <div class="meter" data-continue-meter hidden><span data-continue-bar></span></div>
       <p class="continue-row">
-        <button type="button" class="btn" data-continue-play><Icon name="play" />Resume</button>
-        <span data-continue-left></span>
+        <button type="button" class="btn" data-continue-play>
+          <Icon name="play" /><span data-continue-verb>Play</span>
+        </button>
+        <span data-continue-left>{firstMinutes}</span>
       </p>
       <p class="visually-hidden" data-continue-time></p>
     </section>
+    <button type="button" class="all-lessons" data-all-lessons>
+      <span>All {lessons.length} lessons</span>
+      <Icon name="back" class="next" />
+    </button>
 
-    <h2 class="series-heading">The three series</h2>
-    <ul class="series-list">
-      {
-        series.map(({ id, lessons }) => (
-          <li class="series" data-series={id} data-series-progress={id}>
-            <div class="series-top">
-              <h3>{SERIES_LABEL[id]}</h3>
-              <button type="button" class="link-btn" data-open-series={id}>
-                All {lessons.length} lessons
-              </button>
+    <section aria-labelledby="credits">
+      <h2 id="credits">Credits</h2>
+      <dl class="roster">
+        {
+          roles.map(({ role, people, html }) => (
+            <div class="row">
+              <dt>{role}</dt>
+              {html ? (
+                <dd class="support" set:html={html} />
+              ) : (
+                <dd>
+                  {people.map((person) => (
+                    <details>
+                      <summary>
+                        <span class="name" set:html={person.nameHtml} />
+                        <span class="muted" set:html={person.lineHtml} />
+                      </summary>
+                      <div class="bio" set:html={person.bioHtml} />
+                    </details>
+                  ))}
+                </dd>
+              )}
             </div>
-            <p class="series-count">
-              <span data-finished-count>0</span> of {lessons.length} finished
-            </p>
-            <span class="series-meter">
-              <span data-finished-bar />
-            </span>
-            <p>
-              <span class="next-label" data-next-label>
-                Start with
-              </span>{' '}
-              <a href={lessonPath(lessons[0]!.data)} data-next-link>
-                {lessonTitle(lessons[0]!.data)}
-              </a>
-            </p>
-          </li>
-        ))
-      }
-    </ul>
+          ))
+        }
+      </dl>
+      <p class="muted small">
+        Tap a name for their bio, from the <a href={`${ORIGINAL}about.html`}>original About page</a> (2006–2007). The
+        roles come from the lesson intros.
+      </p>
+    </section>
+
+    <section aria-labelledby="license">
+      <h2 id="license">License</h2>
+      <p class="prose">
+        <cite><span lang="pt-BR">Tá Falado</span>: Brazilian Portuguese Pronunciation for Speakers of Spanish</cite>, by
+        the podcasting team from the University of Texas at Austin, hosted by Orlando R. Kelm and produced at the College
+        of Liberal Arts. Published by COERLL (Center for Open Educational Resources and Language Learning), University of
+        Texas at Austin, at <a href={ORIGINAL}>coerll.utexas.edu/brazilpod/tafalado</a>, archived on March 2, 2026, and
+        no longer updated. © 2025, University of Texas at Austin. Licensed under{' '}
+        <a href="https://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported (CC BY 3.0)</a>.
+      </p>
+      <p class="prose">
+        <strong>Modified: re-hosted and re-presented.</strong> The MP3s, PDF transcripts and photos are served
+        unchanged, and the lesson titles and intros keep their original wording; this site gives them new pages, a new
+        player and a new podcast feed.
+      </p>
+      <p class="prose">
+        The lesson photos come from the original lesson pages. Several show the team themselves; the rest are everyday
+        scenes from the cultural topics. The original site doesn't credit any photo separately, so they're shared here
+        under the same CC BY 3.0 license as the rest of the work. If you took one of these photos and would rather it
+        not appear here, <a href={`${REPO}/issues`}>open an issue</a> and it will be removed.
+      </p>
+    </section>
+
+    <section aria-labelledby="code">
+      <h2 id="code">This site's code</h2>
+      <p>
+        The site's own code is separate from the content and MIT-licensed; the CC BY 3.0 license above covers the
+        content. The podcast and episode artwork is set in{' '}
+        <a href="https://www.huertatipografica.com/en/fonts/alegreya-ht-pro">Alegreya</a> and{' '}
+        <a href="https://www.huertatipografica.com/en/fonts/alegreya-sans-ht">Alegreya Sans</a> by Juan Pablo del Peral
+        (Huerta Tipográfica), under the SIL Open Font License.
+      </p>
+      <ul class="links">
+        <li><a href={REPO}>Source code on GitHub</a></li>
+        <li><a href={`${REPO}/blob/main/LICENSE`}>MIT license</a></li>
+        <li><a href={`${REPO}/blob/main/CREDITS.md`}>CREDITS.md</a></li>
+      </ul>
+    </section>
   </div>
 </Base>
 
 <script>
-  import { showSeries } from '../lib/sidebar-ui';
+  import { showAllLessons } from '../lib/sidebar-ui';
 
   // Runs on every visit to the home page, since the ClientRouter only runs this script once.
   let page: AbortController | undefined;
   document.addEventListener('astro:page-load', () => {
     page?.abort();
     page = new AbortController();
-    for (const button of document.querySelectorAll<HTMLButtonElement>('[data-open-series]')) {
-      button.addEventListener('click', () => showSeries(button.dataset.openSeries!), { signal: page.signal });
-    }
+    document.querySelector('[data-all-lessons]')?.addEventListener('click', showAllLessons, { signal: page.signal });
   });
   document.addEventListener('astro:before-swap', () => page?.abort());
 </script>
 
 <style>
+  .home {
+    max-inline-size: 40rem;
+  }
   p {
     margin: 0;
   }
@@ -84,27 +150,37 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     letter-spacing: -0.01em;
   }
   .lede {
-    max-inline-size: 34rem;
+    margin-block-end: var(--space-12);
+    font: var(--text-21) / 1.5 var(--font-serif);
+  }
+  .muted {
     color: var(--muted);
-    font: var(--text-21) / 1.45 var(--font-serif);
+  }
+  .small {
+    margin-block-start: var(--space-12);
+    font-size: var(--text-14);
+  }
+  section > h2 {
+    margin: 48px 0 var(--space-16);
+    font-size: var(--text-28);
   }
 
   /* The Continue card (#52): on the plate (src/styles/base.css), like the mini-player, with its bar
-     and Resume button in the plate's accent. */
+     and Play button in the plate's accent. */
   .continue {
     display: grid;
     gap: var(--space-8);
-    margin-block-start: var(--space-24);
+    margin-block-start: var(--space-32);
     padding: 20px;
     background: var(--plate);
     color: var(--on-plate);
   }
+  .continue[hidden] {
+    display: none;
+  }
   .continue .btn {
     background: var(--plate-accent);
     color: var(--on-plate-accent);
-  }
-  .continue[hidden] {
-    display: none;
   }
   .continue h2 {
     margin: 0;
@@ -125,13 +201,13 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     margin-block: var(--space-4);
     background: var(--plate-track);
   }
-  .meter > span,
-  .series-meter > span {
+  .meter[hidden] {
+    display: none;
+  }
+  .meter > span {
     display: block;
     block-size: 100%;
     inline-size: 0;
-  }
-  .meter > span {
     background: var(--plate-accent);
   }
   .continue-row {
@@ -143,59 +219,111 @@ const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await 
     font-size: var(--text-14);
   }
 
-  /* The three series */
-  .series-heading {
-    margin: 40px 0 var(--space-8);
-    font-size: var(--text-36);
-    line-height: 1;
+  /* "All lessons": a row under the card, ruled off like a list row, that opens the list. */
+  .all-lessons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: 100%;
+    min-block-size: 52px;
+    padding: 0 var(--space-4) 0 0;
+    border: 0;
+    border-block-end: 2px solid var(--ink);
+    background: none;
+    color: var(--ink);
+    font: 700 var(--text-18) / 1.2 var(--font-sans);
+    cursor: pointer;
+    text-align: start;
   }
-  .series-list {
+  .all-lessons:hover {
+    color: var(--accent);
+  }
+  .all-lessons :global(.next) {
+    transform: scaleX(-1);
+  }
+
+  /* The roster: the role on the left, the names on the right, a rule under each role. */
+  .roster {
     margin: 0;
-    padding: 0;
-    list-style: none;
+    border-block-start: 2px solid var(--ink);
   }
-  .series {
+  .row {
     display: grid;
-    gap: var(--space-6);
-    padding-block: var(--space-16);
+    grid-template-columns: 7.5rem 1fr;
+    gap: var(--space-16);
+    padding-block: var(--space-12);
     border-block-end: 1px solid var(--line);
   }
-  .series-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-12);
-  }
-  .series h3 {
-    margin: 0;
-    font-size: var(--text-24);
-    line-height: 1.1;
-  }
-  .series-count {
+  dt {
+    padding-block-start: 6px;
     color: var(--muted);
-    font-size: var(--text-14);
-    font-variant-numeric: tabular-nums;
-  }
-  /* Each series' bar fills with its paper (base.css sets --paper by data-series). */
-  .series-meter {
-    display: block;
-    block-size: 6px;
-    background: var(--line);
-  }
-  .series-meter > span {
-    background: var(--paper);
-  }
-  .series p:last-child {
-    margin-block-start: var(--space-4);
-  }
-  .next-label {
-    color: var(--muted);
-  }
-  .series a {
     font-weight: 500;
   }
-  [data-next-link][hidden] {
+  dd {
+    margin: 0;
+  }
+  summary {
+    display: grid;
+    padding-block: 4px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
     display: none;
+  }
+  .name {
+    font: 700 var(--text-21) / 1.25 var(--font-serif);
+  }
+  summary:hover .name {
+    color: var(--accent);
+  }
+  .name::after {
+    content: '+';
+    margin-inline-start: 0.4em;
+    color: var(--accent);
+    font-family: var(--font-sans);
+  }
+  details[open] .name::after {
+    content: '–';
+  }
+  .bio {
+    padding: var(--space-8) 0 var(--space-12);
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .bio :global(p) {
+    margin-block: 0 var(--space-12);
+  }
+  /* Support is plain text with its links; CREDITS.md italicizes the names. */
+  .support {
+    padding-block-start: 6px;
+  }
+  .support :global(em) {
+    font-style: normal;
+  }
+
+  .prose {
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .prose + .prose {
+    margin-block-start: var(--space-12);
+  }
+  .prose strong {
+    font-family: var(--font-sans);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) var(--space-24);
+    margin-block-start: var(--space-16);
+    padding: 0;
+    list-style: none;
+    font-weight: 700;
+  }
+
+  @media (max-width: 30rem) {
+    .row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
   }
 </style>

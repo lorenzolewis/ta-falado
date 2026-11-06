@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isFinished, latestUnfinished, resumeAt, seriesProgress, timeLeft } from './progress';
+import { isFinished, latestUnfinished, resumeAt, timeLeft } from './progress';
 
 describe('progress rules', () => {
   it('counts a lesson finished from 95%', () => {
@@ -23,34 +23,6 @@ describe('progress rules', () => {
       }),
     ).toBe('/grammar/03');
     expect(latestUnfinished({})).toBeUndefined();
-  });
-});
-
-describe('series progress', () => {
-  const series = ['/grammar/01', '/grammar/02', '/grammar/03'];
-  const entry = (finished: boolean) => ({ position: 10, finished, playedAt: 1 });
-
-  it('starts with the first lesson before any progress', () => {
-    expect(seriesProgress(series, { '/pronunciation/01': entry(true) })).toEqual({
-      finished: 0,
-      next: '/grammar/01',
-      started: false,
-    });
-  });
-
-  it('counts finished lessons and offers the first unfinished one next', () => {
-    expect(seriesProgress(series, { '/grammar/01': entry(true), '/grammar/02': entry(false) })).toEqual({
-      finished: 1,
-      next: '/grammar/02',
-      started: true,
-    });
-    // A skipped lesson comes before later ones.
-    expect(seriesProgress(series, { '/grammar/02': entry(true) })).toMatchObject({ finished: 1, next: '/grammar/01' });
-  });
-
-  it('has nothing next once every lesson is finished', () => {
-    const all = Object.fromEntries(series.map((id) => [id, entry(true)]));
-    expect(seriesProgress(series, all)).toEqual({ finished: 3, next: undefined, started: true });
   });
 });
 

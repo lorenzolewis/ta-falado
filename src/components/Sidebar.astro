@@ -1,10 +1,10 @@
 ---
-// The sidebar (#53): the site name (the link home) and About, every lesson in release (episode) order
+// The sidebar (#53): the site name (the link home), every lesson in release (episode) order
 // with series pills and a filter, and the footer. It is on every page under the same persist name, so <ClientRouter /> keeps it, with its scroll,
 // pill and query, across navigations, like the player (ADR 0001). Wired in src/lib/sidebar-ui.ts.
 import { formatDuration, isoDuration } from '../lib/format';
 import { SERIES, getLessons, lessonPath } from '../lib/lessons';
-import { LESSONS_ID, pagePath, sectionOf } from '../lib/nav';
+import { LESSONS_ID, pagePath } from '../lib/nav';
 import { SERIES_LABEL } from '../lib/series';
 import Credit from './Credit.astro';
 import FinishedMark from './FinishedMark.astro';
@@ -14,17 +14,13 @@ import Icon from './Icon.astro';
 // lessons with pronunciation (SOURCES.md).
 const lessons = await getLessons();
 const series = SERIES.map((id) => ({ id, count: lessons.filter((l) => l.data.series === id).length }));
-const section = sectionOf(Astro.url.pathname);
 const here = pagePath(Astro.url.pathname);
 const current = (on: boolean) => (on ? 'page' : undefined);
 ---
 
 <nav class="side panel" id={LESSONS_ID} aria-label="Site and lessons" data-sidebar transition:persist="sidebar">
   <div class="site-head">
-    <a class="wordmark" href="/" lang="pt-BR" aria-current={current(section === 'home')} data-nav="home">Tá Falado</a>
-    <a class="about" href="/about" aria-current={current(section === 'about')} data-nav="about">
-      <Icon name="info" />About
-    </a>
+    <a class="wordmark" href="/" lang="pt-BR" aria-current={current(here === '/')} data-nav="home">Tá Falado</a>
   </div>
 
   <div class="lessons">
@@ -111,7 +107,7 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     margin: 0;
   }
 
-  /* The site name, on the name tab of the episode art, is the link home; About sits across from it. */
+  /* The site name, on the name tab of the episode art, is the link home. */
   .site-head {
     display: flex;
     align-items: center;
@@ -131,26 +127,6 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     outline-offset: -4px;
     outline-color: var(--print-ink);
   }
-  .about {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-    min-block-size: 44px;
-    padding-inline: var(--space-8) var(--space-12);
-    border-radius: var(--radius-control);
-    color: var(--muted);
-    font-size: var(--text-18);
-    font-weight: 700;
-    text-decoration: none;
-  }
-  .about:hover {
-    color: var(--ink);
-  }
-  .about[aria-current='page'] {
-    background: var(--ink);
-    color: var(--surface);
-  }
-
   /* Lessons */
   .lessons {
     display: flex;

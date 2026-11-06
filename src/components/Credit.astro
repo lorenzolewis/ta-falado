@@ -1,16 +1,11 @@
 ---
 // The CC BY attribution and the "independent, unofficial" notice (#53), at the foot of the sidebar
 // and, on a phone, of the main pane, so they are reachable from both tabs.
-interface Props {
-  /** Add a link to the About page (the sidebar has its own About row). */
-  about?: boolean;
-}
 ---
 
 <p class="credit">
   <b>An independent, unofficial archive.</b> Lessons by COERLL, University of Texas at Austin, licensed{' '}
   <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
-  {Astro.props.about && <a href="/about">About this site</a>}
 </p>
 
 <style>

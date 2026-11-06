@@ -93,13 +93,12 @@ function syncPage() {
   const sidebar = document.querySelector<HTMLElement>('[data-sidebar]');
   const app = document.querySelector<HTMLElement>('[data-app]');
   if (!sidebar || !app) return;
-  const { section, view } = viewOf(location.pathname, location.hash);
+  const view = viewOf(location.pathname, location.hash);
   const here = pagePath(location.pathname);
   const mark = (el: Element | null, on: boolean) =>
     on ? el?.setAttribute('aria-current', 'page') : el?.removeAttribute('aria-current');
 
-  mark(sidebar.querySelector('[data-nav="home"]'), section === 'home');
-  mark(sidebar.querySelector('[data-nav="about"]'), section === 'about');
+  mark(sidebar.querySelector('[data-nav="home"]'), here === '/');
   for (const link of sidebar.querySelectorAll('.list a')) mark(link, link.getAttribute('href') === here);
   app.dataset.view = view;
 }
@@ -120,14 +119,16 @@ async function openLessons() {
 }
 
 /**
- * "All 24 lessons" on the home page: the list on that series, in the Lessons view on a phone.
- * Exported for the home page's script.
+ * "All 46 lessons" on the home page: the whole list, with no series or query, from its top. On a
+ * phone that is the Lessons view; on desktop the sidebar is already in view, so focus moves to its
+ * first lesson and Tab carries on down the list. Exported for the home page's script.
  */
-export function showSeries(id: string) {
-  showOnly?.(id);
-  document.querySelector('[data-sidebar] .list')?.scrollTo(0, 0);
-  // On desktop the sidebar is already in view.
+export function showAllLessons() {
+  showOnly?.(null);
+  const list = document.querySelector<HTMLElement>('[data-sidebar] .list');
+  list?.scrollTo(0, 0);
   if (matchMedia(PHONE).matches) void openLessons();
+  else list?.querySelector<HTMLAnchorElement>('a')?.focus();
 }
 
 // Links to #lessons (the phone's "‹ Lessons" button). Captured before the ClientRouter's

@@ -11,7 +11,7 @@ describe('seriesOf', () => {
 
   it('gives nothing for any other page', () => {
     expect(seriesOf('/')).toBeUndefined();
-    expect(seriesOf('/about')).toBeUndefined();
+    expect(seriesOf('/feed.xml')).toBeUndefined();
     expect(seriesOf('/grammar')).toBeUndefined();
     expect(seriesOf('/grammar/3')).toBeUndefined();
   });

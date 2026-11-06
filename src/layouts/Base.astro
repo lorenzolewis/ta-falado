@@ -42,7 +42,7 @@ const image = ogImage
 // The phone shows one view at a time (#53): this page's own (home or page), or the Lessons view,
 // which src/lib/sidebar-ui.ts switches to when the URL ends in #lessons. The "‹ Lessons" button,
 // pinned to the top of every page, opens it; the sidebar's site name leads back home.
-const { view } = viewOf(Astro.url.pathname);
+const view = viewOf(Astro.url.pathname);
 // The print's papers and ink, as the artwork uses them (src/lib/print.ts), for src/styles/base.css.
 // A lesson page takes its series' paper (data-series), every other page the podcast cover's.
 const printColours = [
@@ -91,7 +91,7 @@ const printColours = [
         </a>
         <slot />
         <footer class="pane-foot">
-          <Credit about />
+          <Credit />
         </footer>
       </main>
     </div>
