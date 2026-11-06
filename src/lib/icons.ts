@@ -1,4 +1,4 @@
-// The icon set (#52, plus home, info, back and close from #53): a 24px grid with sharp
+// The icon set (#52, plus home, back and close from #53): a 24px grid with sharp
 // geometry, 2.5px strokes with square caps and mitred joins, and solid shapes (class "f").
 // Drawn by src/components/Icon.astro; the stroke styles are in src/styles/base.css.
 //
@@ -20,7 +20,6 @@ export const ICONS = {
   chevron: '<path class="f" d="M6 9.5h12l-6 6.5z"/>',
   home: '<path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/>',
   // An Alegreya-style "i" (flag and foot), its dot clear of the stem so they don't merge at 20px.
-  info: '<circle cx="12" cy="12" r="8.75"/><path class="f" d="M10.75 6.25h2.5v2.5h-2.5zM9.5 10.5h3.75v5.5h1.5v1.75h-5.25V16h1.25v-3.75H9.5z"/>',
   back: '<path d="M15.5 4.5 8 12l7.5 7.5"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
 } as const;
