@@ -177,7 +177,8 @@ a {
   stroke: none;
 }
 .icon text {
-  font: 700 8px var(--font-sans);
+  font: 700 12.5px var(--font-sans);
+  letter-spacing: -0.25px;
   text-anchor: middle;
 }
 
