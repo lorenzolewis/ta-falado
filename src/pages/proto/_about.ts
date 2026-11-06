@@ -1,13 +1,7 @@
-// PROTOTYPE (#57): the About page's content as data, for three layout variants at /proto/about-{a,b,c}.
+// PROTOTYPE (#57): the About page's content as data, for the chosen layout at /proto/about (see PROTOTYPE.md).
 // The facts are CREDITS.md's, restructured by hand; the bios are lifted from its compiled HTML.
 // Throwaway: never merged.
 import * as credits from '../../../CREDITS.md';
-
-export const VARIANTS = [
-  { key: 'a', name: 'Liner notes' },
-  { key: 'b', name: 'Attribution card' },
-  { key: 'c', name: 'Cast list' },
-] as const;
 
 export const REPO = 'https://github.com/lorenzolewis/tafalado';
 export const LINKS = {
