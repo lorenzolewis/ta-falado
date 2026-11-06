@@ -1,7 +1,17 @@
 import { episodeCoverPath, PODCAST_COVER_PATH } from './artwork';
 import { isoDate, isoDuration } from './format';
 import { LICENSE_URL, PODCAST_AUTHOR, PODCAST_DESCRIPTION, PODCAST_TITLE } from './podcast';
+import { INK } from './print';
 import { lessonPath, lessonTitle, type Series } from './series';
+
+/** The site's own short description: the default meta description, and the web app manifest's. */
+export const SITE_DESCRIPTION = 'Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers.';
+
+/**
+ * The browser's and the home screen app's bar colour: the sheet the page is printed on
+ * (--surface in src/styles/base.css), white stock in light mode and ink in dark.
+ */
+export const THEME_COLOUR = { light: '#ffffff', dark: INK } as const;
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'", nbsp: ' ' };
 

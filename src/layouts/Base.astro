@@ -5,11 +5,19 @@ import Credit from '../components/Credit.astro';
 import Icon from '../components/Icon.astro';
 import Player from '../components/Player.astro';
 import Sidebar from '../components/Sidebar.astro';
-import { COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_PATH } from '../lib/artwork';
+import {
+  APPLE_TOUCH_ICON_PATH,
+  COVER_SIZE,
+  FAVICON_PATH,
+  FAVICON_SIZES,
+  OG_HEIGHT,
+  OG_WIDTH,
+  PODCAST_COVER_PATH,
+} from '../lib/artwork';
 import { LESSONS_ID, pagePath, seriesOf, viewOf } from '../lib/nav';
 import { INK, PAPER } from '../lib/print';
 import { PODCAST_TITLE } from '../lib/podcast';
-import { jsonLdScript } from '../lib/seo';
+import { jsonLdScript, SITE_DESCRIPTION, THEME_COLOUR } from '../lib/seo';
 import '../styles/base.css';
 
 interface Props {
@@ -26,7 +34,7 @@ interface Props {
 
 const {
   title,
-  description = 'Brazilian Portuguese pronunciation and grammar podcast for Spanish speakers.',
+  description = SITE_DESCRIPTION,
   ogImage,
   jsonLd,
   noindex = false,
@@ -59,6 +67,19 @@ const printColours = [
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <!-- Icons and the home screen app (src/lib/artwork.ts, src/pages/manifest.webmanifest.ts). -->
+    <link rel="icon" href={FAVICON_PATH} sizes={FAVICON_SIZES.map((size) => `${size}x${size}`).join(' ')} />
+    <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON_PATH} />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content={THEME_COLOUR.light} />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content={THEME_COLOUR.dark} />
+    <!-- Added to an iPhone home screen: open standalone (no Safari bars), named in full under the
+         icon, with the system status bar in light or dark to match the page. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content={PODCAST_TITLE} />
+    <meta name="application-name" content={PODCAST_TITLE} />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="alternate" type="application/rss+xml" title={PODCAST_TITLE} href="/feed.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:type" content="website" />

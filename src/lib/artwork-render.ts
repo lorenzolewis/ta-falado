@@ -3,7 +3,17 @@ import { readFile } from 'node:fs/promises';
 import { crc32, deflateSync } from 'node:zlib';
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
-import { artworkSlug, COVER_SIZE, EPISODE_COVER_SIZE, OG_HEIGHT, OG_WIDTH, PODCAST_COVER_SLUG } from './artwork';
+import {
+  artworkSlug,
+  COVER_SIZE,
+  EPISODE_COVER_SIZE,
+  FAVICON_SIZES,
+  MANIFEST_ICONS,
+  OG_HEIGHT,
+  OG_WIDTH,
+  PODCAST_COVER_SLUG,
+  type ManifestIcon,
+} from './artwork';
 import { getLessons, type Lesson } from './lessons';
 import { DEFAULT_PAPER, INK, PAPER } from './print';
 import { dotPitch, nestSvg, printLayers, type Box } from './print-svg';
@@ -42,6 +52,8 @@ interface Artwork {
   printed?: SatoriElement[];
   /** Text overprinted on top of the dot screen. */
   over?: SatoriElement[];
+  /** Lay the dot screen. Default true; off for the app icons (renderIcon). */
+  screen?: boolean;
 }
 
 type Photo = { data: Buffer; type: 'image/jpeg' | 'image/png' };
@@ -197,13 +209,57 @@ export function renderCover(lesson: Lesson | undefined): Promise<Buffer> {
   return lesson ? renderEpisodeCover(lesson) : renderPodcastCover();
 }
 
+/**
+ * An app icon (favicon, home screen, manifest): "Tá", the start of the cover's name, printed in ink
+ * on the amarelo paper. Full bleed and opaque, as iOS wants: the platforms cut their own shapes. A
+ * maskable icon sets it smaller, inside the central 80% circle that Android's masks never crop.
+ * No dot screen: icons are shown small, where the dots blur into the ink and turn it olive.
+ */
+export function renderIcon(size: number, { maskable = false } = {}): Promise<Buffer> {
+  const fontSize = maskable ? ICON_TEXT.maskable : ICON_TEXT.full;
+  return render(
+    {
+      canvas: SQUARE,
+      paper: DEFAULT_PAPER,
+      screen: false,
+      // The accent makes the glyphs taller above than below, so the line box sits a little low
+      // to centre the ink rather than the em box.
+      printed: [
+        at({ left: 0, top: ICON_TEXT.drop * fontSize, width: SQUARE.width, height: SQUARE.height, alignItems: 'center', justifyContent: 'center' }, [
+          name(fontSize, 'Tá', 1),
+        ]),
+      ],
+    },
+    size,
+  );
+}
+
+/** "Tá"'s size on the 1000px icon canvas, and how far it is dropped (in ems) to centre its ink. */
+const ICON_TEXT = { full: 620, maskable: 440, drop: 0.04 };
+
+/** The favicon: one ICO holding a PNG at each of FAVICON_SIZES. */
+export async function renderFavicon(): Promise<Buffer> {
+  return encodeIco(await Promise.all(FAVICON_SIZES.map(async (size) => ({ size, png: await renderIcon(size) }))));
+}
+
+/** getStaticPaths for the manifest's icons, at /icons/<slug>.png. Their look lives here, so the key is the fonts. */
+export async function manifestIconPaths() {
+  const cacheKey = await fontHash();
+  return MANIFEST_ICONS.map((icon) => ({ params: { slug: icon.slug }, props: { icon }, cacheKey }));
+}
+
+/** Draws one icon from `manifestIconPaths`. */
+export function renderManifestIcon({ size, maskable }: ManifestIcon): Promise<Buffer> {
+  return renderIcon(size, { maskable });
+}
+
 /** The response a build endpoint returns for a rendered image. */
 export function pngResponse(bytes: Buffer): Response {
   return new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png' } });
 }
 
 /** Composes an artwork's layers into one SVG and rasterises it `outputWidth` pixels wide. */
-async function render({ canvas, paper, photo, printed = [], over = [] }: Artwork, outputWidth: number): Promise<Buffer> {
+async function render({ canvas, paper, photo, printed = [], over = [], screen = true }: Artwork, outputWidth: number): Promise<Buffer> {
   const full: Box = { x: 0, y: 0, ...canvas };
   const print = printLayers({
     id: 'print',
@@ -218,7 +274,7 @@ async function render({ canvas, paper, photo, printed = [], over = [] }: Artwork
     <rect width="${canvas.width}" height="${canvas.height}" fill="${paper}"/>
     ${print.ink}
     ${printed.length ? nestSvg(await textLayer(printed, canvas), full, 'printed') : ''}
-    ${print.screen}
+    ${screen ? print.screen : ''}
     ${over.length ? nestSvg(await textLayer(over, canvas), full, 'over') : ''}
   </svg>`;
   const image = new Resvg(svg, { fitTo: { mode: 'width', value: outputWidth }, background: paper }).render();
@@ -310,6 +366,29 @@ function encodeRgbPng(rgba: Buffer, width: number, height: number): Buffer {
     chunk('IDAT', deflateSync(raw)),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+/**
+ * Packs PNGs into one ICO file. Every browser since IE Vista reads PNG entries, so there is no need
+ * for BMP ones. An entry stores its size in a byte, where 0 means 256.
+ */
+function encodeIco(images: { size: number; png: Buffer }[]): Buffer {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(images.length, 4);
+  let offset = header.length + 16 * images.length;
+  const entries = images.map(({ size, png }) => {
+    const entry = Buffer.alloc(16);
+    entry[0] = size % 256;
+    entry[1] = size % 256;
+    entry.writeUInt16LE(1, 4); // colour planes
+    entry.writeUInt16LE(24, 6); // bits per pixel: RGB
+    entry.writeUInt32LE(png.length, 8);
+    entry.writeUInt32LE(offset, 12);
+    offset += png.length;
+    return entry;
+  });
+  return Buffer.concat([header, ...entries, ...images.map(({ png }) => png)]);
 }
 
 function chunk(type: string, data: Buffer): Buffer {
