@@ -19,6 +19,7 @@ import { INK, PAPER } from '../lib/print';
 import { PODCAST_TITLE } from '../lib/podcast';
 import { jsonLdScript, SITE_DESCRIPTION, THEME_COLOUR } from '../lib/seo';
 import '../styles/base.css';
+import '../styles/motion.css';
 
 interface Props {
   /** Page title, before the site name. Omit on the home page. */
@@ -118,6 +119,9 @@ const printColours = [
     </div>
     <!-- Outside <main>, and on every page, so it is kept across navigations (ADR 0001). -->
     <Player />
+    <script>
+      import '../lib/motion';
+    </script>
   </body>
 </html>
 

@@ -3,6 +3,7 @@
 // that touches a page's own elements happens in `astro:page-load`.
 import { formatDuration } from './format';
 import { bindMediaSession } from './media-session';
+import { fadeInOnLoad } from './motion';
 import { seriesOf } from './nav';
 import { JUMP_BACK, JUMP_FORWARD, player, type Track } from './player';
 import { playControl, playerStatus, progress as fractionDone, timeLeft } from './player-view';
@@ -88,7 +89,11 @@ function bindMiniPlayer(root: HTMLElement) {
     const text = { title: track.title, series: track.series, left: timeLeft(state) };
     for (const el of texts) setText(el, text[el.dataset.text as keyof typeof text] ?? '');
     // Only on a new lesson, so the image isn't touched on every time update.
-    for (const art of arts) if (art.getAttribute('src') !== track.artwork) art.src = track.artwork;
+    for (const art of arts) {
+      if (art.getAttribute('src') === track.artwork) continue;
+      art.src = track.artwork;
+      fadeInOnLoad(art);
+    }
     // The plate takes the lesson's paper (src/components/Player.astro).
     const series = seriesOf(track.id);
     if (series && root.dataset.series !== series) root.dataset.series = series;

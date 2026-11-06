@@ -3,7 +3,8 @@
 // filter is bound once, while the current row and the phone's view are updated on every page.
 import { navigate } from 'astro:transitions/client';
 import { createLessonFilter, filterView } from './lesson-filter';
-import { LESSONS_ID, pagePath, viewOf } from './nav';
+import { switchView } from './motion';
+import { LESSONS_ID, pagePath, viewOf, viewSwitchDirection, type View } from './nav';
 
 const bound = new WeakSet<Element>();
 /** How long the lesson filter waits after a keystroke before showing results. */
@@ -101,6 +102,31 @@ function syncPage() {
   mark(sidebar.querySelector('[data-nav="home"]'), here === '/');
   for (const link of sidebar.querySelectorAll('.list a')) mark(link, link.getAttribute('href') === here);
   app.dataset.view = view;
+  syncedPath = location.pathname;
+}
+
+/** The path syncPage last showed: a popstate on it is a switch between the phone's views. */
+let syncedPath = location.pathname;
+/** The view switch under way, so a second request for the same view joins it. */
+let switching: { view: View; done: Promise<void> } | undefined;
+
+/**
+ * Shows the phone's view for the URL on the same page, as a sheet moving (src/lib/motion.ts): the
+ * Lessons view is underneath every page. Resolves once the view has switched.
+ */
+function showView(): Promise<void> {
+  const app = document.querySelector<HTMLElement>('[data-app]');
+  const view = viewOf(location.pathname, location.hash);
+  if (switching?.view === view) return switching.done;
+  if (!app || app.dataset.view === view) {
+    syncPage();
+    return Promise.resolve();
+  }
+  const done = switchView(syncPage, viewSwitchDirection(view)).finally(() => {
+    if (switching?.done === done) switching = undefined;
+  });
+  switching = { view, done };
+  return done;
 }
 
 const LESSONS_HASH = `#${LESSONS_ID}`;
@@ -108,11 +134,12 @@ const LESSONS_HASH = `#${LESSONS_ID}`;
 /**
  * Opens the phone's Lessons view: #lessons on the current page. Through the ClientRouter, so the
  * history entry is one it can go Back from (it ignores the entries of plain fragment links), and
- * then synced here, since a same-page hash navigation fires no event of its own.
+ * then shown here, since the router doesn't swap anything for a same-page fragment.
  */
 async function openLessons() {
   if (location.hash !== LESSONS_HASH) await navigate(LESSONS_HASH);
-  syncPage();
+  // The router may already have started this switch, with the popstate it fires for a new fragment.
+  await showView();
   scrollTo(0, 0);
 }
 
@@ -147,5 +174,6 @@ document.addEventListener('astro:page-load', () => {
 });
 // Before the new page is painted, so the phone never flashes the wrong view.
 document.addEventListener('astro:after-swap', syncPage);
-// Back and Forward into and out of #lessons on the same page swap nothing.
-addEventListener('popstate', syncPage);
+// Back and Forward into and out of #lessons on the same page swap nothing, so the view switches
+// here. Between pages the ClientRouter swaps, and syncPage runs again after it.
+addEventListener('popstate', () => (location.pathname === syncedPath ? void showView() : syncPage()));

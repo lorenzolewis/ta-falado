@@ -27,3 +27,21 @@ export function viewOf(pathname: string, hash = ''): View {
   if (hash === `#${LESSONS_ID}`) return 'lessons';
   return pagePath(pathname) === '/' ? 'home' : 'page';
 }
+
+/** Which way a navigation moves through the sheets (#62): onto a new sheet, or back to one underneath. */
+export type Direction = 'forward' | 'back';
+
+/**
+ * The direction of a ClientRouter navigation, from the one history gives. On desktop home is the
+ * bottom sheet, so going home from any other page is always Back, even from a link. On a phone home
+ * is reached from the Lessons view and opens forward like any page.
+ */
+export function navigationDirection(from: string, to: string, history: Direction, desktop: boolean): Direction {
+  if (desktop && pagePath(to) === '/' && pagePath(from) !== '/') return 'back';
+  return history;
+}
+
+/** The direction of the phone's same-page switch between views: the Lessons view is underneath every page. */
+export function viewSwitchDirection(to: View): Direction {
+  return to === 'lessons' ? 'back' : 'forward';
+}
