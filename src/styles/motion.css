@@ -162,3 +162,13 @@ html[data-astro-transition='back']::view-transition-new(sheet) {
     animation: sheet-fade-in 150ms linear both !important;
   }
 }
+
+/* Images fade in once loaded (src/lib/motion.ts), which marks one still loading. An opacity change,
+   not movement, so it stays under reduced motion too. */
+img {
+  transition: opacity 240ms ease-out;
+}
+img[data-loading] {
+  opacity: 0;
+  transition: none;
+}

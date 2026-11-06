@@ -45,3 +45,21 @@ document.addEventListener('astro:page-load', () => {
   }
   navigated = true;
 });
+
+/**
+ * Fades an image in once it has loaded (src/styles/motion.css), unless it already has, so a cached
+ * image shows at once. The lesson photo fades up from its paper. Exported for the player's artwork,
+ * whose source changes with the track.
+ */
+export function fadeInOnLoad(img: HTMLImageElement): void {
+  if (!img.getAttribute('src') || img.complete) return;
+  img.setAttribute('data-loading', '');
+  const done = () => img.removeAttribute('data-loading');
+  img.addEventListener('load', done, { once: true });
+  img.addEventListener('error', done, { once: true });
+}
+
+const fadeInPage = () => document.querySelectorAll<HTMLImageElement>('main img').forEach(fadeInOnLoad);
+// Before the new page is painted, so a loading image never shows half-drawn first.
+document.addEventListener('astro:after-swap', fadeInPage);
+fadeInPage();
