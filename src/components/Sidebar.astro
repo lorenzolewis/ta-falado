@@ -1,91 +1,89 @@
 ---
-// The sidebar (#53): the site rows, every lesson with series pills and a filter, and the footer.
-// It is on every page under the same persist name, so <ClientRouter /> keeps it, with its scroll,
+// The sidebar (#53): the site name (the link home), every lesson in release (episode) order
+// with series pills and a filter, and the footer. It is on every page under the same persist name, so <ClientRouter /> keeps it, with its scroll,
 // pill and query, across navigations, like the player (ADR 0001). Wired in src/lib/sidebar-ui.ts.
 import { formatDuration, isoDuration } from '../lib/format';
-import { SERIES, lessonPath, lessonsBySeries } from '../lib/lessons';
-import { LESSONS_ID, pagePath, sectionOf } from '../lib/nav';
+import { SERIES, getLessons, lessonPath } from '../lib/lessons';
+import { LESSONS_ID, pagePath } from '../lib/nav';
 import { SERIES_LABEL } from '../lib/series';
 import Credit from './Credit.astro';
 import FinishedMark from './FinishedMark.astro';
 import Icon from './Icon.astro';
 
-const series = await Promise.all(SERIES.map(async (id) => ({ id, lessons: await lessonsBySeries(id) })));
-const section = sectionOf(Astro.url.pathname);
+// The list follows the original feed's episode order (1–46), which interleaves the supplementary
+// lessons with pronunciation (SOURCES.md).
+const lessons = await getLessons();
+const series = SERIES.map((id) => ({ id, count: lessons.filter((l) => l.data.series === id).length }));
 const here = pagePath(Astro.url.pathname);
 const current = (on: boolean) => (on ? 'page' : undefined);
 ---
 
 <nav class="side panel" id={LESSONS_ID} aria-label="Site and lessons" data-sidebar transition:persist="sidebar">
-  <div class="site-rows">
-    <a class="wordmark" href="/" lang="pt-BR">Tá Falado</a>
-    <a class="site-row home-row" href="/" aria-current={current(section === 'home')} data-nav="home">
-      <Icon name="home" class="off" /><Icon name="homeFilled" class="on" />Home
-    </a>
-    <a class="site-row" href="/about" aria-current={current(section === 'about')} data-nav="about">
-      <Icon name="info" />About this site
-    </a>
+  <div class="site-head">
+    <a class="wordmark" href="/" lang="pt-BR" aria-current={current(here === '/')} data-nav="home">Tá Falado</a>
   </div>
 
   <div class="lessons">
-    <div class="lessons-head">
-      <h2>Lessons</h2>
-      <button type="button" class="round" aria-expanded="false" aria-controls="lesson-search" data-search-toggle>
-        <Icon name="search" /><span class="visually-hidden">Filter lessons</span>
-      </button>
+    <!-- The heading row, the series pills and the filter status: pinned while the list scrolls. -->
+    <div class="lessons-top">
+      <!-- The filter opens in this row, in place of the heading (which stays for screen readers). -->
+      <div class="lessons-head">
+        <h2>Lessons</h2>
+        <search class="field" id="lesson-search" hidden>
+          <label for="lesson-filter" class="visually-hidden">Filter lessons</label>
+          <Icon name="search" />
+          <input type="search" id="lesson-filter" autocomplete="off" placeholder="nh, ão, ficar…" />
+        </search>
+        <button type="button" class="round" aria-expanded="false" aria-controls="lesson-search" data-search-toggle>
+          <Icon name="search" class="i-open" /><Icon name="close" class="i-close" /><span class="visually-hidden">Filter lessons</span>
+        </button>
+      </div>
+      <div class="pills" role="group" aria-label="Series">
+        <button type="button" class="pill" aria-pressed="true" data-pill-all>
+          All episodes <span class="pill-count" data-pill-count>{lessons.length}</span>
+        </button>
+        {
+          series.map(({ id, count }) => (
+            <button type="button" class="pill" aria-pressed="false" data-pill={id}>
+              {SERIES_LABEL[id]} <span class="pill-count" data-pill-count>{count}</span>
+            </button>
+          ))
+        }
+      </div>
+      <p class="status" id="lesson-filter-status" role="status"></p>
     </div>
-    <search class="field" id="lesson-search" hidden>
-      <label for="lesson-filter" class="visually-hidden">Filter lessons</label>
-      <Icon name="search" />
-      <input type="search" id="lesson-filter" autocomplete="off" placeholder="nh, ão, ficar…" />
-    </search>
-    <div class="pills" role="group" aria-label="Series">
-      <button type="button" class="pill pill-clear" hidden data-pill-clear>
-        <Icon name="close" /><span class="visually-hidden">Show every series</span>
-      </button>
-      {
-        series.map(({ id, lessons }) => (
-          <button type="button" class="pill" aria-pressed="false" data-pill={id}>
-            {SERIES_LABEL[id]} <span class="pill-count" data-pill-count>{lessons.length}</span>
-          </button>
-        ))
-      }
-    </div>
-    <p class="status" id="lesson-filter-status" role="status"></p>
     <div class="empty" hidden data-empty>
       <button type="button" class="link-btn" data-clear>Clear the filter</button>
     </div>
     <ol class="list">
       {
-        series.flatMap(({ id, lessons }) =>
-          lessons.map(({ data, body }) => (
-            <li
-              data-lesson={lessonPath(data)}
-              data-series={id}
-              data-filter-text={[data.title, data.topic, body].filter(Boolean).join(' ')}
-            >
-              <a href={lessonPath(data)} aria-current={current(here === lessonPath(data))}>
-                <span class="square" aria-hidden="true">
-                  <span class="number">{data.number}</span>
-                  <Icon name="check" class="check" />
+        lessons.map(({ data, body }) => (
+          <li
+            data-lesson={lessonPath(data)}
+            data-series={data.series}
+            data-filter-text={[data.title, data.topic, body].filter(Boolean).join(' ')}
+          >
+            <a href={lessonPath(data)} aria-current={current(here === lessonPath(data))}>
+              <span class="square" aria-hidden="true">
+                <span class="number">{data.number}</span>
+                <Icon name="check" class="check" />
+              </span>
+              <span class="row-text">
+                <span class="row-title">{data.title}</span>
+                <span class="row-sub">
+                  {SERIES_LABEL[data.series]} {data.number}
+                  {data.topic && <>, {data.topic}</>}
                 </span>
-                <span class="row-text">
-                  <span class="row-title">{data.title}</span>
-                  <span class="row-sub">
-                    {SERIES_LABEL[id]} {data.number}
-                    {data.topic && <>, {data.topic}</>}
-                  </span>
-                </span>
-                <span class="row-end">
-                  <time datetime={isoDuration(data.audio.durationSeconds)}>
-                    {formatDuration(data.audio.durationSeconds)}
-                  </time>
-                  <FinishedMark id={lessonPath(data)} />
-                </span>
-              </a>
-            </li>
-          )),
-        )
+              </span>
+              <span class="row-end">
+                <time datetime={isoDuration(data.audio.durationSeconds)}>
+                  {formatDuration(data.audio.durationSeconds)}
+                </time>
+                <FinishedMark id={lessonPath(data)} />
+              </span>
+            </a>
+          </li>
+        ))
       }
     </ol>
   </div>
@@ -104,68 +102,62 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     display: flex;
     flex-direction: column;
     background: var(--surface);
-    border-radius: var(--radius-card);
   }
   p {
     margin: 0;
   }
 
-  /* Site rows */
-  .site-rows {
-    display: grid;
-    gap: 2px;
-    padding: var(--space-12) var(--space-12) var(--space-8);
-    border-block-end: 1px solid var(--line);
-  }
-  .wordmark {
-    padding: var(--space-8) var(--space-8) var(--space-4);
-    color: var(--accent);
-    font: italic 700 var(--text-21) / 1 var(--font-serif);
-    text-decoration: none;
-  }
-  .site-row {
+  /* The site name, on the name tab of the episode art, is the link home. */
+  .site-head {
     display: flex;
     align-items: center;
-    gap: 14px;
-    min-block-size: 48px;
-    padding-inline: var(--space-8);
-    border-radius: var(--radius-row);
-    color: var(--muted);
-    font-size: var(--text-18);
-    font-weight: 700;
+    justify-content: space-between;
+    gap: var(--space-12);
+    padding-inline-end: var(--space-8);
+  }
+  .wordmark {
+    padding: 18px 22px 12px 20px;
+    background: var(--paper-pronunciation);
+    color: var(--print-ink);
+    font: 700 2rem / 0.9 var(--font-serif);
+    letter-spacing: -0.03em;
     text-decoration: none;
   }
-  .site-row:hover,
-  .site-row[aria-current='page'] {
-    color: var(--ink);
+  .wordmark:focus-visible {
+    outline-offset: -4px;
+    outline-color: var(--print-ink);
   }
-  .site-row[aria-current='page'] {
-    background: var(--selected);
-  }
-  .home-row :global(.on),
-  .home-row[aria-current='page'] :global(.off) {
-    display: none;
-  }
-  .home-row[aria-current='page'] :global(.on) {
-    display: block;
-  }
-
   /* Lessons */
   .lessons {
     display: flex;
     flex-direction: column;
-    padding-block-start: var(--space-8);
+    padding-block-start: var(--space-16);
   }
   .lessons-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: var(--space-8);
+    min-block-size: 52px;
     padding: var(--space-4) var(--space-8) var(--space-4) 20px;
   }
   .lessons-head h2 {
+    flex: 1;
     margin: 0;
-    font-size: var(--text-24);
+    font-size: var(--text-28);
     line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  /* Open: the field takes the heading's place in the row, and the button closes it. */
+  .lessons-head:has([aria-expanded='true']) {
+    padding-inline-start: var(--space-12);
+  }
+  .lessons-head:has([aria-expanded='true']) h2 {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .round {
     display: grid;
@@ -173,32 +165,57 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     inline-size: 44px;
     block-size: 44px;
     border: 0;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-control);
     background: transparent;
     color: var(--muted);
   }
   .round:hover,
   .round[aria-expanded='true'] {
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--ink);
+    color: var(--surface);
   }
   .round :global(.icon) {
     inline-size: 20px;
     block-size: 20px;
   }
+  .round :global(.i-close),
+  .round[aria-expanded='true'] :global(.i-open) {
+    display: none;
+  }
+  .round[aria-expanded='true'] :global(.i-close) {
+    display: block;
+  }
   .field {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: var(--space-8);
+    min-inline-size: 0;
     min-block-size: 44px;
-    margin: var(--space-4) var(--space-12) 0;
     padding-inline: 14px;
     border: 2px solid var(--control);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-control);
     background: var(--surface);
   }
   .field[hidden] {
     display: none;
+  }
+  /* It opens out of the button, leftwards across the row. */
+  .field:not([hidden]) {
+    animation: field-open 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes field-open {
+    from {
+      clip-path: inset(0 0 0 100%);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .field:not([hidden]) {
+      animation: none;
+    }
   }
   .field:focus-within {
     outline: 2px solid var(--accent);
@@ -217,6 +234,13 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     outline: none;
     font-size: 1.0625rem;
   }
+  /* The row's own button closes and clears the filter, so the browser's clear button would be a second ×. */
+  .field input::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  /* Series pills, each on its own paper (base.css sets --paper by data-pill); pressed is reversed
+     out in ink. "All episodes" has no paper: it's stock with an ink rule. */
   .pills {
     display: flex;
     flex-wrap: wrap;
@@ -230,26 +254,27 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     min-block-size: 36px;
     padding: 0 var(--space-12);
     border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--bg);
-    color: var(--ink);
-    font-weight: 500;
+    border-radius: var(--radius-control);
+    background: var(--paper);
+    color: var(--print-ink);
+    font-weight: 700;
   }
   .pill[hidden] {
     display: none;
   }
   .pill[aria-pressed='true'] {
-    background: var(--accent);
-    color: var(--on-accent);
+    background: var(--print-ink);
+    color: var(--paper);
   }
-  .pill-clear {
-    justify-content: center;
-    inline-size: 36px;
-    padding: 0;
+  .pill[data-pill-all] {
+    background: transparent;
+    color: var(--ink);
+    box-shadow: inset 0 0 0 2px var(--ink);
   }
-  .pill-clear :global(.icon) {
-    inline-size: 16px;
-    block-size: 16px;
+  .pill[data-pill-all][aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--surface);
+    box-shadow: none;
   }
   .pill-count {
     font-size: var(--text-14);
@@ -265,7 +290,7 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     display: none;
   }
 
-  /* Lesson rows */
+  /* Lesson rows: the number on a chip of the series' paper (base.css sets --paper by data-series). */
   .list {
     margin: 0;
     padding: 0 var(--space-8) var(--space-8);
@@ -277,30 +302,35 @@ const current = (on: boolean) => (on ? 'page' : undefined);
   .list a {
     display: grid;
     grid-template-columns: 44px 1fr auto;
-    gap: var(--space-12);
+    gap: 14px;
     align-items: center;
     min-block-size: 56px;
     padding: var(--space-6) var(--space-8);
-    border-radius: var(--radius-row);
+    border-radius: var(--radius-control);
     color: var(--ink);
     text-decoration: none;
   }
   .list a:hover {
-    background: var(--bg);
+    background: color-mix(in srgb, var(--ink) 7%, var(--surface));
   }
+  /* The current lesson: its row on the series' paper, its chip reversed out in ink. */
   .list a[aria-current='page'] {
-    background: var(--selected);
+    background: var(--paper);
+    color: var(--print-ink);
+  }
+  .list a[aria-current='page'] :is(.row-sub, .row-end) {
+    color: color-mix(in srgb, var(--print-ink) 78%, var(--paper));
   }
   .square {
     display: grid;
     place-items: center;
     inline-size: 44px;
     block-size: 44px;
-    border-radius: var(--radius-row);
-    background: var(--bg);
-    color: var(--accent);
-    font: 700 1.25rem / 1 var(--font-serif);
+    background: var(--paper);
+    color: var(--print-ink);
+    font: 700 1.375rem / 1 var(--font-serif);
     font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: -0.02em;
   }
   .square :global(.check) {
     display: none;
@@ -308,19 +338,30 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     block-size: 20px;
     stroke-width: 3;
   }
+  /* Started: the chip's paper with an ink corner. Finished: ink, with the check in the paper. */
   [data-state='started'] .square {
-    background: var(--strong);
-    color: var(--ipe);
+    background: linear-gradient(135deg, transparent 72%, var(--print-ink) 72%) var(--paper);
   }
-  [data-state='finished'] .square {
-    background: var(--accent);
-    color: var(--on-accent);
+  [data-state='finished'] .square,
+  .list a[aria-current='page'] .square {
+    background: var(--print-ink);
+    color: var(--paper);
   }
   [data-state='finished'] .number {
     display: none;
   }
   [data-state='finished'] .square :global(.check) {
     display: block;
+  }
+  /* In the inverted print ink is the page: the corner and the finished chip are cut out of it. */
+  @media (prefers-color-scheme: dark) {
+    [data-state='started'] .square {
+      background: linear-gradient(135deg, transparent 72%, var(--surface) 72%) var(--paper);
+    }
+    [data-state='finished'] .square {
+      background: transparent;
+      box-shadow: inset 0 0 0 2px var(--paper);
+    }
   }
   .row-text {
     display: grid;
@@ -360,7 +401,6 @@ const current = (on: boolean) => (on ? 'page' : undefined);
 
   .side-foot {
     padding: var(--space-12) 20px var(--space-16);
-    border-block-start: 1px solid var(--line);
   }
 
   /* Desktop: the list scrolls inside the sidebar, and the footer stays pinned to its foot. */
@@ -379,11 +419,15 @@ const current = (on: boolean) => (on ? 'page' : undefined);
     }
   }
 
-  /* Phone: the tabs stand in for the wordmark and Home row; About stays. */
+  /* Phone: the whole view scrolls, so the heading row and pills stick to the top, as they stay put
+     above the list on desktop. */
   @media (max-width: 51.99rem) {
-    .wordmark,
-    .home-row {
-      display: none;
+    .lessons-top {
+      position: sticky;
+      inset-block-start: env(safe-area-inset-top, 0px);
+      z-index: 1;
+      padding-block-end: var(--space-4);
+      background: var(--surface);
     }
   }
 </style>

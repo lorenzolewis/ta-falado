@@ -2,7 +2,7 @@
 
 <!--
 This file is the single source for the credits (docs/adr/0005-credits-roster-parsed-from-credits-md.md).
-src/pages/about.astro parses "The team" and "Bios" below into its roster, and the build fails if they
+The home page (src/pages/index.astro) parses "The team" and "Bios" below into its roster, and the build fails if they
 don't follow the convention noted there. Edit the credits here, not in the page. Raw HTML is allowed
 for `lang` attributes (Portuguese is lang="pt-BR", Spanish lang="es").
 -->

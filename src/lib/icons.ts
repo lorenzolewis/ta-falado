@@ -1,22 +1,26 @@
-// The icon set (#52, plus home, info, library, back and close from #53): a 24px grid with sharp
+// The icon set (#52, plus home, back and close from #53): a 24px grid with sharp
 // geometry, 2.5px strokes with square caps and mitred joins, and solid shapes (class "f").
 // Drawn by src/components/Icon.astro; the stroke styles are in src/styles/base.css.
+//
+// One family: marks stay inside the 20px live area (2–22), rings are r 8.75 on the centre, solid
+// marks are a stroke (2.5) wide, and solids sit a little smaller than outlines since they read heavier.
 export const ICONS = {
-  play: '<path class="f" d="M6.5 3.5 20.5 12l-14 8.5z"/>',
-  pause: '<path class="f" d="M5.5 4h5v16h-5zM13.5 4h5v16h-5z"/>',
-  back10: '<path d="M4 12.5A8 8 0 1 0 7 6.3"/><path class="f" d="M3.6 2.6 10 6.4 4 9.6z"/><text x="12.4" y="15.8">10</text>',
-  forward30: '<path d="M20 12.5A8 8 0 1 1 17 6.3"/><path class="f" d="M20.4 2.6 14 6.4l6 3.2z"/><text x="11.6" y="15.8">30</text>',
-  volume: '<path class="f" d="M3 9h4l6-5v16l-6-5H3z"/><path d="M16 9a4.2 4.2 0 0 1 0 6M18.8 6.2a8.2 8.2 0 0 1 0 11.6"/>',
-  mute: '<path class="f" d="M3 9h4l6-5v16l-6-5H3z"/><path d="m16 9 6 6m0-6-6 6"/>',
-  search: '<circle cx="10.5" cy="10.5" r="6.75"/><path d="m15.5 15.5 5.5 5.5"/>',
+  // Centroid on x 12, 16 tall like the pause bars.
+  play: '<path class="f" d="M7.5 4 20.5 12 7.5 20z"/>',
+  pause: '<path class="f" d="M5.5 4h4.5v16H5.5zM14 4h4.5v16H14z"/>',
+  // Skip: big numerals (12.5px, see base.css) under a shallow arrow, readable at 16–20px.
+  back10: '<path d="M20 9.5A9.5 9.5 0 0 0 8.5 4.25"/><path class="f" d="M2.5 4.5 8.5 1v7z"/><text x="12" y="21.5">10</text>',
+  forward30: '<path d="M4 9.5A9.5 9.5 0 0 1 15.5 4.25"/><path class="f" d="M21.5 4.5 15.5 1v7z"/><text x="12" y="21.5">30</text>',
+  // Waves concentric on the cone's apex; mute's cross takes the waves' box.
+  volume: '<path class="f" d="M2.5 9h4l6-5v16l-6-5h-4z"/><path d="M15.5 9.25a4 4 0 0 1 0 5.5M18.25 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path class="f" d="M2.5 9h4l6-5v16l-6-5h-4z"/><path d="m16 9.5 5 5m0-5-5 5"/>',
+  search: '<circle cx="10.25" cy="10.25" r="6.5"/><path d="m15.25 15.25 5.25 5.25"/>',
   check: '<path d="M4 12.5 9 17.5 20 6.5"/>',
-  doc: '<path class="f" fill-rule="evenodd" d="M5 2h9l5 5v15H5zm3.5 10v2H15v-2zm0 4v2h4.5v-2zM13 3.5V8h4.5z"/>',
-  chevron: '<path class="f" d="M6 9h12l-6 7z"/>',
-  home: '<path d="M3.5 10.5 12 3.5l8.5 7V20.5h-6v-6h-5v6h-6z"/>',
-  homeFilled: '<path class="f" d="M2 10.2 12 2l10 8.2V22h-8.2v-6.5h-3.6V22H2z"/>',
-  info: '<circle cx="12" cy="12" r="8.75"/><path d="M12 11v6"/><path class="f" d="M10.6 6.6h2.8v2.8h-2.8z"/>',
-  library: '<path d="M4.5 3.5v17M10 3.5v17M15 4.5l5 15.5"/>',
-  back: '<path d="M15 4.5 7.5 12l7.5 7.5"/>',
+  doc: '<path class="f" fill-rule="evenodd" d="M5.5 2.5h8.5l4.5 4.5v14.5h-13zm3 9.5v2.5h7V12zm0 4.5v2.5h4.5v-2.5zM13 4v4h4z"/>',
+  chevron: '<path class="f" d="M6 9.5h12l-6 6.5z"/>',
+  home: '<path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/>',
+  // An Alegreya-style "i" (flag and foot), its dot clear of the stem so they don't merge at 20px.
+  back: '<path d="M15.5 4.5 8 12l7.5 7.5"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
 } as const;
 

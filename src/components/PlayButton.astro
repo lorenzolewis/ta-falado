@@ -1,6 +1,6 @@
 ---
-// A lesson page's Play pill (#56): it follows the mini-player (Play, Resume, Pause, Play again) and
-// shows the time left beside it once started. src/lib/player-ui.ts wires it to the persistent player
+// A lesson page's Play button (#56), on the series' paper: it follows the mini-player (Play, Resume,
+// Pause, Play again) and shows the time left beside it once started. src/lib/player-ui.ts wires it to the persistent player
 // and fills the label and the time; `data-state` is a PlayControl status from src/lib/player-view.ts.
 import Icon from './Icon.astro';
 import { toTrack, type Lesson } from '../lib/lessons';
@@ -11,7 +11,7 @@ interface Props {
 ---
 
 <p class="listen" data-play={JSON.stringify(toTrack(Astro.props.lesson))} data-state="fresh">
-  <button type="button" class="btn btn-ipe">
+  <button type="button" class="btn btn-paper">
     <Icon name="play" class="i-play" />
     <Icon name="pause" class="i-pause" />
     <span data-play-label>Play</span>
@@ -26,6 +26,11 @@ interface Props {
     align-items: center;
     gap: var(--space-16);
     margin: var(--space-24) 0 0;
+  }
+  .btn {
+    min-block-size: 56px;
+    padding: 0 28px 0 20px;
+    font-size: var(--text-21);
   }
   .left {
     color: var(--muted);

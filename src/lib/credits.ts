@@ -1,4 +1,4 @@
-// The About page's roster, parsed from CREDITS.md's compiled HTML (docs/adr/0005). CREDITS.md stays
+// The home page's credits roster, parsed from CREDITS.md's compiled HTML (docs/adr/0005). CREDITS.md stays
 // the single source for the credits; this reads its convention and throws when the file breaks it,
 // so a mistake fails the build instead of dropping someone from the page.
 

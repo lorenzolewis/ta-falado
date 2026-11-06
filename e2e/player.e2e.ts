@@ -56,9 +56,10 @@ test('the player plays, seeks, keeps playing across pages and resumes after a re
   expect(await seconds(player.seek)).toBeGreaterThanOrEqual(60);
 
   // Navigate: the audio keeps playing through a ClientRouter page swap.
-  await page.getByRole('link', { name: 'About this site' }).click();
-  await expect(page).toHaveURL(/\/about$/);
-  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText(/Pronunciation of/);
+  // Another lesson from the sidebar: its page swaps in, while lesson 1 plays on.
+  await page.getByRole('navigation', { name: 'Site and lessons' }).getByRole('link', { name: /Pronunciation 2\b/ }).click();
+  await expect(page).toHaveURL(/\/pronunciation\/02$/);
+  await expect(page.getByRole('heading', { level: 1 })).not.toHaveText(/Pronunciation of \/i\//);
   await expect(player.pause).toBeVisible();
   await expect(player.speed).toHaveValue('1.5');
   await expectPlaying(player.seek);

@@ -1,7 +1,8 @@
 ---
-// A lesson page (#56), the #55 decision ("A8, print cover"): the lesson's print bleeds across the top
-// of the pane with the series and title on its foot, then the facts, the Play pill, the intro and the
-// transcript link. Portuguese and Spanish words in the intro are marked as in docs/lesson-schema.md.
+// A lesson page (#56): the lesson's print bleeds across the top of the pane, with the series and
+// number on a paper tab rising into its foot, as on the episode art (#61); then the title, the facts,
+// Play, the intro and the transcript link. Portuguese and Spanish words in the intro are marked as in
+// docs/lesson-schema.md.
 import type { GetStaticPaths } from 'astro';
 import { render } from 'astro:content';
 import Icon from '../../components/Icon.astro';
@@ -68,58 +69,48 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
     --bleed-x: 20px;
     --bleed-y: var(--space-24);
   }
-  .lesson :where(p) {
-    margin: 0;
-  }
 
-  /* The print and the title share one grid cell; the title block sits on the print's foot. */
+  /* The print, edge to edge: 27:14, two-thirds the height of the #55 frame. */
   .cover {
-    display: grid;
     margin: calc(-1 * var(--bleed-y)) calc(-1 * var(--bleed-x)) 0;
   }
-  .cover > :global(*) {
-    grid-area: 1 / 1;
-  }
   .cover :global(.print) {
-    border-start-start-radius: var(--radius-card);
-    border-start-end-radius: var(--radius-card);
+    aspect-ratio: 27 / 14;
   }
-  /* The gradient belongs to the title block, so a long title moves the fade higher and the text
-     always has the page colour behind it. */
+  /* The wide frame crops a lot; the faces in these photos sit high, so keep the upper part. */
+  .cover :global(.print img) {
+    object-position: 50% 25%;
+  }
   .name {
-    position: relative;
-    align-self: end;
     margin: 0;
-    padding: 112px var(--bleed-x) 0;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      color-mix(in srgb, var(--surface) 70%, transparent) 45%,
-      var(--surface) 80%
-    );
+    padding: 0 var(--bleed-x);
   }
+  /* The series and number on a tab of the series' paper, rising into the photo's bottom-left. */
   .series {
-    color: var(--accent);
-    font-size: var(--text-18);
-    font-weight: 700;
+    position: relative;
+    display: inline-block;
+    margin: -58px 0 0 calc(-1 * var(--bleed-x));
+    padding: 18px 24px 8px var(--bleed-x);
+    background: var(--paper);
+    color: var(--print-ink);
+    font: 700 var(--text-21) / 1.2 var(--font-sans);
   }
   h1 {
-    margin: var(--space-4) 0 0;
-    font-size: clamp(var(--text-36), 7vw, var(--text-60));
-    line-height: 1;
-    letter-spacing: -0.01em;
+    margin: var(--space-12) 0 0;
+    font-size: clamp(2.75rem, 8vw, 5.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.025em;
     text-wrap: balance;
   }
   .facts {
-    margin-block-start: var(--space-12);
+    max-inline-size: 36rem;
+    margin: var(--space-16) 0 0;
     color: var(--muted);
   }
 
   .intro {
     max-inline-size: 38rem;
     margin-block-start: 40px;
-    padding-block-start: var(--space-24);
-    border-block-start: 1px solid var(--line);
     font: var(--text-21) / 1.55 var(--font-serif);
   }
   .intro :global(p) {
@@ -128,49 +119,55 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
   .intro :global(p + p) {
     margin-block-start: var(--space-16);
   }
+  /* Portuguese words: bold, underlined in the series' paper, below the letters so they stay clear. */
   .intro :global(i[lang='pt-BR']) {
-    color: var(--accent);
-    font-weight: 500;
+    font-weight: 700;
+    text-decoration: underline var(--paper);
+    text-decoration-thickness: 0.16em;
+    text-decoration-skip-ink: none;
+    text-underline-offset: 0.14em;
+  }
+  /* In the inverted print the word takes the paper itself. */
+  @media (prefers-color-scheme: dark) {
+    .intro :global(i[lang='pt-BR']) {
+      color: var(--paper);
+      text-decoration: none;
+    }
   }
 
   .transcript {
-    margin-block-start: var(--space-32);
+    margin: var(--space-32) 0 0;
   }
   .transcript a {
     display: inline-flex;
     align-items: center;
     gap: var(--space-8);
     min-block-size: 44px;
+    color: var(--ink);
     font-size: var(--text-18);
     font-weight: 700;
+    text-decoration-color: var(--paper);
+    text-decoration-thickness: 4px;
+    text-underline-offset: 4px;
   }
   .size {
     color: var(--muted);
     font-weight: 400;
   }
 
-  /* Phone: the "Lessons" link (src/layouts/Base.astro) sits over the print's top corner, on a
-     page-coloured pill so it reads on any paper, and the print still bleeds to the pane's top. */
+  /* Phone: the print bleeds to the pane's top, under the pinned "‹ Lessons" button. */
   @media (max-width: 51.99rem) {
     :global(.pane):has(> .lesson) {
-      position: relative;
+      padding-block-start: var(--bleed-y);
     }
-    :global(.pane > .back):has(+ .lesson) {
-      position: absolute;
-      inset-block-start: var(--space-12);
-      inset-inline-start: var(--space-12);
-      z-index: 1;
-      margin: 0;
-      background: var(--surface);
-    }
-    /* "Tá Falado" on a print with no photo starts below the link (12px down, 44px tall). */
+    /* "Tá Falado" on a print with no photo starts below the button (12px down, 44px tall). */
     :global(.back) + .lesson {
       --print-inset-top: calc(var(--space-12) + 44px);
     }
   }
 
-  /* Desktop: at the pane's full width 9:7 would be taller than the window, so the height is capped
-     and the photo crops wider there. The text stays within 44rem. */
+  /* Desktop: at the pane's full width 27:14 would still be tall, so the height is capped and the
+     photo crops wider. The text stays within 44rem. */
   @media (min-width: 52rem) {
     .lesson {
       --bleed-x: 48px;
@@ -187,7 +184,7 @@ const description = lessonDescription(lesson.rendered?.html ?? '');
     }
     .cover :global(.print) {
       inline-size: 100%;
-      max-block-size: min(62vh, 560px);
+      max-block-size: min(41vh, 373px);
     }
   }
 </style>
