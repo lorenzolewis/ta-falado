@@ -113,19 +113,28 @@ const LESSONS_HASH = `#${LESSONS_ID}`;
  */
 async function openLessons() {
   if (location.hash !== LESSONS_HASH) await navigate(LESSONS_HASH);
-  protoSwap(() => {
-    syncPage();
-    scrollTo(0, 0);
-  }, 'back');
+  showView();
+  scrollTo(0, 0);
 }
 
-// PROTOTYPE (#62): lets src/pages/proto/_MotionSwitcher.astro animate the phone's same-page view switch.
-function protoSwap(update: () => void, dir: 'forward' | 'back') {
-  const swap = (window as any).__protoViewSwap;
-  if (swap) swap(update, dir);
-  else update();
-}
+// PROTOTYPE (#62): the phone's same-page switch between the Lessons view and the page, animated by
+// src/pages/proto/_MotionSwitcher.astro: to Lessons is "back", to the page "forward". Called by
+// both openLessons() and popstate (the router dispatches one for the new hash), so a switch
+// already on its way to the same view isn't started twice.
+let pendingView: string | null = null;
 let syncedPath = location.pathname;
+function showView() {
+  const app = document.querySelector<HTMLElement>('[data-app]');
+  const to = viewOf(location.pathname, location.hash);
+  if (!app || app.dataset.view === to || pendingView === to) return;
+  const swap = (window as any).__protoViewSwap;
+  if (!swap) return syncPage();
+  pendingView = to;
+  swap(() => {
+    pendingView = null;
+    syncPage();
+  }, to === 'lessons' ? 'back' : 'forward');
+}
 
 /**
  * "All 46 lessons" on the home page (shown only on a phone): the Lessons view with the whole list,
@@ -160,10 +169,4 @@ document.addEventListener('astro:page-load', () => {
 document.addEventListener('astro:after-swap', syncPage);
 // Back and Forward into and out of #lessons on the same page swap nothing.
 // PROTOTYPE (#62): animated only when the path is unchanged; the ClientRouter animates the rest.
-addEventListener('popstate', () => {
-  if (location.pathname !== syncedPath) return syncPage();
-  const app = document.querySelector<HTMLElement>('[data-app]');
-  const to = viewOf(location.pathname, location.hash);
-  if (!app || app.dataset.view === to) return syncPage();
-  protoSwap(syncPage, to === 'lessons' ? 'back' : 'forward');
-});
+addEventListener('popstate', () => (location.pathname === syncedPath ? showView() : syncPage()));

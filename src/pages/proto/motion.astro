@@ -1,28 +1,15 @@
 ---
-// PROTOTYPE (#62), throwaway, never merged. The launch page for the motion variants: they run on
-// every real page (src/pages/proto/_MotionSwitcher.astro), so this only explains them and links in.
+// PROTOTYPE (#62), throwaway, never merged. The chosen motion runs on every real page
+// (src/pages/proto/_MotionSwitcher.astro); this page only explains it and links in.
 import Base from '../../layouts/Base.astro';
-import { getLessons, lessonPath, lessonTitle } from '../../lib/lessons';
-
-const lessons = await getLessons();
-const pick = [lessons[0]!, lessons[1]!, lessons.find((l) => l.data.series === 'grammar')!];
-const variants = [
-  ['0', 'Today', 'The ClientRouter’s default: the whole window crossfades for 250ms.'],
-  ['a', 'The tab carries', 'The paper tab travels: from the row’s number square into the lesson’s tab, or tab to tab between lessons. The title travels with it, the photo crossfades in place, the rest fades.'],
-  ['b', 'Sheets', 'Each page is a sheet. Forward lays a new one over from the right; Back slides it off. On a phone the Lessons view and each page are sheets in a stack, as in iOS.'],
-  ['c', 'Press', 'Nothing travels. The old page lifts off in 140ms, then the new one is printed in place: the photo’s ink comes up through the dot screen, the heading settles, the text follows.'],
-];
 ---
 
 <Base title="Prototype: motion" noindex>
   <h1>Motion prototype (#62)</h1>
-  <p>Pick a variant, then use the site normally: the lesson list, Back, the phone’s “‹ Lessons”, with audio playing. The pink bar switches variants on any page (or press [ and ]), slows everything ×5 and simulates reduced motion.</p>
-  <ul>
-    {variants.map(([key, name, about]) => (
-      <li>
-        <p><a href={`/?motion=${key}`}><strong>{key.toUpperCase()}, {name}</strong></a>: {about}</p>
-      </li>
-    ))}
-  </ul>
-  <p>Good journeys to try: {pick.map((l) => <a href={lessonPath(l.data)}>{lessonTitle(l.data)}</a>).reduce((a, b) => [a, ', ', b] as any)}.</p>
+  <p>
+    Chosen: “Sheets”. Each page is a sheet. Opening a page lays a new sheet over from the right; Back pulls the top
+    sheet off to the right. Going home on desktop is always Back. On a phone the Lessons view is underneath every page,
+    and home opens forward like any page. The pink bar slows everything ×5 and simulates reduced motion.
+  </p>
+  <p><a href="/">Start at home</a></p>
 </Base>

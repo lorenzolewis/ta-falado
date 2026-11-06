@@ -1,31 +1,17 @@
 ---
-// PROTOTYPE (#62), throwaway, never merged. Three motion variants for every page-to-page navigation,
-// switchable site-wide with ?motion=0|a|b|c|d (kept for the visit in sessionStorage, since the
-// ClientRouter drops the query on navigation) and this floating bar. "[" and "]" cycle variants
-// (the arrow keys belong to the player). "Slow ×5" stretches every duration; "Reduced" simulates
-// prefers-reduced-motion. The bar shows the last navigation: its direction and which elements had
-// their own view-transition names, i.e. what moved separately from the page.
+// PROTOTYPE (#62), throwaway, never merged. The chosen motion ("Sheets", src/pages/proto/_motion.css)
+// with a floating bar to judge it: "Slow ×5" stretches every duration, "Reduced" simulates
+// prefers-reduced-motion. The variants tried before it are in this branch's history.
 import './_motion.css';
 ---
 
-<div class="proto-bar" data-proto-bar transition:persist="proto-bar" aria-label="Prototype: motion variants">
-  <button type="button" data-prev aria-label="Previous variant">‹</button>
-  <span class="label" data-label></span>
-  <button type="button" data-next aria-label="Next variant">›</button>
+<div class="proto-bar" data-proto-bar transition:persist="proto-bar" aria-label="Prototype: motion">
+  <span>Sheets</span>
   <label><input type="checkbox" data-slow /> Slow ×5</label>
   <label><input type="checkbox" data-rm /> Reduced</label>
-  <span class="last" data-last></span>
 </div>
 
 <script>
-  const VARIANTS: Record<string, string> = {
-    '0': 'Today (default crossfade)',
-    a: 'The tab carries',
-    b: 'Sheets',
-    c: 'Press',
-    d: 'Sheets, printed (B + quiet C)',
-  };
-  const KEYS = Object.keys(VARIANTS);
   const store = {
     get: (k: string) => {
       try { return sessionStorage.getItem(`proto62-${k}`); } catch { return null; }
@@ -34,113 +20,39 @@ import './_motion.css';
       try { sessionStorage.setItem(`proto62-${k}`, v); } catch {}
     },
   };
-
-  const params = new URLSearchParams(location.search);
-  const fromUrl = params.get('motion');
-  if (fromUrl && fromUrl in VARIANTS) store.set('motion', fromUrl);
-  let motion = store.get('motion') ?? 'd';
   let slow = store.get('slow') === '1';
   let rm = store.get('rm') === '1';
-
   function apply(root: HTMLElement) {
-    root.dataset.motion = motion;
     root.style.setProperty('--slow', slow ? '5' : '1');
     root.toggleAttribute('data-rm', rm);
   }
-
-  function render() {
-    apply(document.documentElement);
-    const bar = document.querySelector<HTMLElement>('[data-proto-bar]');
-    if (!bar) return;
-    bar.querySelector('[data-label]')!.textContent = `${motion.toUpperCase()} · ${VARIANTS[motion]}`;
-    bar.querySelector<HTMLInputElement>('[data-slow]')!.checked = slow;
-    bar.querySelector<HTMLInputElement>('[data-rm]')!.checked = rm;
-    const url = new URL(location.href);
-    url.searchParams.set('motion', motion);
-    history.replaceState(history.state, '', url);
-  }
-
-  function cycle(step: number) {
-    motion = KEYS[(KEYS.indexOf(motion) + step + KEYS.length) % KEYS.length]!;
-    store.set('motion', motion);
-    render();
-  }
-
   function bindBar() {
+    apply(document.documentElement);
     const bar = document.querySelector<HTMLElement>('[data-proto-bar]');
     if (!bar || bar.dataset.bound) return;
     bar.dataset.bound = '1';
-    bar.querySelector('[data-prev]')!.addEventListener('click', () => cycle(-1));
-    bar.querySelector('[data-next]')!.addEventListener('click', () => cycle(1));
-    bar.querySelector<HTMLInputElement>('[data-slow]')!.addEventListener('change', (e) => {
-      slow = (e.target as HTMLInputElement).checked;
-      store.set('slow', slow ? '1' : '0');
-      render();
-    });
-    bar.querySelector<HTMLInputElement>('[data-rm]')!.addEventListener('change', (e) => {
-      rm = (e.target as HTMLInputElement).checked;
-      store.set('rm', rm ? '1' : '0');
-      render();
-    });
+    const s = bar.querySelector<HTMLInputElement>('[data-slow]')!;
+    const r = bar.querySelector<HTMLInputElement>('[data-rm]')!;
+    s.checked = slow;
+    r.checked = rm;
+    s.addEventListener('change', () => { slow = s.checked; store.set('slow', slow ? '1' : '0'); apply(document.documentElement); });
+    r.addEventListener('change', () => { rm = r.checked; store.set('rm', rm ? '1' : '0'); apply(document.documentElement); });
   }
 
-  addEventListener('keydown', (e) => {
-    const t = e.target as HTMLElement;
-    if (t.closest('input, textarea, [contenteditable]')) return;
-    if (e.key === '[') cycle(-1);
-    if (e.key === ']') cycle(1);
-  });
-
-  /** Elements with their own view-transition name: what moves apart from the page. */
-  function namedNow() {
-    const names = new Set<string>();
-    for (const el of document.querySelectorAll<HTMLElement>('body *')) {
-      const n = getComputedStyle(el).viewTransitionName;
-      if (n && n !== 'none' && el.checkVisibility()) names.add(n);
-    }
-    return [...names].join(', ') || 'none';
-  }
-  function report(direction: string) {
-    const last = document.querySelector('[data-last]');
-    if (last) last.textContent = `Last: ${direction}, ${motion.toUpperCase()}, own layers: ${namedNow()}`;
-  }
-
-  // A: the clicked row's number square and title travel into the lesson's tab and title, but only
-  // when the page we're leaving has no tab of its own (lesson to lesson, the tab morphs tab to tab).
-  let direction = 'forward';
+  // Desktop: home is the bottom sheet, so going home is always Back (the lesson sheet is pulled
+  // off), even from a link, which history counts as forward. On a phone, home is reached from the
+  // Lessons view and moves forward like any page; it's the Lessons view that is underneath.
+  const wide = matchMedia('(min-width: 52rem)');
   document.addEventListener('astro:before-preparation', (e) => {
-    // B and D: home is the bottom sheet, so going home is always Back (the sheet on top is pulled
-    // off), even from a link, which history counts as forward.
-    if ((motion === 'b' || motion === 'd') && e.to.pathname === '/' && e.from.pathname !== '/') e.direction = 'back';
-    direction = e.direction;
-    if (motion !== 'a') return;
-    const row = (e.sourceElement as Element | undefined)?.closest?.('[data-sidebar] .list a');
-    const pageTab = document.querySelector<HTMLElement>('.lesson .series');
-    if (!row || pageTab?.checkVisibility()) return;
-    row.querySelector('.square')?.setAttribute('data-vt-tab', '');
-    row.querySelector('.row-title')?.setAttribute('data-vt-title', '');
+    if (wide.matches && e.to.pathname === '/' && e.from.pathname !== '/') e.direction = 'back';
   });
   document.addEventListener('astro:before-swap', (e) => apply(e.newDocument.documentElement));
-  document.addEventListener('astro:after-swap', () => {
-    // Before the new state is captured, or the persisted row would duplicate the new tab's name.
-    for (const el of document.querySelectorAll('[data-vt-tab], [data-vt-title]')) {
-      el.removeAttribute('data-vt-tab');
-      el.removeAttribute('data-vt-title');
-    }
-    render();
-    report(direction);
-    if (motion === 'c' || (motion === 'd' && direction !== 'back')) {
-      document.documentElement.setAttribute('data-press', '');
-      setTimeout(() => document.documentElement.removeAttribute('data-press'), 1100 * (slow ? 5 : 1));
-    }
-  });
-  // Focus (all variants): a click in the persisted sidebar keeps focus on that row (desktop), so
-  // the list keeps its place. Anything else would leave focus on <body>; move it to the page's
-  // <main> instead (tabindex=-1, no outline), without scrolling, so Tab continues from the page.
+
+  // Focus: a click in the persisted sidebar keeps focus on that row (desktop). Anything else would
+  // leave focus on <body>; move it to the page's <main> (tabindex=-1) without scrolling.
   let navigated = false;
   document.addEventListener('astro:page-load', () => {
     bindBar();
-    render();
     if (navigated && (document.activeElement === document.body || !document.activeElement?.checkVisibility())) {
       document.querySelector<HTMLElement>('#main')?.focus({ preventScroll: true });
     }
@@ -148,21 +60,17 @@ import './_motion.css';
   });
 
   // The phone's Lessons view is a same-page #lessons switch, which the ClientRouter doesn't
-  // animate. src/lib/sidebar-ui.ts calls this so it gets the variant's motion too: to Lessons is
-  // "back" (the parent), to a page is "forward".
+  // animate. src/lib/sidebar-ui.ts calls this: to Lessons is "back", to a page is "forward".
   (window as any).__protoViewSwap = (update: () => void, dir: 'forward' | 'back') => {
-    if (motion === '0' || !document.startViewTransition) return update();
+    if (!document.startViewTransition) return update();
     const root = document.documentElement;
+    const token = String(Math.random());
     root.setAttribute('data-astro-transition', dir);
-    const vt = document.startViewTransition(() => {
-      update();
-      report(`${dir} (Lessons view)`);
-      if (motion === 'c' || (motion === 'd' && dir !== 'back')) {
-        root.setAttribute('data-press', '');
-        setTimeout(() => root.removeAttribute('data-press'), 1100 * (slow ? 5 : 1));
-      }
+    root.dataset.swap = token;
+    document.startViewTransition(update).finished.finally(() => {
+      // Only if no later swap has taken over the attribute.
+      if (root.dataset.swap === token) root.removeAttribute('data-astro-transition');
     });
-    vt.finished.finally(() => root.removeAttribute('data-astro-transition'));
   };
 </script>
 
@@ -174,50 +82,16 @@ import './_motion.css';
     inset-inline-end: 8px;
     z-index: 50;
     display: flex;
-    flex-wrap: wrap;
+    gap: 10px;
     align-items: center;
-    gap: 6px 10px;
-    max-inline-size: min(26rem, calc(100vw - 7.5rem));
     padding: 6px 10px;
     border-radius: 10px;
     background: #ff2bd6;
     color: #000;
     font: 600 13px/1.2 system-ui, sans-serif;
-    box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
   }
-  .proto-bar button {
-    min-inline-size: 32px;
-    min-block-size: 32px;
-    border: 0;
-    border-radius: 6px;
-    background: #000;
-    color: #fff;
-    font-size: 18px;
-  }
-  .proto-bar .label {
-    min-inline-size: 9rem;
-  }
-  .proto-bar label {
-    display: inline-flex;
-    gap: 4px;
-    align-items: center;
-  }
-  .proto-bar .last {
-    flex-basis: 100%;
-    font-weight: 400;
-    font-size: 11px;
-  }
-  .proto-bar .last:empty {
-    display: none;
-  }
-  ::view-transition-group(proto-bar) {
-    animation: none;
-    z-index: 100;
-  }
-  ::view-transition-old(proto-bar) {
-    display: none;
-  }
-  ::view-transition-new(proto-bar) {
-    animation: none;
-  }
+  .proto-bar label { display: inline-flex; gap: 4px; align-items: center; }
+  ::view-transition-group(proto-bar) { animation: none; z-index: 100; }
+  ::view-transition-old(proto-bar) { display: none; }
+  ::view-transition-new(proto-bar) { animation: none; }
 </style>
