@@ -1,6 +1,6 @@
 import { episodeCoverPath, PODCAST_COVER_PATH } from './artwork';
 import { isoDate, isoDuration } from './format';
-import { LICENSE_URL, PODCAST_AUTHOR, PODCAST_DESCRIPTION, PODCAST_TITLE } from './podcast';
+import { LICENSE_URL, PODCAST_AUTHOR, PODCAST_DESCRIPTION, PODCAST_TITLE, SHOW_URLS } from './podcast';
 import { INK } from './print';
 import { lessonPath, lessonTitle, type Series } from './series';
 
@@ -77,8 +77,10 @@ export function podcastEpisodeLd(lesson: EpisodeRef, description: string, site: 
 }
 
 /** schema.org JSON-LD for the home page: the podcast as a whole. */
-export function podcastSeriesLd(site: URL) {
+export function podcastSeriesLd(site: URL, show: Partial<Record<string, string>> = SHOW_URLS) {
   const url = (path: string) => new URL(path, site).href;
+  // The show's listings in the podcast apps, once it has any.
+  const sameAs = Object.values(show).filter((href): href is string => Boolean(href));
   return {
     '@context': 'https://schema.org',
     '@type': 'PodcastSeries',
@@ -90,6 +92,7 @@ export function podcastSeriesLd(site: URL) {
     inLanguage: 'en',
     license: LICENSE_URL,
     author: { '@type': 'Organization', name: PODCAST_AUTHOR },
+    ...(sameAs.length > 0 && { sameAs }),
   };
 }
 
