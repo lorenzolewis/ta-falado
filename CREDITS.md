@@ -1,9 +1,10 @@
 # Credits and license
 
 <!--
-This file is the single source for the credits and license: src/pages/about.astro renders it as the
-/about page, shifting each heading down one level. Edit the credits here, not in the page. Raw HTML
-is allowed for `lang` attributes (Portuguese is lang="pt-BR", Spanish lang="es").
+This file is the single source for the credits (docs/adr/0005-credits-roster-parsed-from-credits-md.md).
+src/pages/about.astro parses "The team" and "Bios" below into its roster, and the build fails if they
+don't follow the convention noted there. Edit the credits here, not in the page. Raw HTML is allowed
+for `lang` attributes (Portuguese is lang="pt-BR", Spanish lang="es").
 -->
 
 This site is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>. It isn't affiliated with or endorsed by the University of Texas at Austin or COERLL.
@@ -42,25 +43,33 @@ The site's own code is separate: it's MIT-licensed (see `LICENSE` in the [source
 
 The original About page doesn't label anyone's role; the roles here come from the lesson intros and the bios.
 
+<!--
+The roster convention: each "###" heading is a role, in the order the page shows them. Under it,
+one list item per person, "**Name**: line", where the line is shown under the name as written. Each
+name needs a "###" bio under "Bios" with the same text. A role with a paragraph instead of a list
+(Support) is shown as that paragraph, with no bios. José Luis Montiel is the Spanish speaker in the
+lessons; the page shows only where each voice is from.
+-->
+
 ### Host
 
-- Orlando R. Kelm, University of Texas at Austin (Hispanic linguistics)
+- **Orlando R. Kelm**: Hispanic linguistics, University of Texas at Austin
 
 ### Voices
 
-- Valdo Oliveira, from Feira de Santana, Bahia
-- Michelle Schreiner Lima, from Limeira and Americana, São Paulo
-- <span lang="es">José Luis Montiel</span>, the Spanish speaker, from Maracaibo, Venezuela
+- **Valdo Oliveira**: Feira de Santana, Bahia
+- **Michelle Schreiner Lima**: Limeira and Americana, São Paulo
+- **<span lang="es">José Luis Montiel</span>**: Maracaibo, Venezuela
 
 ### Guest voices
 
-- Vivian Flanzer, from Rio de Janeiro (Pronunciation 13 and 15)
-- Alfredo Barros, from Pernambuco (Pronunciation 11)
+- **Vivian Flanzer**: Rio de Janeiro, Pronunciation 13 and 15
+- **Alfredo Barros**: Pernambuco, Pronunciation 11
 
 ### Production
 
-- Michael Heidenreich, audio recording
-- s.palomino, multimedia and technology
+- **Michael Heidenreich**: Audio recording
+- **s.palomino**: Multimedia and technology
 
 ### Support
 
@@ -77,7 +86,7 @@ itunes:author is "College of Liberal Arts, University of Texas at Austin".
 From the original [About Us page](https://www.coerll.utexas.edu/brazilpod/tafalado/about.html), "Podcasting Team from the University of Texas at Austin", as published in 2006–2007.
 
 
-### Orlando Kelm
+### Orlando R. Kelm
 
 _Orlando_ was born in Calgary, Alberta, Canada but raised in Salt Lake City, Utah (his German father never could get used to the cold weather, so he moved further south). He earned his Ph.D. in Hispanic Linguistics at the University of California at Berkeley in 1989 and then went straight to the University of Texas at Austin, where he has been ever since.
 

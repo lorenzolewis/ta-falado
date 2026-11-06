@@ -1,28 +1,196 @@
 ---
+// The About page (#58, decided in #57 as "liner notes"): the credits read like the back of a record
+// sleeve. A roster of roles and names, each name opening its bio in place; the license written out as
+// prose; then this site's own code. The roster comes from CREDITS.md (docs/adr/0005).
 import Base from '../layouts/Base.astro';
 import * as credits from '../../CREDITS.md';
+import { parseCredits } from '../lib/credits';
 
-// CREDITS.md is the single source for the credits and license. Its headings start at h1, so shift
-// them down one level to sit under this page's h1, and drop the maintainer comments.
-const creditsHtml = (await credits.compiledContent())
-  .replace(/<!--[\s\S]*?-->/g, '')
-  .replace(/<(\/?)h([1-5])\b/g, (_, slash: string, level: string) => `<${slash}h${Number(level) + 1}`);
+const roles = parseCredits(await credits.compiledContent());
+
+const REPO = 'https://github.com/lorenzolewis/tafalado';
+const ORIGINAL = 'https://www.coerll.utexas.edu/brazilpod/tafalado/';
 ---
 
 <Base title="About" description="About this independent, unofficial archive of the Tá Falado podcast, with full credits and license.">
-  <h1>About this site</h1>
-  <p>
-    This is an independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian
-    Portuguese lessons recorded at the University of Texas at Austin in 2006 and 2007. It keeps all 46 lessons
-    and their transcripts available in a site that works on a phone.
-  </p>
-  <p>
-    The lessons are for English speakers who also speak Spanish and are learning Brazilian Portuguese: each one
-    builds on what you already know from Spanish, pointing out where Portuguese pronunciation and grammar differ.
-  </p>
-  <p>
-    The original site is archived at{' '}
-    <a href="https://www.coerll.utexas.edu/brazilpod/tafalado/">www.coerll.utexas.edu/brazilpod/tafalado</a>.
-  </p>
-  <Fragment set:html={creditsHtml} />
+  <article class="about">
+    <h1>About this site</h1>
+    <p class="lede">
+      An independent, unofficial archive of <i lang="pt-BR">Tá Falado</i>, a podcast of Brazilian Portuguese lessons
+      for speakers of Spanish, recorded at the University of Texas at Austin in 2006 and 2007. All 46 lessons and their
+      transcripts from the <a href={ORIGINAL}>archived original site</a>, in a site that works on a phone.
+    </p>
+    <p class="muted">This site isn't affiliated with or endorsed by the University of Texas at Austin or COERLL.</p>
+
+    <section aria-labelledby="credits">
+      <h2 id="credits">Credits</h2>
+      <dl class="roster">
+        {
+          roles.map(({ role, people, html }) => (
+            <div class="row">
+              <dt>{role}</dt>
+              {html ? (
+                <dd class="support" set:html={html} />
+              ) : (
+                <dd>
+                  {people.map((person) => (
+                    <details>
+                      <summary>
+                        <span class="name" set:html={person.nameHtml} />
+                        <span class="muted" set:html={person.lineHtml} />
+                      </summary>
+                      <div class="bio" set:html={person.bioHtml} />
+                    </details>
+                  ))}
+                </dd>
+              )}
+            </div>
+          ))
+        }
+      </dl>
+      <p class="muted small">
+        Tap a name for their bio, from the <a href={`${ORIGINAL}about.html`}>original About page</a> (2006–2007). The
+        roles come from the lesson intros.
+      </p>
+    </section>
+
+    <section aria-labelledby="license">
+      <h2 id="license">License</h2>
+      <p class="prose">
+        <cite><span lang="pt-BR">Tá Falado</span>: Brazilian Portuguese Pronunciation for Speakers of Spanish</cite>, by
+        the podcasting team from the University of Texas at Austin, hosted by Orlando R. Kelm and produced at the College
+        of Liberal Arts. Published by COERLL (Center for Open Educational Resources and Language Learning), University of
+        Texas at Austin, at <a href={ORIGINAL}>coerll.utexas.edu/brazilpod/tafalado</a>, archived on March 2, 2026, and
+        no longer updated. © 2025, University of Texas at Austin. Licensed under{' '}
+        <a href="https://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported (CC BY 3.0)</a>.
+      </p>
+      <p class="prose">
+        <strong>Modified: re-hosted and re-presented.</strong> The MP3s, PDF transcripts and photos are served
+        unchanged, and the lesson titles and intros keep their original wording; this site gives them new pages, a new
+        player and a new podcast feed.
+      </p>
+      <p class="prose">
+        The lesson photos come from the original lesson pages. Several show the team themselves; the rest are everyday
+        scenes from the cultural topics. The original site doesn't credit any photo separately, so they're shared here
+        under the same CC BY 3.0 license as the rest of the work. If you took one of these photos and would rather it
+        not appear here, <a href={`${REPO}/issues`}>open an issue</a> and it will be removed.
+      </p>
+    </section>
+
+    <section aria-labelledby="code">
+      <h2 id="code">This site's code</h2>
+      <p>
+        The site's own code is separate from the content and MIT-licensed; the CC BY 3.0 license above covers the
+        content. The podcast and episode artwork is set in
+        <a href="https://www.huertatipografica.com/en/fonts/alegreya-ht-pro">Alegreya</a> and
+        <a href="https://www.huertatipografica.com/en/fonts/alegreya-sans-ht">Alegreya Sans</a> by Juan Pablo del Peral
+        (Huerta Tipográfica), under the SIL Open Font License.
+      </p>
+      <ul class="links">
+        <li><a href={REPO}>Source code on GitHub</a></li>
+        <li><a href={`${REPO}/blob/main/LICENSE`}>MIT license</a></li>
+        <li><a href={`${REPO}/blob/main/CREDITS.md`}>CREDITS.md</a></li>
+      </ul>
+    </section>
+  </article>
 </Base>
+
+<style>
+  .about {
+    max-inline-size: 40rem;
+  }
+  h2 {
+    margin: 48px 0 var(--space-16);
+    font-size: var(--text-28);
+  }
+  .lede {
+    font: var(--text-21) / 1.5 var(--font-serif);
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .small {
+    font-size: var(--text-14);
+  }
+
+  /* The roster: the role on the left, the names on the right, a rule under each role. */
+  .roster {
+    margin: 0;
+    border-block-start: 2px solid var(--ink);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: var(--space-16);
+    padding-block: var(--space-12);
+    border-block-end: 1px solid var(--line);
+  }
+  dt {
+    padding-block-start: 6px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  dd {
+    margin: 0;
+  }
+  summary {
+    display: grid;
+    padding-block: 4px;
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .name {
+    font: 700 var(--text-21) / 1.25 var(--font-serif);
+  }
+  summary:hover .name {
+    color: var(--accent);
+  }
+  .name::after {
+    content: '+';
+    margin-inline-start: 0.4em;
+    color: var(--accent);
+    font-family: var(--font-sans);
+  }
+  details[open] .name::after {
+    content: '–';
+  }
+  .bio {
+    padding: var(--space-8) 0 var(--space-12);
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .bio :global(p) {
+    margin-block: 0 var(--space-12);
+  }
+  /* Support is plain text with its links; CREDITS.md italicizes the names. */
+  .support {
+    padding-block-start: 6px;
+  }
+  .support :global(em) {
+    font-style: normal;
+  }
+
+  .prose {
+    font: var(--text-18) / 1.55 var(--font-serif);
+  }
+  .prose strong {
+    font-family: var(--font-sans);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) var(--space-24);
+    padding: 0;
+    list-style: none;
+    font-weight: 700;
+  }
+
+  @media (max-width: 30rem) {
+    .row {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>
