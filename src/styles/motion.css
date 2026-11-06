@@ -64,14 +64,10 @@
     view-transition-name: sheet;
   }
 }
+/* The images keep the browser's own sizing: full width, natural height, from the top. On a phone
+   a page's image is as tall as the page, and stretching it to the group would magnify it. */
 ::view-transition-group(sheet) {
   animation: none;
-}
-::view-transition-old(sheet),
-::view-transition-new(sheet) {
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top;
 }
 
 @keyframes sheet-in {
